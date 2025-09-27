@@ -130,7 +130,7 @@ absl::StatusOr<std::unique_ptr<ChunkedMac>> NewChunkedHmac(
     const HmacKeyProto& key) {
   if (!key.has_params()) {
     return absl::Status(absl::StatusCode::kInvalidArgument,
-                        "Invalid key: missing paramaters.");
+                        "Invalid key: missing parameters.");
   }
   subtle::HashType hash_type = util::Enums::ProtoToSubtle(key.params().hash());
   SecretData secret_key_data = util::SecretDataFromStringView(key.key_value());

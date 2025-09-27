@@ -211,7 +211,7 @@ absl::StatusOr<EcdsaPrivateKeyProto> NewEcdsaPrivateKey(
 
 // Construct a new RSASSA-PSS key proto from a subtle RSA private key
 // `private_key_subtle`; the key is assigned version `key_version` and
-// key paramters `parameters`.
+// key parameters `parameters`.
 absl::StatusOr<RsaSsaPssPrivateKeyProto> NewRsaSsaPrivateKey(
     const internal::RsaPrivateKey& private_key_subtle, uint32_t key_version,
     const PemKeyParams& parameters) {
@@ -251,7 +251,7 @@ absl::StatusOr<RsaSsaPssPrivateKeyProto> NewRsaSsaPrivateKey(
 
 // Construct a new RSASSA-PKCS1 key proto from a subtle RSA private key
 // `private_key_subtle`; the key is assigned version `key_version` and
-// key paramters `parameters`.
+// key parameters `parameters`.
 RsaSsaPkcs1PrivateKeyProto NewRsaSsaPkcs1PrivateKey(
     const internal::RsaPrivateKey& private_key_subtle, uint32_t key_version,
     const PemKeyParams& parameters) {
@@ -457,7 +457,7 @@ absl::Status AddRsaSsaPublicKey(const PemKey& pem_key, Keyset& keyset) {
       RsaSsaPssPublicKeyProto public_key_proto;
       RsaSsaPssVerifyKeyManager key_manager;
 
-      // RSA Public key paramters.
+      // RSA Public key parameters.
       public_key_proto.set_e(public_key_subtle->e);
       public_key_proto.set_n(public_key_subtle->n);
 
@@ -482,7 +482,7 @@ absl::Status AddRsaSsaPublicKey(const PemKey& pem_key, Keyset& keyset) {
       RsaSsaPkcs1PublicKeyProto public_key_proto;
       RsaSsaPkcs1VerifyKeyManager key_manager;
 
-      // RSA Public key paramters.
+      // RSA Public key parameters.
       public_key_proto.set_e(public_key_subtle->e);
       public_key_proto.set_n(public_key_subtle->n);
 
