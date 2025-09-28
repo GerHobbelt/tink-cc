@@ -14,12 +14,21 @@
 # limitations under the License.
 ################################################################################
 
+# Generated with openssl rand -hex 10
+echo "==========================================================================="
+echo "Tink Script ID: 98fe051eb8c78e2cc0ff (to quickly find the script from logs)"
+echo "==========================================================================="
+
+
 set -euo pipefail
 
 if [[ -n "${KOKORO_ROOT:-}" ]]; then
   TINK_BASE_DIR="$(echo "${KOKORO_ARTIFACTS_DIR}"/git*)"
   cd "${TINK_BASE_DIR}/tink_cc"
 fi
+
+# Install cmake if not available
+cmake --version || brew install cmake
 
 # Sourcing is needed to update the caller environment.
 source ./kokoro/testutils/install_openssl.sh

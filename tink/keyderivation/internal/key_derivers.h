@@ -19,19 +19,33 @@
 
 #include <memory>
 
+#include "absl/status/statusor.h"
 #include "tink/input_stream.h"
 #include "tink/key.h"
 #include "tink/parameters.h"
-#include "tink/util/statusor.h"
 #include "proto/tink.pb.h"
 
 namespace crypto {
 namespace tink {
 namespace internal {
 
+// Derives a key from the given parameters and randomness.
+//
+// The following key types are supported:
+// - AEAD: AES-CTR-HMAC, AES-GCM, XChaCha20-Poly1305
+// - Deterministic AEAD: AES-SIV
+// - MAC: HMAC
+// - PRF: AES-CMAC-PRF, HKDF-PRF
+// - Signature: ECDSA, Ed25519
+//
+// The following key types are pending support:
+// - PRF: HMAC-PRF
+// - Streaming AEAD: AES-CTR-HMAC, AES-GCM-HKDF
+//
+// TODO: b/314831964 - Add support for remaining key types.
 absl::StatusOr<std::unique_ptr<crypto::tink::Key>> DeriveKey(
     const crypto::tink::Parameters& params,
-    crypto::tink::InputStream* randomness);
+    crypto::tink::InputStream* rand_stream);
 
 }  // namespace internal
 }  // namespace tink

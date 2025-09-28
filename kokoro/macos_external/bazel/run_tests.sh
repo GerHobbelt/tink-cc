@@ -14,6 +14,11 @@
 # limitations under the License.
 ################################################################################
 
+# Generated with openssl rand -hex 10
+echo "==========================================================================="
+echo "Tink Script ID: 41fa20f4161078ed5a2f (to quickly find the script from logs)"
+echo "==========================================================================="
+
 set -euo pipefail
 
 # If we are running on Kokoro cd into the repository.
@@ -28,6 +33,9 @@ if [[ -n "${TINK_REMOTE_BAZEL_CACHE_GCS_BUCKET:-}" ]]; then
   CACHE_FLAGS="-c ${TINK_REMOTE_BAZEL_CACHE_GCS_BUCKET}/bazel/macos"
 fi
 readonly CACHE_FLAGS
+
+echo "=========================================================== BUILDING MAIN"
+bazelisk
 
 ./kokoro/testutils/run_bazel_tests.sh ${CACHE_FLAGS} .
 ./kokoro/testutils/run_bazel_tests.sh ${CACHE_FLAGS} "examples"

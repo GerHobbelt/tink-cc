@@ -52,8 +52,15 @@
 #include "tink/mac/hmac_proto_serialization.h"
 #include "tink/parameters.h"
 #include "tink/partial_key_access.h"
+#include "tink/prf/aes_cmac_prf_key.h"
+#include "tink/prf/aes_cmac_prf_parameters.h"
+#include "tink/prf/aes_cmac_prf_proto_serialization.h"
+#include "tink/prf/hkdf_prf_key.h"
+#include "tink/prf/hkdf_prf_parameters.h"
+#include "tink/prf/hkdf_prf_proto_serialization.h"
 #include "tink/restricted_big_integer.h"
 #include "tink/restricted_data.h"
+#include "tink/secret_data.h"
 #include "tink/signature/ecdsa_parameters.h"
 #include "tink/signature/ecdsa_private_key.h"
 #include "tink/signature/ecdsa_proto_serialization.h"
@@ -65,8 +72,6 @@
 #include "tink/subtle/common_enums.h"
 #include "tink/util/input_stream_util.h"
 #include "tink/util/secret_data.h"
-#include "tink/util/status.h"
-#include "tink/util/statusor.h"
 #include "proto/aes_gcm.pb.h"
 #include "proto/tink.pb.h"
 
@@ -84,7 +89,7 @@ using KeyDeriverFn = absl::AnyInvocable<absl::StatusOr<std::unique_ptr<Key>>(
 using KeyDeriverFnMap = absl::flat_hash_map<std::type_index, KeyDeriverFn>;
 
 absl::StatusOr<std::unique_ptr<AesCtrHmacAeadKey>> DeriveAesCtrHmacAeadKey(
-    const Parameters& generic_params, InputStream* randomness) {
+    const Parameters& generic_params, InputStream* rand_stream) {
   // To ensure the resulting key provides key commitment, derive the AES key
   // first, then the HMAC key.
   //
@@ -105,12 +110,12 @@ absl::StatusOr<std::unique_ptr<AesCtrHmacAeadKey>> DeriveAesCtrHmacAeadKey(
                         "Parameters is not AesCtrHmacAeadParameters.");
   }
   absl::StatusOr<std::string> aes_key_bytes =
-      ReadBytesFromStream(params->GetAesKeySizeInBytes(), randomness);
+      ReadBytesFromStream(params->GetAesKeySizeInBytes(), rand_stream);
   if (!aes_key_bytes.ok()) {
     return aes_key_bytes.status();
   }
   absl::StatusOr<std::string> hmac_key_bytes =
-      ReadBytesFromStream(params->GetHmacKeySizeInBytes(), randomness);
+      ReadBytesFromStream(params->GetHmacKeySizeInBytes(), rand_stream);
   if (!hmac_key_bytes.ok()) {
     return hmac_key_bytes.status();
   }
@@ -130,20 +135,20 @@ absl::StatusOr<std::unique_ptr<AesCtrHmacAeadKey>> DeriveAesCtrHmacAeadKey(
 }
 
 absl::StatusOr<std::unique_ptr<AesGcmKey>> DeriveAesGcmKey(
-    const Parameters& generic_params, InputStream* randomness) {
+    const Parameters& generic_params, InputStream* rand_stream) {
   const AesGcmParameters* params =
       dynamic_cast<const AesGcmParameters*>(&generic_params);
   if (params == nullptr) {
     return absl::Status(absl::StatusCode::kInternal,
                         "Parameters is not AesGcmParameters.");
   }
-  absl::StatusOr<std::string> randomness_str =
-      ReadBytesFromStream(params->KeySizeInBytes(), randomness);
-  if (!randomness_str.ok()) {
-    return randomness_str.status();
+  absl::StatusOr<std::string> rand =
+      ReadBytesFromStream(params->KeySizeInBytes(), rand_stream);
+  if (!rand.ok()) {
+    return rand.status();
   }
   absl::StatusOr<AesGcmKey> key = AesGcmKey::Create(
-      *params, RestrictedData(*randomness_str, InsecureSecretKeyAccess::Get()),
+      *params, RestrictedData(*rand, InsecureSecretKeyAccess::Get()),
       /*id_requirement=*/absl::nullopt, GetPartialKeyAccess());
   if (!key.ok()) {
     return key.status();
@@ -153,21 +158,21 @@ absl::StatusOr<std::unique_ptr<AesGcmKey>> DeriveAesGcmKey(
 
 absl::StatusOr<std::unique_ptr<XChaCha20Poly1305Key>>
 DeriveXChaCha20Poly1305Key(const Parameters& generic_params,
-                           InputStream* randomness) {
+                           InputStream* rand_stream) {
   const XChaCha20Poly1305Parameters* params =
       dynamic_cast<const XChaCha20Poly1305Parameters*>(&generic_params);
   if (params == nullptr) {
     return absl::Status(absl::StatusCode::kInternal,
                         "Parameters is not XChaCha20Poly1305Parameters.");
   }
-  absl::StatusOr<std::string> randomness_str =
-      ReadBytesFromStream(kXChaCha20Poly1305KeyLen, randomness);
-  if (!randomness_str.ok()) {
-    return randomness_str.status();
+  absl::StatusOr<std::string> rand =
+      ReadBytesFromStream(kXChaCha20Poly1305KeyLen, rand_stream);
+  if (!rand.ok()) {
+    return rand.status();
   }
   absl::StatusOr<XChaCha20Poly1305Key> key = XChaCha20Poly1305Key::Create(
       params->GetVariant(),
-      RestrictedData(*randomness_str, InsecureSecretKeyAccess::Get()),
+      RestrictedData(*rand, InsecureSecretKeyAccess::Get()),
       /*id_requirement=*/absl::nullopt, GetPartialKeyAccess());
   if (!key.ok()) {
     return key.status();
@@ -176,20 +181,20 @@ DeriveXChaCha20Poly1305Key(const Parameters& generic_params,
 }
 
 absl::StatusOr<std::unique_ptr<AesSivKey>> DeriveAesSivKey(
-    const Parameters& generic_params, InputStream* randomness) {
+    const Parameters& generic_params, InputStream* rand_stream) {
   const AesSivParameters* params =
       dynamic_cast<const AesSivParameters*>(&generic_params);
   if (params == nullptr) {
     return absl::Status(absl::StatusCode::kInternal,
                         "Parameters is not AesSivParameters.");
   }
-  absl::StatusOr<SecretData> randomness_str =
-      ReadSecretBytesFromStream(params->KeySizeInBytes(), randomness);
-  if (!randomness_str.ok()) {
-    return randomness_str.status();
+  absl::StatusOr<SecretData> rand =
+      ReadSecretBytesFromStream(params->KeySizeInBytes(), rand_stream);
+  if (!rand.ok()) {
+    return rand.status();
   }
   absl::StatusOr<AesSivKey> key = AesSivKey::Create(
-      *params, RestrictedData(*randomness_str, InsecureSecretKeyAccess::Get()),
+      *params, RestrictedData(*rand, InsecureSecretKeyAccess::Get()),
       /*id_requirement=*/absl::nullopt, GetPartialKeyAccess());
   if (!key.ok()) {
     return key.status();
@@ -198,20 +203,20 @@ absl::StatusOr<std::unique_ptr<AesSivKey>> DeriveAesSivKey(
 }
 
 absl::StatusOr<std::unique_ptr<HmacKey>> DeriveHmacKey(
-    const Parameters& generic_params, InputStream* randomness) {
+    const Parameters& generic_params, InputStream* rand_stream) {
   const HmacParameters* params =
       dynamic_cast<const HmacParameters*>(&generic_params);
   if (params == nullptr) {
     return absl::Status(absl::StatusCode::kInternal,
                         "Parameters is not HmacParameters.");
   }
-  absl::StatusOr<std::string> randomness_str =
-      ReadBytesFromStream(params->KeySizeInBytes(), randomness);
-  if (!randomness_str.ok()) {
-    return randomness_str.status();
+  absl::StatusOr<std::string> rand =
+      ReadBytesFromStream(params->KeySizeInBytes(), rand_stream);
+  if (!rand.ok()) {
+    return rand.status();
   }
   absl::StatusOr<HmacKey> key = HmacKey::Create(
-      *params, RestrictedData(*randomness_str, InsecureSecretKeyAccess::Get()),
+      *params, RestrictedData(*rand, InsecureSecretKeyAccess::Get()),
       /*id_requirement=*/absl::nullopt, GetPartialKeyAccess());
   if (!key.ok()) {
     return key.status();
@@ -219,8 +224,52 @@ absl::StatusOr<std::unique_ptr<HmacKey>> DeriveHmacKey(
   return absl::make_unique<HmacKey>(*key);
 }
 
-absl::StatusOr<std::unique_ptr<EcdsaPrivateKey>> DeriveEcdsaPrivateKey(
+absl::StatusOr<std::unique_ptr<AesCmacPrfKey>> DeriveAesCmacPrfKey(
+    const Parameters& generic_params, InputStream* rand_stream) {
+  const AesCmacPrfParameters* params =
+      dynamic_cast<const AesCmacPrfParameters*>(&generic_params);
+  if (params == nullptr) {
+    return absl::Status(absl::StatusCode::kInternal,
+                        "Parameters is not AesCmacPrfParameters.");
+  }
+  absl::StatusOr<std::string> rand =
+      ReadBytesFromStream(params->KeySizeInBytes(), rand_stream);
+  if (!rand.ok()) {
+    return rand.status();
+  }
+  absl::StatusOr<AesCmacPrfKey> key = AesCmacPrfKey::Create(
+      RestrictedData(*rand, InsecureSecretKeyAccess::Get()),
+      GetPartialKeyAccess());
+  if (!key.ok()) {
+    return key.status();
+  }
+  return absl::make_unique<AesCmacPrfKey>(*key);
+}
+
+absl::StatusOr<std::unique_ptr<HkdfPrfKey>> DeriveHkdfPrfKey(
     const Parameters& generic_params, InputStream* randomness) {
+  const HkdfPrfParameters* params =
+      dynamic_cast<const HkdfPrfParameters*>(&generic_params);
+  if (params == nullptr) {
+    return absl::Status(absl::StatusCode::kInternal,
+                        "Parameters is not HkdfPrfParameters.");
+  }
+  absl::StatusOr<std::string> randomness_str =
+      ReadBytesFromStream(params->KeySizeInBytes(), randomness);
+  if (!randomness_str.ok()) {
+    return randomness_str.status();
+  }
+  absl::StatusOr<HkdfPrfKey> key = HkdfPrfKey::Create(
+      *params, RestrictedData(*randomness_str, InsecureSecretKeyAccess::Get()),
+      GetPartialKeyAccess());
+  if (!key.ok()) {
+    return key.status();
+  }
+  return absl::make_unique<HkdfPrfKey>(*key);
+}
+
+absl::StatusOr<std::unique_ptr<EcdsaPrivateKey>> DeriveEcdsaPrivateKey(
+    const Parameters& generic_params, InputStream* rand_stream) {
   const EcdsaParameters* params =
       dynamic_cast<const EcdsaParameters*>(&generic_params);
   if (params == nullptr) {
@@ -248,7 +297,7 @@ absl::StatusOr<std::unique_ptr<EcdsaPrivateKey>> DeriveEcdsaPrivateKey(
                           "ECDSA curve does not support key derivation.");
   }
   absl::StatusOr<SecretData> secret_seed =
-      ReadSecretBytesFromStream(num_rand_bytes, randomness);
+      ReadSecretBytesFromStream(num_rand_bytes, rand_stream);
   if (!secret_seed.ok()) {
     return secret_seed.status();
   }
@@ -278,7 +327,7 @@ absl::StatusOr<std::unique_ptr<EcdsaPrivateKey>> DeriveEcdsaPrivateKey(
 }
 
 absl::StatusOr<std::unique_ptr<Ed25519PrivateKey>> DeriveEd25519PrivateKey(
-    const Parameters& generic_params, InputStream* randomness) {
+    const Parameters& generic_params, InputStream* rand_stream) {
   const Ed25519Parameters* params =
       dynamic_cast<const Ed25519Parameters*>(&generic_params);
   if (params == nullptr) {
@@ -287,7 +336,7 @@ absl::StatusOr<std::unique_ptr<Ed25519PrivateKey>> DeriveEd25519PrivateKey(
   }
 
   absl::StatusOr<SecretData> secret_seed =
-      ReadSecretBytesFromStream(kEd25519PrivKeyLen, randomness);
+      ReadSecretBytesFromStream(kEd25519PrivKeyLen, rand_stream);
   if (!secret_seed.ok()) {
     return secret_seed.status();
   }
@@ -320,11 +369,11 @@ const KeyDeriverFnMap& ParametersToKeyDeriver() {
 
     // AEAD.
     CHECK_OK(RegisterAesCtrHmacAeadProtoSerialization());
-    CHECK_OK(RegisterAesGcmProtoSerialization());
-    CHECK_OK(RegisterXChaCha20Poly1305ProtoSerialization());
     m->insert({std::type_index(typeid(AesCtrHmacAeadParameters)),
                DeriveAesCtrHmacAeadKey});
+    CHECK_OK(RegisterAesGcmProtoSerialization());
     m->insert({std::type_index(typeid(AesGcmParameters)), DeriveAesGcmKey});
+    CHECK_OK(RegisterXChaCha20Poly1305ProtoSerialization());
     m->insert({std::type_index(typeid(XChaCha20Poly1305Parameters)),
                DeriveXChaCha20Poly1305Key});
 
@@ -335,6 +384,13 @@ const KeyDeriverFnMap& ParametersToKeyDeriver() {
     // MAC.
     CHECK_OK(RegisterHmacProtoSerialization());
     m->insert({std::type_index(typeid(HmacParameters)), DeriveHmacKey});
+
+    // PRF.
+    CHECK_OK(RegisterAesCmacPrfProtoSerialization());
+    m->insert(
+        {std::type_index(typeid(AesCmacPrfParameters)), DeriveAesCmacPrfKey});
+    CHECK_OK(RegisterHkdfPrfProtoSerialization());
+    m->insert({std::type_index(typeid(HkdfPrfParameters)), DeriveHkdfPrfKey});
 
     // Signature.
     CHECK_OK(RegisterEcdsaProtoSerialization());
@@ -352,14 +408,14 @@ const KeyDeriverFnMap& ParametersToKeyDeriver() {
 }  // namespace
 
 absl::StatusOr<std::unique_ptr<Key>> DeriveKey(const Parameters& params,
-                                               InputStream* randomness) {
+                                               InputStream* rand_stream) {
   auto it = ParametersToKeyDeriver().find(std::type_index(typeid(params)));
   if (it == ParametersToKeyDeriver().end()) {
     return absl::Status(
         absl::StatusCode::kUnimplemented,
         absl::StrCat("Key deriver not found for ", typeid(params).name()));
   }
-  return it->second(params, randomness);
+  return it->second(params, rand_stream);
 }
 
 }  // namespace internal

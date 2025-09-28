@@ -130,6 +130,7 @@ tink_cc_library(
     absl::check
     absl::memory
     absl::status
+    absl::statusor
     absl::strings
     absl::string_view
     absl::optional
@@ -142,6 +143,7 @@ tink_cc_library(
     tink::core::partial_key_access
     tink::core::restricted_big_integer
     tink::core::restricted_data
+    tink::core::secret_data
     tink::aead::aes_ctr_hmac_aead_key
     tink::aead::aes_ctr_hmac_aead_parameters
     tink::aead::aes_ctr_hmac_aead_proto_serialization
@@ -158,6 +160,12 @@ tink_cc_library(
     tink::mac::hmac_key
     tink::mac::hmac_parameters
     tink::mac::hmac_proto_serialization
+    tink::prf::aes_cmac_prf_key
+    tink::prf::aes_cmac_prf_parameters
+    tink::prf::aes_cmac_prf_proto_serialization
+    tink::prf::hkdf_prf_key
+    tink::prf::hkdf_prf_parameters
+    tink::prf::hkdf_prf_proto_serialization
     tink::signature::ecdsa_parameters
     tink::signature::ecdsa_private_key
     tink::signature::ecdsa_proto_serialization
@@ -169,8 +177,6 @@ tink_cc_library(
     tink::subtle::common_enums
     tink::util::input_stream_util
     tink::util::secret_data
-    tink::util::status
-    tink::util::statusor
     tink::proto::aes_gcm_cc_proto
     tink::proto::tink_cc_proto
 )
@@ -184,6 +190,7 @@ tink_cc_test(
     gmock
     absl::memory
     absl::status
+    absl::statusor
     absl::optional
     tink::core::input_stream
     tink::core::insecure_secret_key_access_testonly
@@ -222,7 +229,12 @@ tink_cc_test(
     tink::mac::hmac_key_manager
     tink::mac::hmac_parameters
     tink::mac::hmac_proto_serialization
+    tink::prf::aes_cmac_prf_key
+    tink::prf::aes_cmac_prf_key_manager
+    tink::prf::aes_cmac_prf_parameters
+    tink::prf::hkdf_prf_key
     tink::prf::hkdf_prf_key_manager
+    tink::prf::hkdf_prf_parameters
     tink::signature::ecdsa_parameters
     tink::signature::ecdsa_private_key
     tink::signature::ecdsa_proto_serialization
@@ -237,9 +249,9 @@ tink_cc_test(
     tink::subtle::prf::streaming_prf
     tink::util::istream_input_stream
     tink::util::secret_data
-    tink::util::statusor
     tink::util::test_matchers
     tink::util::test_util
+    tink::proto::aes_cmac_prf_cc_proto
     tink::proto::aes_ctr_cc_proto
     tink::proto::aes_ctr_hmac_aead_cc_proto
     tink::proto::aes_gcm_cc_proto
