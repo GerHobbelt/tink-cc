@@ -41,8 +41,8 @@
 #include "tink/mac/internal/hmac_proto_structs.h"
 #include "tink/partial_key_access.h"
 #include "tink/restricted_data.h"
+#include "tink/secret_data.h"
 #include "tink/secret_key_access_token.h"
-#include "tink/util/secret_data.h"
 
 namespace crypto {
 namespace tink {
@@ -51,7 +51,6 @@ namespace {
 
 using ::crypto::tink::internal::ProtoParser;
 using ::crypto::tink::internal::ProtoParserBuilder;
-using ::crypto::tink::util::SecretData;
 
 struct HmacKeyStruct {
   uint32_t version;
@@ -242,9 +241,9 @@ absl::StatusOr<HmacKey> ParseKey(const ProtoKeySerialization& serialization,
                              proto_key->params.tag_size, *hash_type, *variant);
   if (!parameters.ok()) return parameters.status();
 
-  return HmacKey::Create(*parameters,
-                         RestrictedData(proto_key->key_value, *token),
-                         serialization.IdRequirement(), GetPartialKeyAccess());
+  return HmacKey::Create(
+      *parameters, RestrictedData(std::move(proto_key->key_value), *token),
+      serialization.IdRequirement(), GetPartialKeyAccess());
 }
 
 absl::StatusOr<ProtoKeySerialization> SerializeKey(

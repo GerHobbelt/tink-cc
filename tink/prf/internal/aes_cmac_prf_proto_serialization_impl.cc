@@ -49,7 +49,6 @@ namespace {
 
 using ::crypto::tink::internal::ProtoParser;
 using ::crypto::tink::internal::ProtoParserBuilder;
-using ::crypto::tink::util::SecretData;
 
 struct AesCmacPrfKeyFormatStruct {
   uint32_t key_size;
@@ -167,8 +166,9 @@ absl::StatusOr<AesCmacPrfKey> ParseKey(
     return absl::InvalidArgumentError("Only version 0 keys are accepted.");
   }
 
-  return AesCmacPrfKey::Create(RestrictedData(proto_key->key_value, *token),
-                               GetPartialKeyAccess());
+  return AesCmacPrfKey::Create(
+      RestrictedData(std::move(proto_key->key_value), *token),
+      GetPartialKeyAccess());
 }
 
 absl::StatusOr<internal::ProtoKeySerialization> SerializeKey(

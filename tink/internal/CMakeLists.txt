@@ -1439,6 +1439,7 @@ tink_cc_test(
     absl::statusor
     absl::strings
     absl::optional
+    tink::core::secret_data
     tink::internal::testing::field_with_number
     tink::util::secret_data
     tink::util::test_matchers
@@ -1478,6 +1479,7 @@ tink_cc_test(
     absl::strings
     absl::string_view
     absl::span
+    tink::core::secret_data
     tink::util::test_matchers
     tink::util::test_util
 )
@@ -1760,6 +1762,7 @@ tink_cc_library(
     tink::prf::internal::hmac_prf_proto_serialization_impl
     tink::signature::internal::ecdsa_proto_serialization_impl
     tink::signature::internal::ed25519_proto_serialization_impl
+    tink::streamingaead::internal::aes_gcm_hkdf_streaming_proto_serialization_impl
 )
 
 tink_cc_test(
@@ -1815,6 +1818,8 @@ tink_cc_test(
     tink::signature::ed25519_parameters
     tink::signature::ed25519_private_key
     tink::signature::ed25519_public_key
+    tink::streamingaead::aes_gcm_hkdf_streaming_key
+    tink::streamingaead::aes_gcm_hkdf_streaming_parameters
     tink::subtle::common_enums
     tink::subtle::random
     tink::util::secret_data
