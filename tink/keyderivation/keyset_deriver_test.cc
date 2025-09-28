@@ -65,6 +65,9 @@
 #include "tink/prf/hkdf_prf_key.h"
 #include "tink/prf/hkdf_prf_parameters.h"
 #include "tink/prf/hkdf_prf_proto_serialization.h"
+#include "tink/prf/hmac_prf_key.h"
+#include "tink/prf/hmac_prf_parameters.h"
+#include "tink/prf/hmac_prf_proto_serialization.h"
 #include "tink/registry.h"
 #include "tink/restricted_big_integer.h"
 #include "tink/restricted_data.h"
@@ -77,6 +80,12 @@
 #include "tink/signature/ed25519_private_key.h"
 #include "tink/signature/ed25519_proto_serialization.h"
 #include "tink/signature/ed25519_public_key.h"
+#include "tink/streamingaead/aes_ctr_hmac_streaming_key.h"
+#include "tink/streamingaead/aes_ctr_hmac_streaming_parameters.h"
+#include "tink/streamingaead/aes_ctr_hmac_streaming_proto_serialization.h"
+#include "tink/streamingaead/aes_gcm_hkdf_streaming_key.h"
+#include "tink/streamingaead/aes_gcm_hkdf_streaming_parameters.h"
+#include "tink/streamingaead/aes_gcm_hkdf_streaming_proto_serialization.h"
 #include "tink/subtle/common_enums.h"
 #include "tink/util/secret_data.h"
 #include "tink/util/test_matchers.h"
@@ -240,6 +249,19 @@ std::unique_ptr<HkdfPrfKey> CreateHkdfPrfKey(
           .value());
 }
 
+std::unique_ptr<HmacPrfKey> CreateHmacPrfKey(
+    int key_size_in_bytes, HmacPrfParameters::HashType hash_type,
+    absl::string_view secret) {
+  HmacPrfParameters params =
+      HmacPrfParameters::Create(key_size_in_bytes, hash_type).value();
+  return std::make_unique<HmacPrfKey>(
+      HmacPrfKey::Create(params,
+                         RestrictedData(test::HexDecodeOrDie(secret),
+                                        InsecureSecretKeyAccess::Get()),
+                         GetPartialKeyAccess())
+          .value());
+}
+
 std::unique_ptr<EcdsaPrivateKey> CreateEcdsaPrivateKey(
     crypto::tink::subtle::EllipticCurveType proto_curve_type,
     EcdsaParameters::CurveType curve_type, EcdsaParameters::HashType hash_type,
@@ -289,6 +311,52 @@ std::unique_ptr<Ed25519PrivateKey> CreateEd25519PrivateKey(
   return absl::make_unique<Ed25519PrivateKey>(
       Ed25519PrivateKey::Create(public_key, private_key_bytes,
                                 GetPartialKeyAccess())
+          .value());
+}
+
+std::unique_ptr<AesCtrHmacStreamingKey> CreateAesCtrHmacStreamingKey(
+    int key_size_in_bytes, int derived_key_size_in_bytes,
+    AesCtrHmacStreamingParameters::HashType hkdf_hash_type,
+    AesCtrHmacStreamingParameters::HashType hmac_hash_type,
+    int hmac_tag_size_in_bytes, int ciphertext_segment_size_in_bytes,
+    absl::string_view secret) {
+  AesCtrHmacStreamingParameters params =
+      AesCtrHmacStreamingParameters::Builder()
+          .SetKeySizeInBytes(key_size_in_bytes)
+          .SetDerivedKeySizeInBytes(derived_key_size_in_bytes)
+          .SetHkdfHashType(hkdf_hash_type)
+          .SetHmacHashType(hmac_hash_type)
+          .SetHmacTagSizeInBytes(hmac_tag_size_in_bytes)
+          .SetCiphertextSegmentSizeInBytes(ciphertext_segment_size_in_bytes)
+          .Build()
+          .value();
+  return std::make_unique<AesCtrHmacStreamingKey>(
+      AesCtrHmacStreamingKey::Create(
+          params,
+          RestrictedData(test::HexDecodeOrDie(secret),
+                         InsecureSecretKeyAccess::Get()),
+          GetPartialKeyAccess())
+          .value());
+}
+
+std::unique_ptr<AesGcmHkdfStreamingKey> CreateAesGcmHkdfStreamingKey(
+    int key_size_in_bytes, int derived_key_size_in_bytes,
+    AesGcmHkdfStreamingParameters::HashType hash_type,
+    int ciphertext_segment_size_in_bytes, absl::string_view secret) {
+  AesGcmHkdfStreamingParameters params =
+      AesGcmHkdfStreamingParameters::Builder()
+          .SetKeySizeInBytes(key_size_in_bytes)
+          .SetDerivedKeySizeInBytes(derived_key_size_in_bytes)
+          .SetHashType(hash_type)
+          .SetCiphertextSegmentSizeInBytes(ciphertext_segment_size_in_bytes)
+          .Build()
+          .value();
+  return std::make_unique<AesGcmHkdfStreamingKey>(
+      AesGcmHkdfStreamingKey::Create(
+          params,
+          RestrictedData(test::HexDecodeOrDie(secret),
+                         InsecureSecretKeyAccess::Get()),
+          GetPartialKeyAccess())
           .value());
 }
 
@@ -379,6 +447,21 @@ std::vector<std::shared_ptr<Key>> PrfTestVector() {
       CreateHkdfPrfKey(
           /*key_size_in_bytes=*/32, HkdfPrfParameters::HashType::kSha512,
           /*salt=*/test::HexDecodeOrDie("beef"), kOkmFromRfc.substr(0, 64)),
+      CreateHmacPrfKey(
+          /*key_size_in_bytes=*/16, HmacPrfParameters::HashType::kSha1,
+          kOkmFromRfc.substr(0, 32)),
+      CreateHmacPrfKey(/*key_size_in_bytes=*/16,
+                       HmacPrfParameters::HashType::kSha224,
+                       kOkmFromRfc.substr(0, 32)),
+      CreateHmacPrfKey(
+          /*key_size_in_bytes=*/16, HmacPrfParameters::HashType::kSha256,
+          kOkmFromRfc.substr(0, 32)),
+      CreateHmacPrfKey(/*key_size_in_bytes=*/32,
+                       HmacPrfParameters::HashType::kSha384,
+                       kOkmFromRfc.substr(0, 64)),
+      CreateHmacPrfKey(
+          /*key_size_in_bytes=*/32, HmacPrfParameters::HashType::kSha512,
+          kOkmFromRfc.substr(0, 64)),
   };
 }
 
@@ -432,6 +515,57 @@ std::vector<std::shared_ptr<Key>> SignatureEd25519TestVector() {
   };
 }
 
+std::vector<std::shared_ptr<Key>> StreamingAeadTestVector() {
+  return {
+      CreateAesCtrHmacStreamingKey(
+          /*key_size_in_bytes=*/19, /*derived_key_size_in_bytes=*/16,
+          /*hkdf_hash_type=*/AesCtrHmacStreamingParameters::HashType::kSha1,
+          /*hmac_hash_type=*/AesCtrHmacStreamingParameters::HashType::kSha1,
+          /*hmac_tag_size_in_bytes'clang=*/10,
+          /*ciphertext_segment_size_in_bytes=*/1024, kOkmFromRfc.substr(0, 38)),
+      CreateAesCtrHmacStreamingKey(
+          /*key_size_in_bytes=*/19, /*derived_key_size_in_bytes=*/16,
+          /*hkdf_hash_type=*/AesCtrHmacStreamingParameters::HashType::kSha256,
+          /*hmac_hash_type=*/AesCtrHmacStreamingParameters::HashType::kSha1,
+          /*hmac_tag_size_in_bytes'clang=*/14,
+          /*ciphertext_segment_size_in_bytes=*/1024 * 1024,
+          kOkmFromRfc.substr(0, 38)),
+      CreateAesCtrHmacStreamingKey(
+          /*key_size_in_bytes=*/35, /*derived_key_size_in_bytes=*/32,
+          /*hkdf_hash_type=*/AesCtrHmacStreamingParameters::HashType::kSha512,
+          /*hmac_hash_type=*/AesCtrHmacStreamingParameters::HashType::kSha256,
+          /*hmac_tag_size_in_bytes'clang=*/16,
+          /*ciphertext_segment_size_in_bytes=*/3 * 1024 * 1024,
+          kOkmFromRfc.substr(0, 70)),
+      CreateAesCtrHmacStreamingKey(
+          /*key_size_in_bytes=*/35, /*derived_key_size_in_bytes=*/32,
+          /*hkdf_hash_type=*/AesCtrHmacStreamingParameters::HashType::kSha512,
+          /*hmac_hash_type=*/AesCtrHmacStreamingParameters::HashType::kSha512,
+          /*hmac_tag_size_in_bytes'clang=*/64,
+          /*ciphertext_segment_size_in_bytes=*/4 * 1024 * 1024,
+          kOkmFromRfc.substr(0, 70)),
+      CreateAesGcmHkdfStreamingKey(
+          /*key_size_in_bytes=*/19, /*derived_key_size_in_bytes=*/16,
+          AesGcmHkdfStreamingParameters::HashType::kSha1,
+          /*ciphertext_segment_size_in_bytes=*/1024, kOkmFromRfc.substr(0, 38)),
+      CreateAesGcmHkdfStreamingKey(
+          /*key_size_in_bytes=*/19, /*derived_key_size_in_bytes=*/16,
+          AesGcmHkdfStreamingParameters::HashType::kSha256,
+          /*ciphertext_segment_size_in_bytes=*/1024 * 1024,
+          kOkmFromRfc.substr(0, 38)),
+      CreateAesGcmHkdfStreamingKey(
+          /*key_size_in_bytes=*/35, /*derived_key_size_in_bytes=*/32,
+          AesGcmHkdfStreamingParameters::HashType::kSha512,
+          /*ciphertext_segment_size_in_bytes=*/3 * 1024 * 1024,
+          kOkmFromRfc.substr(0, 70)),
+      CreateAesGcmHkdfStreamingKey(
+          /*key_size_in_bytes=*/35, /*derived_key_size_in_bytes=*/32,
+          AesGcmHkdfStreamingParameters::HashType::kSha512,
+          /*ciphertext_segment_size_in_bytes=*/4 * 1024 * 1024,
+          kOkmFromRfc.substr(0, 70)),
+  };
+}
+
 std::vector<std::vector<std::shared_ptr<Key>>> TestVectors() {
   std::vector<std::vector<std::shared_ptr<Key>>> vectors;
   vectors.push_back(AeadTestVector());
@@ -439,6 +573,7 @@ std::vector<std::vector<std::shared_ptr<Key>>> TestVectors() {
   vectors.push_back(MacTestVector());
   vectors.push_back(PrfTestVector());
   vectors.push_back(SignatureEd25519TestVector());
+  vectors.push_back(StreamingAeadTestVector());
 
   // Deriving EC keys with secret seed is not implemented in OpenSSL.
   if (internal::IsBoringSsl()) {
@@ -516,8 +651,11 @@ TEST_P(KeysetDeriverTest, PrfBasedDeriveKeyset) {
   ASSERT_THAT(RegisterHmacProtoSerialization(), IsOk());
   ASSERT_THAT(RegisterAesCmacPrfProtoSerialization(), IsOk());
   ASSERT_THAT(RegisterHkdfPrfProtoSerialization(), IsOk());
+  ASSERT_THAT(RegisterHmacPrfProtoSerialization(), IsOk());
   ASSERT_THAT(RegisterEcdsaProtoSerialization(), IsOk());
   ASSERT_THAT(RegisterEd25519ProtoSerialization(), IsOk());
+  ASSERT_THAT(RegisterAesCtrHmacStreamingProtoSerialization(), IsOk());
+  ASSERT_THAT(RegisterAesGcmHkdfStreamingProtoSerialization(), IsOk());
 
   // Create primitive.
   absl::StatusOr<std::unique_ptr<KeysetDeriver>> deriver =

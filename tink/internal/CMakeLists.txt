@@ -1762,6 +1762,7 @@ tink_cc_library(
     tink::prf::internal::hmac_prf_proto_serialization_impl
     tink::signature::internal::ecdsa_proto_serialization_impl
     tink::signature::internal::ed25519_proto_serialization_impl
+    tink::streamingaead::internal::aes_ctr_hmac_streaming_proto_serialization_impl
     tink::streamingaead::internal::aes_gcm_hkdf_streaming_proto_serialization_impl
 )
 
@@ -1818,12 +1819,13 @@ tink_cc_test(
     tink::signature::ed25519_parameters
     tink::signature::ed25519_private_key
     tink::signature::ed25519_public_key
+    tink::streamingaead::aes_ctr_hmac_streaming_key
+    tink::streamingaead::aes_ctr_hmac_streaming_parameters
     tink::streamingaead::aes_gcm_hkdf_streaming_key
     tink::streamingaead::aes_gcm_hkdf_streaming_parameters
     tink::subtle::common_enums
     tink::subtle::random
     tink::util::secret_data
-    tink::util::statusor
     tink::util::test_matchers
 )
 
@@ -2105,4 +2107,73 @@ tink_cc_test(
     tink::internal::monitoring_key_set_info
     gmock
     tink::core::key_status
+)
+
+tink_cc_library(
+  NAME xwing_util
+  SRCS
+    xwing_util.cc
+    xwing_util.h
+  DEPS
+    tink::internal::call_with_core_dump_protection
+    tink::internal::secret_buffer
+    absl::log
+    absl::status
+    absl::statusor
+    crypto
+    tink::core::secret_data
+    tink::util::secret_data
+  TAGS
+    exclude_if_openssl
+)
+
+tink_cc_test(
+  NAME xwing_util_test
+  SRCS
+    xwing_util_test.cc
+  DEPS
+    tink::internal::xwing_util
+    gmock
+    absl::statusor
+    tink::util::secret_data
+    tink::util::test_matchers
+    tink::util::test_util
+  TAGS
+    exclude_if_openssl
+)
+
+tink_cc_library(
+  NAME proto_parser_repeated_message_field
+  SRCS
+    proto_parser_repeated_message_field.h
+  DEPS
+    tink::internal::proto_parser_fields
+    tink::internal::proto_parser_state
+    tink::internal::proto_parsing_helpers
+    tink::internal::proto_parsing_low_level_parser
+    absl::status
+    absl::statusor
+    absl::strings
+    absl::string_view
+    absl::span
+)
+
+tink_cc_test(
+  NAME proto_parser_repeated_message_field_test
+  SRCS
+    proto_parser_repeated_message_field_test.cc
+  DEPS
+    tink::internal::proto_parser_fields
+    tink::internal::proto_parser_repeated_message_field
+    tink::internal::proto_parser_state
+    tink::internal::proto_parsing_low_level_parser
+    gmock
+    absl::btree
+    absl::crc32c
+    absl::strings
+    absl::string_view
+    absl::span
+    tink::internal::testing::field_with_number
+    tink::util::test_matchers
+    tink::util::test_util
 )

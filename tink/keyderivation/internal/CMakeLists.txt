@@ -166,6 +166,9 @@ tink_cc_library(
     tink::prf::hkdf_prf_key
     tink::prf::hkdf_prf_parameters
     tink::prf::hkdf_prf_proto_serialization
+    tink::prf::hmac_prf_key
+    tink::prf::hmac_prf_parameters
+    tink::prf::hmac_prf_proto_serialization
     tink::signature::ecdsa_parameters
     tink::signature::ecdsa_private_key
     tink::signature::ecdsa_proto_serialization
@@ -174,6 +177,12 @@ tink_cc_library(
     tink::signature::ed25519_private_key
     tink::signature::ed25519_proto_serialization
     tink::signature::ed25519_public_key
+    tink::streamingaead::aes_ctr_hmac_streaming_key
+    tink::streamingaead::aes_ctr_hmac_streaming_parameters
+    tink::streamingaead::aes_ctr_hmac_streaming_proto_serialization
+    tink::streamingaead::aes_gcm_hkdf_streaming_key
+    tink::streamingaead::aes_gcm_hkdf_streaming_parameters
+    tink::streamingaead::aes_gcm_hkdf_streaming_proto_serialization
     tink::subtle::common_enums
     tink::util::input_stream_util
     tink::util::secret_data
@@ -206,43 +215,46 @@ tink_cc_test(
     tink::aead::aes_ctr_hmac_aead_key
     tink::aead::aes_ctr_hmac_aead_key_manager
     tink::aead::aes_ctr_hmac_aead_parameters
-    tink::aead::aes_ctr_hmac_aead_proto_serialization
     tink::aead::aes_eax_parameters
     tink::aead::aes_eax_proto_serialization
     tink::aead::aes_gcm_key
     tink::aead::aes_gcm_key_manager
     tink::aead::aes_gcm_parameters
-    tink::aead::aes_gcm_proto_serialization
     tink::aead::xchacha20_poly1305_key
     tink::aead::xchacha20_poly1305_key_manager
     tink::aead::xchacha20_poly1305_parameters
-    tink::aead::xchacha20_poly1305_proto_serialization
     tink::daead::aes_siv_key
     tink::daead::aes_siv_key_manager
     tink::daead::aes_siv_parameters
-    tink::daead::aes_siv_proto_serialization
-    tink::internal::mutable_serialization_registry
+    tink::internal::global_serialization_registry
     tink::internal::proto_parameters_serialization
     tink::internal::serialization
     tink::internal::ssl_util
     tink::mac::hmac_key
     tink::mac::hmac_key_manager
     tink::mac::hmac_parameters
-    tink::mac::hmac_proto_serialization
     tink::prf::aes_cmac_prf_key
     tink::prf::aes_cmac_prf_key_manager
     tink::prf::aes_cmac_prf_parameters
     tink::prf::hkdf_prf_key
     tink::prf::hkdf_prf_key_manager
     tink::prf::hkdf_prf_parameters
+    tink::prf::hmac_prf_key
+    tink::prf::hmac_prf_key_manager
+    tink::prf::hmac_prf_parameters
     tink::signature::ecdsa_parameters
     tink::signature::ecdsa_private_key
-    tink::signature::ecdsa_proto_serialization
     tink::signature::ecdsa_sign_key_manager
     tink::signature::ed25519_parameters
     tink::signature::ed25519_private_key
-    tink::signature::ed25519_proto_serialization
     tink::signature::ed25519_sign_key_manager
+    tink::streamingaead::aes_ctr_hmac_streaming_key
+    tink::streamingaead::aes_ctr_hmac_streaming_key_manager
+    tink::streamingaead::aes_ctr_hmac_streaming_parameters
+    tink::streamingaead::aes_ctr_hmac_streaming_proto_serialization
+    tink::streamingaead::aes_gcm_hkdf_streaming_key
+    tink::streamingaead::aes_gcm_hkdf_streaming_key_manager
+    tink::streamingaead::aes_gcm_hkdf_streaming_parameters
     tink::subtle::common_enums
     tink::subtle::random
     tink::subtle::prf::hkdf_streaming_prf
@@ -254,13 +266,16 @@ tink_cc_test(
     tink::proto::aes_cmac_prf_cc_proto
     tink::proto::aes_ctr_cc_proto
     tink::proto::aes_ctr_hmac_aead_cc_proto
+    tink::proto::aes_ctr_hmac_streaming_cc_proto
     tink::proto::aes_gcm_cc_proto
+    tink::proto::aes_gcm_hkdf_streaming_cc_proto
     tink::proto::aes_siv_cc_proto
     tink::proto::common_cc_proto
     tink::proto::ecdsa_cc_proto
     tink::proto::ed25519_cc_proto
     tink::proto::hkdf_prf_cc_proto
     tink::proto::hmac_cc_proto
+    tink::proto::hmac_prf_cc_proto
     tink::proto::tink_cc_proto
     tink::proto::xchacha20_poly1305_cc_proto
 )
@@ -330,6 +345,7 @@ tink_cc_library(
     tink::keyderivation::prf_based_key_derivation_parameters
     tink::prf::prf_key
     tink::prf::prf_parameters
+    tink::streamingaead::aes_ctr_hmac_streaming_proto_serialization
     tink::util::status
     tink::proto::prf_based_deriver_cc_proto
     tink::proto::tink_cc_proto
