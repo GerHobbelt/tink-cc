@@ -27,9 +27,16 @@ tink_cc_library(
     util.cc
     util.h
   DEPS
+    tink::internal::safe_stringops
+    tink::internal::secret_buffer
+    absl::algorithm_container
     absl::core_headers
     absl::absl_log
+    absl::status
+    absl::statusor
     absl::strings
+    tink::core::secret_data
+    tink::util::secret_data
 )
 
 tink_cc_library(
@@ -207,10 +214,7 @@ tink_cc_library(
     absl::strings
     crypto
     tink::core::secret_data
-    tink::config::tink_fips
     tink::subtle::common_enums
-    tink::util::errors
-    tink::util::secret_data
 )
 
 tink_cc_test(
@@ -221,6 +225,10 @@ tink_cc_test(
     tink::internal::util
     gmock
     absl::strings
+    tink::core::secret_data
+    tink::util::secret_data
+    tink::util::test_matchers
+    tink::util::test_util
 )
 
 tink_cc_test(
@@ -365,10 +373,9 @@ tink_cc_test(
     absl::statusor
     absl::strings
     crypto
+    tink::core::secret_data
     tink::subtle::random
     tink::util::secret_data
-    tink::util::status
-    tink::util::statusor
     tink::util::test_matchers
     tink::util::test_util
 )
@@ -391,7 +398,7 @@ tink_cc_test(
   SRCS
     ec_util_test.cc
   DATA
-    wycheproof::testvectors
+    wycheproof::testvectors_v1
   DEPS
     tink::internal::bn_util
     tink::internal::ec_util
@@ -504,17 +511,16 @@ tink_cc_test(
   SRCS
     monitoring_util_test.cc
   DEPS
-    tink::internal::monitoring
+    tink::internal::monitoring_key_set_info
     tink::internal::monitoring_util
     gmock
     absl::flat_hash_map
     absl::memory
     absl::status
+    absl::statusor
     absl::strings
     tink::core::key_status
     tink::core::primitive_set
-    tink::util::status
-    tink::util::statusor
     tink::util::test_matchers
     tink::proto::tink_cc_proto
 )

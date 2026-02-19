@@ -1,3 +1,6 @@
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
+
 package(default_visibility = ["//:__subpackages__"])
 
 licenses(["notice"])
@@ -15,7 +18,7 @@ cc_library(
         "@abseil-cpp//absl/strings",
         "@abseil-cpp//absl/time",
         "@abseil-cpp//absl/types:optional",
-        "@protobuf//:protobuf",
+        "@protobuf",
     ],
 )
 
@@ -153,7 +156,7 @@ cc_library(
         "@abseil-cpp//absl/strings",
         "@abseil-cpp//absl/types:optional",
         "@boringssl//:crypto",
-        "@protobuf//:protobuf",
+        "@protobuf",
     ],
 )
 
@@ -494,10 +497,14 @@ cc_library(
         "//tink:key",
         "//tink:partial_key_access_token",
         "//tink:restricted_big_integer",
+        "//tink:restricted_data",
         "//tink/internal:rsa_util",
         "//tink/internal:ssl_unique_ptr",
+        "@abseil-cpp//absl/base:core_headers",
         "@abseil-cpp//absl/status",
         "@abseil-cpp//absl/status:statusor",
+        "@abseil-cpp//absl/strings",
+        "@abseil-cpp//absl/synchronization",
         "@abseil-cpp//absl/types:optional",
         "@boringssl//:crypto",
     ],
@@ -665,7 +672,7 @@ cc_test(
         "@abseil-cpp//absl/strings",
         "@boringssl//:crypto",
         "@googletest//:gtest_main",
-        "@protobuf//:protobuf",
+        "@protobuf",
     ],
 )
 
@@ -1050,11 +1057,13 @@ cc_test(
         "//tink:key",
         "//tink:partial_key_access",
         "//tink:restricted_big_integer",
+        "//tink:restricted_data",
         "//tink/internal:bn_util",
         "//tink/internal:ssl_unique_ptr",
         "//tink/util:test_matchers",
         "@abseil-cpp//absl/log:absl_check",
         "@abseil-cpp//absl/status",
+        "@abseil-cpp//absl/status:statusor",
         "@abseil-cpp//absl/strings",
         "@abseil-cpp//absl/strings:string_view",
         "@abseil-cpp//absl/types:optional",
@@ -1078,7 +1087,6 @@ cc_test(
         "//tink:key",
         "//tink:parameters",
         "//tink:partial_key_access",
-        "//tink:restricted_big_integer",
         "//tink:restricted_data",
         "//tink/internal:bn_util",
         "//tink/internal:mutable_serialization_registry",
@@ -1090,6 +1098,7 @@ cc_test(
         "//tink/util:test_matchers",
         "@abseil-cpp//absl/log:absl_check",
         "@abseil-cpp//absl/status",
+        "@abseil-cpp//absl/status:statusor",
         "@abseil-cpp//absl/strings:string_view",
         "@abseil-cpp//absl/types:optional",
         "@boringssl//:crypto",

@@ -413,6 +413,7 @@ tink_cc_library(
     tink::hybrid::hybrid_parameters
     absl::core_headers
     absl::status
+    absl::statusor
     absl::strings
     absl::optional
     tink::core::parameters
@@ -420,8 +421,6 @@ tink_cc_library(
     tink::aead::aes_gcm_parameters
     tink::aead::xchacha20_poly1305_parameters
     tink::daead::aes_siv_parameters
-    tink::util::status
-    tink::util::statusor
 )
 
 tink_cc_library(
@@ -457,9 +456,12 @@ tink_cc_library(
     tink::hybrid::ecies_parameters
     tink::hybrid::ecies_public_key
     tink::hybrid::hybrid_private_key
+    absl::core_headers
     absl::status
+    absl::statusor
     absl::strings
     absl::str_format
+    absl::synchronization
     absl::optional
     crypto
     tink::core::ec_point
@@ -474,9 +476,6 @@ tink_cc_library(
     tink::internal::err_util
     tink::internal::ssl_unique_ptr
     tink::subtle::common_enums
-    tink::util::secret_data
-    tink::util::status
-    tink::util::statusor
 )
 
 tink_cc_library(
@@ -967,6 +966,7 @@ tink_cc_test(
     tink::hybrid::ecies_parameters
     gmock
     absl::status
+    absl::statusor
     absl::string_view
     absl::optional
     tink::core::parameters
@@ -974,7 +974,6 @@ tink_cc_test(
     tink::aead::aes_gcm_parameters
     tink::aead::xchacha20_poly1305_parameters
     tink::daead::aes_siv_parameters
-    tink::util::statusor
     tink::util::test_matchers
     tink::util::test_util
 )
@@ -988,6 +987,7 @@ tink_cc_test(
     tink::hybrid::ecies_public_key
     gmock
     absl::status
+    absl::statusor
     absl::optional
     crypto
     tink::core::big_integer
@@ -997,7 +997,6 @@ tink_cc_test(
     tink::internal::ec_util
     tink::subtle::common_enums
     tink::subtle::random
-    tink::util::statusor
     tink::util::test_matchers
     tink::util::test_util
 )
@@ -1012,6 +1011,7 @@ tink_cc_test(
     tink::hybrid::ecies_public_key
     gmock
     absl::status
+    absl::statusor
     absl::strings
     absl::string_view
     absl::optional
@@ -1027,7 +1027,6 @@ tink_cc_test(
     tink::subtle::common_enums
     tink::subtle::random
     tink::util::secret_data
-    tink::util::statusor
     tink::util::test_matchers
     tink::util::test_util
 )

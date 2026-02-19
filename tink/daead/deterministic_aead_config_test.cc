@@ -60,6 +60,7 @@ using ::crypto::tink::test::DummyDeterministicAead;
 using ::crypto::tink::test::IsOk;
 using ::crypto::tink::test::StatusIs;
 using ::testing::Eq;
+using ::testing::Not;
 
 class DeterministicAeadConfigTest : public ::testing::Test {
  protected:
@@ -98,16 +99,16 @@ TEST_F(DeterministicAeadConfigTest, WrappersRegistered) {
   key_info.set_status(google::crypto::tink::KeyStatusType::ENABLED);
   key_info.set_key_id(1234);
   key_info.set_output_prefix_type(google::crypto::tink::OutputPrefixType::RAW);
-  auto primitive_set = absl::make_unique<PrimitiveSet<DeterministicAead>>();
-  ASSERT_THAT(
-      primitive_set->set_primary(
-          primitive_set
-              ->AddPrimitive(absl::make_unique<DummyDeterministicAead>("dummy"),
-                             key_info)
-              .value()),
-      IsOk());
+  PrimitiveSet<DeterministicAead>::Builder primitive_set_builder;
+  primitive_set_builder.AddPrimaryPrimitive(
+      absl::make_unique<DummyDeterministicAead>("dummy"), key_info);
+  absl::StatusOr<PrimitiveSet<DeterministicAead>> primitive_set =
+      std::move(primitive_set_builder).Build();
+  ASSERT_THAT(primitive_set, IsOk());
 
-  auto registry_wrapped = Registry::Wrap(std::move(primitive_set));
+  auto registry_wrapped =
+      Registry::Wrap(std::make_unique<PrimitiveSet<DeterministicAead>>(
+          *std::move(primitive_set)));
 
   ASSERT_THAT(registry_wrapped, IsOk());
   auto encryption_result =
@@ -122,7 +123,7 @@ TEST_F(DeterministicAeadConfigTest, WrappersRegistered) {
 
   decryption_result = DummyDeterministicAead("dummy").DecryptDeterministically(
       encryption_result.value(), "wrong");
-  EXPECT_FALSE(decryption_result.status().ok());
+  EXPECT_THAT(decryption_result, Not(IsOk()));
 }
 
 TEST_F(DeterministicAeadConfigTest, RegisterFipsValidTemplates) {

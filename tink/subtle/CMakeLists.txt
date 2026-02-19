@@ -337,7 +337,6 @@ tink_cc_library(
     tink::internal::util
     tink::signature::rsa_ssa_pss_parameters
     tink::signature::rsa_ssa_pss_private_key
-    tink::util::secret_data
     tink::util::statusor
 )
 
@@ -1005,7 +1004,7 @@ tink_cc_test(
   SRCS
     aes_gcm_boringssl_test.cc
   DATA
-    wycheproof::testvectors
+    wycheproof::testvectors_v1
   DEPS
     tink::subtle::aes_gcm_boringssl
     gmock
@@ -1108,7 +1107,7 @@ tink_cc_test(
   SRCS
     aes_eax_boringssl_test.cc
   DATA
-    wycheproof::testvectors
+    wycheproof::testvectors_v1
   DEPS
     tink::subtle::aes_eax_boringssl
     gmock
@@ -1164,7 +1163,7 @@ tink_cc_test(
   SRCS
     aes_siv_boringssl_test.cc
   DATA
-    wycheproof::testvectors
+    wycheproof::testvectors_v1
   DEPS
     tink::subtle::aes_siv_boringssl
     gmock
@@ -1209,7 +1208,7 @@ tink_cc_test(
   SRCS
     ecdsa_verify_boringssl_test.cc
   DATA
-    wycheproof::testvectors
+    wycheproof::testvectors_v1
   DEPS
     tink::subtle::common_enums
     tink::subtle::ecdsa_sign_boringssl
@@ -1261,7 +1260,7 @@ tink_cc_test(
   SRCS
     ed25519_verify_boringssl_test.cc
   DATA
-    wycheproof::testvectors
+    wycheproof::testvectors_v1
   DEPS
     tink::subtle::ed25519_verify_boringssl
     gmock
@@ -1287,7 +1286,7 @@ tink_cc_test(
   SRCS
     rsa_ssa_pss_verify_boringssl_test.cc
   DATA
-    wycheproof::testvectors
+    wycheproof::testvectors_v1
   DEPS
     tink::subtle::common_enums
     tink::subtle::rsa_ssa_pss_verify_boringssl
@@ -1343,7 +1342,7 @@ tink_cc_test(
   SRCS
     rsa_ssa_pkcs1_verify_boringssl_test.cc
   DATA
-    wycheproof::testvectors
+    wycheproof::testvectors_v1
   DEPS
     tink::subtle::common_enums
     tink::subtle::rsa_ssa_pkcs1_verify_boringssl
@@ -1393,7 +1392,7 @@ tink_cc_test(
   SRCS
     aes_gcm_siv_boringssl_test.cc
   DATA
-    wycheproof::testvectors
+    wycheproof::testvectors_v1
   DEPS
     tink::subtle::aes_gcm_siv_boringssl
     tink::subtle::subtle_util
@@ -1446,7 +1445,7 @@ tink_cc_test(
   SRCS
     xchacha20_poly1305_boringssl_test.cc
   DATA
-    wycheproof::testvectors
+    wycheproof::testvectors_v1
   DEPS
     tink::subtle::subtle_util
     tink::subtle::xchacha20_poly1305_boringssl

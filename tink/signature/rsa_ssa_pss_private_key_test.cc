@@ -18,14 +18,18 @@
 
 #include <memory>
 #include <string>
+#include <utility>
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/log/absl_check.h"
 #include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
+#include "tink/restricted_big_integer.h"
+#include "tink/restricted_data.h"
 #ifdef OPENSSL_IS_BORINGSSL
 #include "openssl/base.h"
 #endif
@@ -37,10 +41,8 @@
 #include "tink/internal/ssl_unique_ptr.h"
 #include "tink/key.h"
 #include "tink/partial_key_access.h"
-#include "tink/restricted_big_integer.h"
 #include "tink/signature/rsa_ssa_pss_parameters.h"
 #include "tink/signature/rsa_ssa_pss_public_key.h"
-#include "tink/util/statusor.h"
 #include "tink/util/test_matchers.h"
 #include "tink/util/test_util.h"
 
@@ -51,7 +53,9 @@ namespace {
 using ::crypto::tink::test::IsOk;
 using ::crypto::tink::test::StatusIs;
 using ::testing::Eq;
+using ::testing::HasSubstr;
 using ::testing::NotNull;
+using ::testing::StrEq;
 using ::testing::TestWithParam;
 using ::testing::Values;
 
@@ -64,12 +68,12 @@ struct TestCase {
 };
 
 struct PrivateValues {
-  RestrictedBigInteger p;
-  RestrictedBigInteger q;
-  RestrictedBigInteger dp;
-  RestrictedBigInteger dq;
-  RestrictedBigInteger d;
-  RestrictedBigInteger q_inv;
+  RestrictedData p;
+  RestrictedData q;
+  RestrictedData dp;
+  RestrictedData dq;
+  RestrictedData d;
+  RestrictedData q_inv;
 };
 
 constexpr int kModulusSizeInBits = 2048;
@@ -128,23 +132,19 @@ std::string Base64WebSafeDecode(absl::string_view base64_string) {
 
 PrivateValues GetValidPrivateValues() {
   return PrivateValues{
-      /*p=*/RestrictedBigInteger(Base64WebSafeDecode(kP),
-                                 InsecureSecretKeyAccess::Get()),
+      /*p=*/RestrictedData(Base64WebSafeDecode(kP),
+                           InsecureSecretKeyAccess::Get()),
       /*q=*/
-      RestrictedBigInteger(Base64WebSafeDecode(kQ),
-                           InsecureSecretKeyAccess::Get()),
+      RestrictedData(Base64WebSafeDecode(kQ), InsecureSecretKeyAccess::Get()),
       /*dp=*/
-      RestrictedBigInteger(Base64WebSafeDecode(kDp),
-                           InsecureSecretKeyAccess::Get()),
+      RestrictedData(Base64WebSafeDecode(kDp), InsecureSecretKeyAccess::Get()),
       /*dq=*/
-      RestrictedBigInteger(Base64WebSafeDecode(kDq),
-                           InsecureSecretKeyAccess::Get()),
+      RestrictedData(Base64WebSafeDecode(kDq), InsecureSecretKeyAccess::Get()),
       /*d=*/
-      RestrictedBigInteger(Base64WebSafeDecode(kD),
-                           InsecureSecretKeyAccess::Get()),
+      RestrictedData(Base64WebSafeDecode(kD), InsecureSecretKeyAccess::Get()),
       /*q_inv=*/
-      RestrictedBigInteger(Base64WebSafeDecode(kQInv),
-                           InsecureSecretKeyAccess::Get())};
+      RestrictedData(Base64WebSafeDecode(kQInv),
+                     InsecureSecretKeyAccess::Get())};
 }
 
 RsaSsaPssPublicKey GetValidPublicKey() {
@@ -165,6 +165,24 @@ RsaSsaPssPublicKey GetValidPublicKey() {
       /*id_requirement=*/absl::nullopt, GetPartialKeyAccess());
   ABSL_CHECK_OK(public_key.status()) << "Failed to create public key.";
   return *public_key;
+}
+
+RsaSsaPssPrivateKey CreateWithValidPrivateValues(
+    const RsaSsaPssPublicKey& public_key) {
+  PrivateValues private_values = GetValidPrivateValues();
+
+  absl::StatusOr<RsaSsaPssPrivateKey> private_key =
+      RsaSsaPssPrivateKey::Builder()
+          .SetPublicKey(public_key)
+          .SetPrimeP(private_values.p)
+          .SetPrimeQ(private_values.q)
+          .SetPrimeExponentP(private_values.dp)
+          .SetPrimeExponentQ(private_values.dq)
+          .SetPrivateExponent(private_values.d)
+          .SetCrtCoefficient(private_values.q_inv)
+          .Build(GetPartialKeyAccess());
+  ABSL_CHECK_OK(private_key.status()) << "Failed to create private key.";
+  return *private_key;
 }
 
 std::string FlipFirstByte(absl::string_view str) {
@@ -234,14 +252,36 @@ TEST_P(RsaSsaPssPrivateKeyTest, BuildPrivateKeySucceeds) {
   EXPECT_THAT(private_key->GetIdRequirement(), Eq(test_case.id_requirement));
   EXPECT_THAT(private_key->GetPublicKey(), Eq(*public_key));
   EXPECT_THAT(private_key->GetOutputPrefix(), Eq(test_case.output_prefix));
+  EXPECT_THAT(private_key->GetPrimePData(), Eq(private_values.p));
+  EXPECT_THAT(private_key->GetPrimeQData(), Eq(private_values.q));
+  EXPECT_THAT(private_key->GetPrimeExponentPData(), Eq(private_values.dp));
+  EXPECT_THAT(private_key->GetPrimeExponentQData(), Eq(private_values.dq));
+  EXPECT_THAT(private_key->GetCrtCoefficientData(), Eq(private_values.q_inv));
+  EXPECT_THAT(private_key->GetPrivateExponentData(), Eq(private_values.d));
   EXPECT_THAT(private_key->GetPrimeP(GetPartialKeyAccess()),
-              Eq(private_values.p));
+              Eq(RestrictedBigInteger(
+                  private_values.p.Get(InsecureSecretKeyAccess::Get()),
+                  InsecureSecretKeyAccess::Get())));
   EXPECT_THAT(private_key->GetPrimeQ(GetPartialKeyAccess()),
-              Eq(private_values.q));
-  EXPECT_THAT(private_key->GetPrimeExponentP(), Eq(private_values.dp));
-  EXPECT_THAT(private_key->GetPrimeExponentQ(), Eq(private_values.dq));
-  EXPECT_THAT(private_key->GetCrtCoefficient(), Eq(private_values.q_inv));
-  EXPECT_THAT(private_key->GetPrivateExponent(), Eq(private_values.d));
+              Eq(RestrictedBigInteger(
+                  private_values.q.Get(InsecureSecretKeyAccess::Get()),
+                  InsecureSecretKeyAccess::Get())));
+  EXPECT_THAT(private_key->GetPrimeExponentP(),
+              Eq(RestrictedBigInteger(
+                  private_values.dp.Get(InsecureSecretKeyAccess::Get()),
+                  InsecureSecretKeyAccess::Get())));
+  EXPECT_THAT(private_key->GetPrimeExponentQ(),
+              Eq(RestrictedBigInteger(
+                  private_values.dq.Get(InsecureSecretKeyAccess::Get()),
+                  InsecureSecretKeyAccess::Get())));
+  EXPECT_THAT(private_key->GetCrtCoefficient(),
+              Eq(RestrictedBigInteger(
+                  private_values.q_inv.Get(InsecureSecretKeyAccess::Get()),
+                  InsecureSecretKeyAccess::Get())));
+  EXPECT_THAT(private_key->GetPrivateExponent(),
+              Eq(RestrictedBigInteger(
+                  private_values.d.Get(InsecureSecretKeyAccess::Get()),
+                  InsecureSecretKeyAccess::Get())));
 }
 
 TEST(RsaSsaPssPrivateKeyTest, BuildPrivateKeyFromBoringSsl) {
@@ -267,8 +307,7 @@ TEST(RsaSsaPssPrivateKeyTest, BuildPrivateKeyFromBoringSsl) {
   absl::StatusOr<std::string> e_str =
       internal::BignumToString(e_bn, BN_num_bytes(e_bn));
   ASSERT_THAT(e_str, IsOk());
-  absl::StatusOr<std::string> d_str =
-      internal::BignumToString(d_bn, BN_num_bytes(d_bn));
+  absl::StatusOr<std::string> d_str = internal::BignumToString(d_bn, 2048 / 8);
   ASSERT_THAT(d_str, IsOk());
   absl::StatusOr<std::string> p_str =
       internal::BignumToString(p_bn, BN_num_bytes(p_bn));
@@ -277,13 +316,13 @@ TEST(RsaSsaPssPrivateKeyTest, BuildPrivateKeyFromBoringSsl) {
       internal::BignumToString(q_bn, BN_num_bytes(q_bn));
   ASSERT_THAT(q_str, IsOk());
   absl::StatusOr<std::string> dp_str =
-      internal::BignumToString(dp_bn, BN_num_bytes(dp_bn));
+      internal::BignumToString(dp_bn, BN_num_bytes(p_bn));
   ASSERT_THAT(dp_str, IsOk());
   absl::StatusOr<std::string> dq_str =
-      internal::BignumToString(dq_bn, BN_num_bytes(dq_bn));
+      internal::BignumToString(dq_bn, BN_num_bytes(q_bn));
   ASSERT_THAT(dq_str, IsOk());
   absl::StatusOr<std::string> q_inv_str =
-      internal::BignumToString(q_inv_bn, BN_num_bytes(q_inv_bn));
+      internal::BignumToString(q_inv_bn, BN_num_bytes(p_bn));
   ASSERT_THAT(q_inv_str, IsOk());
 
   absl::StatusOr<RsaSsaPssParameters> parameters =
@@ -305,39 +344,37 @@ TEST(RsaSsaPssPrivateKeyTest, BuildPrivateKeyFromBoringSsl) {
   absl::StatusOr<RsaSsaPssPrivateKey> private_key =
       RsaSsaPssPrivateKey::Builder()
           .SetPublicKey(*public_key)
-          .SetPrimeP(
-              RestrictedBigInteger(*p_str, InsecureSecretKeyAccess::Get()))
-          .SetPrimeQ(
-              RestrictedBigInteger(*q_str, InsecureSecretKeyAccess::Get()))
+          .SetPrimeP(RestrictedData(*p_str, InsecureSecretKeyAccess::Get()))
+          .SetPrimeQ(RestrictedData(*q_str, InsecureSecretKeyAccess::Get()))
           .SetPrimeExponentP(
-              RestrictedBigInteger(*dp_str, InsecureSecretKeyAccess::Get()))
+              RestrictedData(*dp_str, InsecureSecretKeyAccess::Get()))
           .SetPrimeExponentQ(
-              RestrictedBigInteger(*dq_str, InsecureSecretKeyAccess::Get()))
+              RestrictedData(*dq_str, InsecureSecretKeyAccess::Get()))
           .SetPrivateExponent(
-              RestrictedBigInteger(*d_str, InsecureSecretKeyAccess::Get()))
+              RestrictedData(*d_str, InsecureSecretKeyAccess::Get()))
           .SetCrtCoefficient(
-              RestrictedBigInteger(*q_inv_str, InsecureSecretKeyAccess::Get()))
+              RestrictedData(*q_inv_str, InsecureSecretKeyAccess::Get()))
           .Build(GetPartialKeyAccess());
   ASSERT_THAT(private_key, IsOk());
 
   EXPECT_THAT(private_key->GetParameters(), Eq(*parameters));
   EXPECT_THAT(private_key->GetPublicKey(), Eq(*public_key));
-  EXPECT_THAT(private_key->GetPrimeP(GetPartialKeyAccess())
-                  .GetSecret(InsecureSecretKeyAccess::Get()),
-              Eq(*p_str));
-  EXPECT_THAT(private_key->GetPrimeQ(GetPartialKeyAccess())
-                  .GetSecret(InsecureSecretKeyAccess::Get()),
-              Eq(*q_str));
-  EXPECT_THAT(private_key->GetPrimeExponentP().GetSecret(
+  EXPECT_THAT(
+      private_key->GetPrimePData().GetSecret(InsecureSecretKeyAccess::Get()),
+      Eq(*p_str));
+  EXPECT_THAT(
+      private_key->GetPrimeQData().GetSecret(InsecureSecretKeyAccess::Get()),
+      Eq(*q_str));
+  EXPECT_THAT(private_key->GetPrimeExponentPData().GetSecret(
                   InsecureSecretKeyAccess::Get()),
               Eq(*dp_str));
-  EXPECT_THAT(private_key->GetPrimeExponentQ().GetSecret(
+  EXPECT_THAT(private_key->GetPrimeExponentQData().GetSecret(
                   InsecureSecretKeyAccess::Get()),
               Eq(*dq_str));
-  EXPECT_THAT(private_key->GetCrtCoefficient().GetSecret(
+  EXPECT_THAT(private_key->GetCrtCoefficientData().GetSecret(
                   InsecureSecretKeyAccess::Get()),
               Eq(*q_inv_str));
-  EXPECT_THAT(private_key->GetPrivateExponent().GetSecret(
+  EXPECT_THAT(private_key->GetPrivateExponentData().GetSecret(
                   InsecureSecretKeyAccess::Get()),
               Eq(*d_str));
   EXPECT_THAT(private_key->GetIdRequirement(), Eq(absl::nullopt));
@@ -377,9 +414,8 @@ TEST(RsaSsaPssPrivateKeyTest, BuildPrivateKeyValidatesPrimeP) {
   absl::StatusOr<RsaSsaPssPrivateKey> private_key_modified_prime_p =
       RsaSsaPssPrivateKey::Builder()
           .SetPublicKey(public_key)
-          .SetPrimeP(
-              RestrictedBigInteger(FlipFirstByte(Base64WebSafeDecode(kP)),
-                                   InsecureSecretKeyAccess::Get()))
+          .SetPrimeP(RestrictedData(FlipFirstByte(Base64WebSafeDecode(kP)),
+                                    InsecureSecretKeyAccess::Get()))
           .SetPrimeQ(private_values.q)
           .SetPrimeExponentP(private_values.dp)
           .SetPrimeExponentQ(private_values.dq)
@@ -399,9 +435,8 @@ TEST(RsaSsaPssPrivateKeyTest, BuildPrivateKeyValidatesPrimeQ) {
       RsaSsaPssPrivateKey::Builder()
           .SetPublicKey(public_key)
           .SetPrimeP(private_values.p)
-          .SetPrimeQ(
-              RestrictedBigInteger(FlipFirstByte(Base64WebSafeDecode(kQ)),
-                                   InsecureSecretKeyAccess::Get()))
+          .SetPrimeQ(RestrictedData(FlipFirstByte(Base64WebSafeDecode(kQ)),
+                                    InsecureSecretKeyAccess::Get()))
           .SetPrimeExponentP(private_values.dp)
           .SetPrimeExponentQ(private_values.dq)
           .SetPrivateExponent(private_values.d)
@@ -422,8 +457,8 @@ TEST(RsaSsaPssPrivateKeyTest, BuildPrivateKeyValidatesPrimeExponentP) {
           .SetPrimeP(private_values.p)
           .SetPrimeQ(private_values.q)
           .SetPrimeExponentP(
-              RestrictedBigInteger(FlipFirstByte(Base64WebSafeDecode(kDp)),
-                                   InsecureSecretKeyAccess::Get()))
+              RestrictedData(FlipFirstByte(Base64WebSafeDecode(kDp)),
+                             InsecureSecretKeyAccess::Get()))
           .SetPrimeExponentQ(private_values.dq)
           .SetPrivateExponent(private_values.d)
           .SetCrtCoefficient(private_values.q_inv)
@@ -444,8 +479,8 @@ TEST(RsaSsaPssPrivateKeyTest, BuildPrivateKeyValidatesPrimeExponentQ) {
           .SetPrimeQ(private_values.q)
           .SetPrimeExponentP(private_values.dp)
           .SetPrimeExponentQ(
-              RestrictedBigInteger(FlipFirstByte(Base64WebSafeDecode(kDq)),
-                                   InsecureSecretKeyAccess::Get()))
+              RestrictedData(FlipFirstByte(Base64WebSafeDecode(kDq)),
+                             InsecureSecretKeyAccess::Get()))
           .SetPrivateExponent(private_values.d)
           .SetCrtCoefficient(private_values.q_inv)
           .Build(GetPartialKeyAccess());
@@ -466,8 +501,8 @@ TEST(RsaSsaPssPrivateKeyTest, BuildPrivateKeyValidatesPrivateExponent) {
           .SetPrimeExponentP(private_values.dp)
           .SetPrimeExponentQ(private_values.dq)
           .SetPrivateExponent(
-              RestrictedBigInteger(FlipFirstByte(Base64WebSafeDecode(kD)),
-                                   InsecureSecretKeyAccess::Get()))
+              RestrictedData(FlipFirstByte(Base64WebSafeDecode(kD)),
+                             InsecureSecretKeyAccess::Get()))
           .SetCrtCoefficient(private_values.q_inv)
           .Build(GetPartialKeyAccess());
 
@@ -488,12 +523,76 @@ TEST(RsaSsaPssPrivateKeyTest, BuildPrivateKeyValidatesCrtCoefficient) {
           .SetPrimeExponentQ(private_values.dq)
           .SetPrivateExponent(private_values.d)
           .SetCrtCoefficient(
-              RestrictedBigInteger(FlipFirstByte(Base64WebSafeDecode(kQInv)),
-                                   InsecureSecretKeyAccess::Get()))
+              RestrictedData(FlipFirstByte(Base64WebSafeDecode(kQInv)),
+                             InsecureSecretKeyAccess::Get()))
           .Build(GetPartialKeyAccess());
 
   EXPECT_THAT(private_key_modified_crt_coefficient.status(),
               StatusIs(absl::StatusCode::kInvalidArgument));
+}
+
+TEST(RsaSsaPssPrivateKeyTest, BuildPrivateKeyDpShorterThanPFails) {
+  RsaSsaPssPublicKey public_key = GetValidPublicKey();
+  PrivateValues private_values = GetValidPrivateValues();
+
+  absl::string_view dp_str =
+      private_values.dp.GetSecret(InsecureSecretKeyAccess::Get());
+  RestrictedData shorter_dp(dp_str.substr(1), InsecureSecretKeyAccess::Get());
+
+  EXPECT_THAT(RsaSsaPssPrivateKey::Builder()
+                  .SetPublicKey(public_key)
+                  .SetPrimeP(private_values.p)
+                  .SetPrimeQ(private_values.q)
+                  .SetPrimeExponentP(shorter_dp)
+                  .SetPrimeExponentQ(private_values.dq)
+                  .SetPrivateExponent(private_values.d)
+                  .SetCrtCoefficient(private_values.q_inv)
+                  .Build(GetPartialKeyAccess()),
+              StatusIs(absl::StatusCode::kInvalidArgument,
+                       HasSubstr("Prime exponent dp has incorrect length")));
+}
+
+TEST(RsaSsaPssPrivateKeyTest, BuildPrivateKeyDqShorterThanQFails) {
+  RsaSsaPssPublicKey public_key = GetValidPublicKey();
+  PrivateValues private_values = GetValidPrivateValues();
+
+  absl::string_view dq_str =
+      private_values.dq.GetSecret(InsecureSecretKeyAccess::Get());
+  RestrictedData shorter_dq(dq_str.substr(1), InsecureSecretKeyAccess::Get());
+
+  EXPECT_THAT(RsaSsaPssPrivateKey::Builder()
+                  .SetPublicKey(public_key)
+                  .SetPrimeP(private_values.p)
+                  .SetPrimeQ(private_values.q)
+                  .SetPrimeExponentP(private_values.dp)
+                  .SetPrimeExponentQ(shorter_dq)
+                  .SetPrivateExponent(private_values.d)
+                  .SetCrtCoefficient(private_values.q_inv)
+                  .Build(GetPartialKeyAccess()),
+              StatusIs(absl::StatusCode::kInvalidArgument,
+                       HasSubstr("Prime exponent dq has incorrect length")));
+}
+
+TEST(RsaSsaPssPrivateKeyTest, BuildPrivateKeyQInvShorterThanPFails) {
+  RsaSsaPssPublicKey public_key = GetValidPublicKey();
+  PrivateValues private_values = GetValidPrivateValues();
+
+  absl::string_view q_inv_str =
+      private_values.q_inv.GetSecret(InsecureSecretKeyAccess::Get());
+  RestrictedData shorter_q_inv(q_inv_str.substr(1),
+                               InsecureSecretKeyAccess::Get());
+
+  EXPECT_THAT(RsaSsaPssPrivateKey::Builder()
+                  .SetPublicKey(public_key)
+                  .SetPrimeP(private_values.p)
+                  .SetPrimeQ(private_values.q)
+                  .SetPrimeExponentP(private_values.dp)
+                  .SetPrimeExponentQ(private_values.dq)
+                  .SetPrivateExponent(private_values.d)
+                  .SetCrtCoefficient(shorter_q_inv)
+                  .Build(GetPartialKeyAccess()),
+              StatusIs(absl::StatusCode::kInvalidArgument,
+                       HasSubstr("CRT coefficient has incorrect length")));
 }
 
 TEST(RsaSsaPssPrivateKeyTest, BuildPublicKeyNotSetFails) {
@@ -613,6 +712,109 @@ TEST(RsaSsaPssPrivateKeyTest, BuildCrtCoefficientNotSetFails) {
 
   EXPECT_THAT(private_key_no_crt_coefficient_set.status(),
               StatusIs(absl::StatusCode::kInvalidArgument));
+}
+
+TEST_P(RsaSsaPssPrivateKeyTest, BuildWithRestrictedBigInteger) {
+  TestCase test_case = GetParam();
+
+  absl::StatusOr<RsaSsaPssParameters> parameters =
+      RsaSsaPssParameters::Builder()
+          .SetModulusSizeInBits(kModulusSizeInBits)
+          .SetPublicExponent(kF4)
+          .SetSigHashType(test_case.hash_type)
+          .SetMgf1HashType(test_case.hash_type)
+          .SetSaltLengthInBytes(test_case.salt_length_in_bytes)
+          .SetVariant(test_case.variant)
+          .Build();
+  ASSERT_THAT(parameters, IsOk());
+
+  BigInteger modulus(Base64WebSafeDecode(k2048BitRsaModulus));
+  absl::StatusOr<RsaSsaPssPublicKey> public_key = RsaSsaPssPublicKey::Create(
+      *parameters, modulus, test_case.id_requirement, GetPartialKeyAccess());
+  ASSERT_THAT(public_key, IsOk());
+
+  RestrictedBigInteger p_rb(Base64WebSafeDecode(kP),
+                            InsecureSecretKeyAccess::Get());
+  RestrictedBigInteger q_rb(Base64WebSafeDecode(kQ),
+                            InsecureSecretKeyAccess::Get());
+  RestrictedBigInteger dp_rb(Base64WebSafeDecode(kDp),
+                             InsecureSecretKeyAccess::Get());
+  RestrictedBigInteger dq_rb(Base64WebSafeDecode(kDq),
+                             InsecureSecretKeyAccess::Get());
+  RestrictedBigInteger d_rb(Base64WebSafeDecode(kD),
+                            InsecureSecretKeyAccess::Get());
+  RestrictedBigInteger q_inv_rb(Base64WebSafeDecode(kQInv),
+                                InsecureSecretKeyAccess::Get());
+
+  absl::StatusOr<RsaSsaPssPrivateKey> private_key =
+      RsaSsaPssPrivateKey::Builder()
+          .SetPublicKey(*public_key)
+          .SetPrimeP(p_rb)
+          .SetPrimeQ(q_rb)
+          .SetPrimeExponentP(dp_rb)
+          .SetPrimeExponentQ(dq_rb)
+          .SetPrivateExponent(d_rb)
+          .SetCrtCoefficient(q_inv_rb)
+          .Build(GetPartialKeyAccess());
+  ASSERT_THAT(private_key, IsOk());
+
+  PrivateValues private_values = GetValidPrivateValues();
+  EXPECT_THAT(private_key->GetParameters(), Eq(*parameters));
+  EXPECT_THAT(private_key->GetIdRequirement(), Eq(test_case.id_requirement));
+  EXPECT_THAT(private_key->GetPublicKey(), Eq(*public_key));
+  EXPECT_THAT(private_key->GetOutputPrefix(), Eq(test_case.output_prefix));
+  EXPECT_THAT(private_key->GetPrimePData(), Eq(private_values.p));
+  EXPECT_THAT(private_key->GetPrimeQData(), Eq(private_values.q));
+  EXPECT_THAT(private_key->GetPrimeExponentPData(), Eq(private_values.dp));
+  EXPECT_THAT(private_key->GetPrimeExponentQData(), Eq(private_values.dq));
+  EXPECT_THAT(private_key->GetCrtCoefficientData(), Eq(private_values.q_inv));
+  EXPECT_THAT(private_key->GetPrivateExponentData(), Eq(private_values.d));
+}
+
+TEST_P(RsaSsaPssPrivateKeyTest,
+       BuildWithRestrictedBigIntegerAndRestrictedDataFails) {
+  TestCase test_case = GetParam();
+
+  absl::StatusOr<RsaSsaPssParameters> parameters =
+      RsaSsaPssParameters::Builder()
+          .SetModulusSizeInBits(kModulusSizeInBits)
+          .SetPublicExponent(kF4)
+          .SetSigHashType(test_case.hash_type)
+          .SetMgf1HashType(test_case.hash_type)
+          .SetSaltLengthInBytes(test_case.salt_length_in_bytes)
+          .SetVariant(test_case.variant)
+          .Build();
+  ASSERT_THAT(parameters, IsOk());
+
+  BigInteger modulus(Base64WebSafeDecode(k2048BitRsaModulus));
+  absl::StatusOr<RsaSsaPssPublicKey> public_key = RsaSsaPssPublicKey::Create(
+      *parameters, modulus, test_case.id_requirement, GetPartialKeyAccess());
+  ASSERT_THAT(public_key, IsOk());
+
+  RestrictedBigInteger p_rb(Base64WebSafeDecode(kP),
+                            InsecureSecretKeyAccess::Get());
+  RestrictedBigInteger dp_rb(Base64WebSafeDecode(kDp),
+                             InsecureSecretKeyAccess::Get());
+  RestrictedBigInteger dq_rb(Base64WebSafeDecode(kDq),
+                             InsecureSecretKeyAccess::Get());
+  RestrictedBigInteger d_rb(Base64WebSafeDecode(kD),
+                            InsecureSecretKeyAccess::Get());
+  RestrictedBigInteger q_inv_rb(Base64WebSafeDecode(kQInv),
+                                InsecureSecretKeyAccess::Get());
+  PrivateValues private_values = GetValidPrivateValues();
+
+  EXPECT_THAT(RsaSsaPssPrivateKey::Builder()
+                  .SetPublicKey(*public_key)
+                  .SetPrimeP(p_rb)
+                  .SetPrimeQ(private_values.q)
+                  .SetPrimeExponentP(dp_rb)
+                  .SetPrimeExponentQ(dq_rb)
+                  .SetPrivateExponent(d_rb)
+                  .SetCrtCoefficient(q_inv_rb)
+                  .Build(GetPartialKeyAccess()),
+              StatusIs(absl::StatusCode::kInvalidArgument,
+                       StrEq("Cannot build with a mix of RestrictedData and "
+                             "RestrictedBigInteger parameters")));
 }
 
 TEST(RsaSsaPssPrivateKeyTest, CreateMismatchedKeyPairFails) {
@@ -846,6 +1048,144 @@ TEST(RsaSsaPssPrivateKeyTest, Clone) {
   std::unique_ptr<Key> cloned_key = private_key->Clone();
 
   ASSERT_THAT(*cloned_key, Eq(*private_key));
+}
+
+TEST(RsaSsaPssPrivateKeyTest, CopyConstructor) {
+  absl::StatusOr<RsaSsaPssParameters> parameters =
+      RsaSsaPssParameters::Builder()
+          .SetModulusSizeInBits(2048)
+          .SetPublicExponent(kF4)
+          .SetSigHashType(RsaSsaPssParameters::HashType::kSha256)
+          .SetMgf1HashType(RsaSsaPssParameters::HashType::kSha256)
+          .SetSaltLengthInBytes(32)
+          .SetVariant(RsaSsaPssParameters::Variant::kNoPrefix)
+          .Build();
+  ASSERT_THAT(parameters, IsOk());
+
+  BigInteger modulus(Base64WebSafeDecode(k2048BitRsaModulus));
+  absl::StatusOr<RsaSsaPssPublicKey> public_key = RsaSsaPssPublicKey::Create(
+      *parameters, modulus,
+      /*id_requirement=*/absl::nullopt, GetPartialKeyAccess());
+  ASSERT_THAT(public_key, IsOk());
+
+  RsaSsaPssPrivateKey private_key = CreateWithValidPrivateValues(*public_key);
+
+  RsaSsaPssPrivateKey copy(private_key);
+
+  EXPECT_THAT(copy, Eq(private_key));
+}
+
+TEST(RsaSsaPssPrivateKeyTest, CopyAssignment) {
+  absl::StatusOr<RsaSsaPssParameters> parameters =
+      RsaSsaPssParameters::Builder()
+          .SetModulusSizeInBits(2048)
+          .SetPublicExponent(kF4)
+          .SetSigHashType(RsaSsaPssParameters::HashType::kSha256)
+          .SetMgf1HashType(RsaSsaPssParameters::HashType::kSha256)
+          .SetSaltLengthInBytes(32)
+          .SetVariant(RsaSsaPssParameters::Variant::kNoPrefix)
+          .Build();
+  ASSERT_THAT(parameters, IsOk());
+
+  absl::StatusOr<RsaSsaPssParameters> other_parameters =
+      RsaSsaPssParameters::Builder()
+          .SetModulusSizeInBits(2048)
+          .SetPublicExponent(kF4)
+          .SetSigHashType(RsaSsaPssParameters::HashType::kSha384)
+          .SetMgf1HashType(RsaSsaPssParameters::HashType::kSha384)
+          .SetSaltLengthInBytes(48)
+          .SetVariant(RsaSsaPssParameters::Variant::kTink)
+          .Build();
+  ASSERT_THAT(other_parameters, IsOk());
+
+  BigInteger modulus(Base64WebSafeDecode(k2048BitRsaModulus));
+
+  absl::StatusOr<RsaSsaPssPublicKey> public_key = RsaSsaPssPublicKey::Create(
+      *parameters, modulus,
+      /*id_requirement=*/absl::nullopt, GetPartialKeyAccess());
+  ASSERT_THAT(public_key, IsOk());
+
+  absl::StatusOr<RsaSsaPssPublicKey> other_public_key =
+      RsaSsaPssPublicKey::Create(*other_parameters, modulus,
+                                 /*id_requirement=*/123, GetPartialKeyAccess());
+  ASSERT_THAT(other_public_key, IsOk());
+
+  RsaSsaPssPrivateKey private_key = CreateWithValidPrivateValues(*public_key);
+  RsaSsaPssPrivateKey copy = CreateWithValidPrivateValues(*other_public_key);
+
+  copy = private_key;
+
+  EXPECT_THAT(copy, Eq(private_key));
+}
+
+TEST(RsaSsaPssPrivateKeyTest, MoveConstructor) {
+  absl::StatusOr<RsaSsaPssParameters> parameters =
+      RsaSsaPssParameters::Builder()
+          .SetModulusSizeInBits(2048)
+          .SetPublicExponent(kF4)
+          .SetSigHashType(RsaSsaPssParameters::HashType::kSha256)
+          .SetMgf1HashType(RsaSsaPssParameters::HashType::kSha256)
+          .SetSaltLengthInBytes(32)
+          .SetVariant(RsaSsaPssParameters::Variant::kNoPrefix)
+          .Build();
+  ASSERT_THAT(parameters, IsOk());
+
+  BigInteger modulus(Base64WebSafeDecode(k2048BitRsaModulus));
+  absl::StatusOr<RsaSsaPssPublicKey> public_key = RsaSsaPssPublicKey::Create(
+      *parameters, modulus,
+      /*id_requirement=*/absl::nullopt, GetPartialKeyAccess());
+  ASSERT_THAT(public_key, IsOk());
+
+  RsaSsaPssPrivateKey private_key = CreateWithValidPrivateValues(*public_key);
+
+  RsaSsaPssPrivateKey expected(private_key);
+  RsaSsaPssPrivateKey moved(std::move(private_key));
+
+  EXPECT_THAT(moved, Eq(expected));
+}
+
+TEST(RsaSsaPssPrivateKeyTest, MoveAssignment) {
+  absl::StatusOr<RsaSsaPssParameters> parameters =
+      RsaSsaPssParameters::Builder()
+          .SetModulusSizeInBits(2048)
+          .SetPublicExponent(kF4)
+          .SetSigHashType(RsaSsaPssParameters::HashType::kSha256)
+          .SetMgf1HashType(RsaSsaPssParameters::HashType::kSha256)
+          .SetSaltLengthInBytes(32)
+          .SetVariant(RsaSsaPssParameters::Variant::kNoPrefix)
+          .Build();
+  ASSERT_THAT(parameters, IsOk());
+
+  absl::StatusOr<RsaSsaPssParameters> other_parameters =
+      RsaSsaPssParameters::Builder()
+          .SetModulusSizeInBits(2048)
+          .SetPublicExponent(kF4)
+          .SetSigHashType(RsaSsaPssParameters::HashType::kSha384)
+          .SetMgf1HashType(RsaSsaPssParameters::HashType::kSha384)
+          .SetSaltLengthInBytes(48)
+          .SetVariant(RsaSsaPssParameters::Variant::kTink)
+          .Build();
+  ASSERT_THAT(other_parameters, IsOk());
+
+  BigInteger modulus(Base64WebSafeDecode(k2048BitRsaModulus));
+
+  absl::StatusOr<RsaSsaPssPublicKey> public_key = RsaSsaPssPublicKey::Create(
+      *parameters, modulus,
+      /*id_requirement=*/absl::nullopt, GetPartialKeyAccess());
+  ASSERT_THAT(public_key, IsOk());
+
+  absl::StatusOr<RsaSsaPssPublicKey> other_public_key =
+      RsaSsaPssPublicKey::Create(*other_parameters, modulus,
+                                 /*id_requirement=*/123, GetPartialKeyAccess());
+  ASSERT_THAT(other_public_key, IsOk());
+
+  RsaSsaPssPrivateKey private_key = CreateWithValidPrivateValues(*public_key);
+  RsaSsaPssPrivateKey moved = CreateWithValidPrivateValues(*other_public_key);
+
+  RsaSsaPssPrivateKey expected(private_key);
+  moved = std::move(private_key);
+
+  EXPECT_THAT(moved, Eq(expected));
 }
 
 }  // namespace

@@ -15,12 +15,20 @@
 ///////////////////////////////////////////////////////////////////////////////
 #include "tink/internal/util.h"
 
-#include <iterator>
+#include <cstddef>
 #include <functional>
+#include <string>
+#include <utility>
 
-#include "absl/strings/ascii.h"
 #include "absl/log/absl_log.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/ascii.h"
 #include "absl/strings/string_view.h"
+#include "tink/internal/safe_stringops.h"
+#include "tink/internal/secret_buffer.h"
+#include "tink/secret_data.h"
+#include "tink/util/secret_data.h"
 
 namespace crypto {
 namespace tink {
@@ -62,8 +70,36 @@ bool IsPrintableAscii(absl::string_view input) {
   return true;
 }
 
-void LogFatal(absl::string_view msg) {
-  ABSL_LOG(FATAL) <<  msg;
+void LogFatal(absl::string_view msg) { ABSL_LOG(FATAL) << msg; }
+
+absl::StatusOr<SecretData> ParseBigIntToFixedLength(absl::string_view val,
+                                                    int length) {
+  if (length >= val.size()) {
+    int start = length - val.size();
+    SecretBuffer buffer(length, 0);
+    SafeMemCopy(buffer.data() + start, val.data(), val.size());
+    return util::internal::AsSecretData(std::move(buffer));
+  } else {
+    // val is longer than what we have room -- we need to check that val starts
+    // with zeros. We use SafeCryptoMemEquals to minimize leakage in case it
+    // does not.
+    int to_truncate = val.size() - length;
+    SecretBuffer zeros(to_truncate, 0);
+    if (!SafeCryptoMemEquals(zeros.data(), val.data(), zeros.size())) {
+      return absl::InvalidArgumentError("Integer too large");
+    }
+    val.remove_prefix(to_truncate);
+    return util::SecretDataFromStringView(val);
+  }
+}
+
+absl::string_view WithoutLeadingZeros(const absl::string_view val) {
+  size_t padding_pos = val.find_first_not_of('\0');
+  if (padding_pos != std::string::npos) {
+    return val.substr(padding_pos);
+  } else {
+    return "";
+  }
 }
 
 }  // namespace internal

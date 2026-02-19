@@ -1,3 +1,6 @@
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
+
 package(default_visibility = ["//:__subpackages__"])
 
 licenses(["notice"])
@@ -252,7 +255,7 @@ cc_test(
     name = "cord_aes_gcm_boringssl_test",
     size = "small",
     srcs = ["cord_aes_gcm_boringssl_test.cc"],
-    data = ["//testvectors:aes_gcm"],
+    data = ["//:testvectors_v1"],
     deps = [
         ":cord_aes_gcm_boringssl",
         ":wycheproof_aead",
@@ -296,10 +299,10 @@ cc_test(
         "//tink:crypto_format",
         "//tink:primitive_set",
         "//tink/subtle:subtle_util",
-        "//tink/util:statusor",
         "//tink/util:test_matchers",
         "@abseil-cpp//absl/memory",
         "@abseil-cpp//absl/status",
+        "@abseil-cpp//absl/status:statusor",
         "@abseil-cpp//absl/strings:string_view",
         "@abseil-cpp//absl/types:span",
         "@googletest//:gtest_main",
@@ -309,7 +312,7 @@ cc_test(
 cc_test(
     name = "zero_copy_aes_gcm_boringssl_test",
     srcs = ["zero_copy_aes_gcm_boringssl_test.cc"],
-    data = ["//testvectors:aes_gcm"],
+    data = ["//:testvectors_v1"],
     deps = [
         ":wycheproof_aead",
         ":zero_copy_aead",
@@ -350,11 +353,7 @@ cc_test(
 cc_test(
     name = "ssl_aead_test",
     srcs = ["ssl_aead_test.cc"],
-    data = [
-        "//testvectors:aes_gcm",
-        "//testvectors:aes_gcm_siv",
-        "//testvectors:chacha20_poly1305",
-    ],
+    data = ["//:testvectors_v1"],
     deps = [
         ":ssl_aead",
         ":wycheproof_aead",
@@ -1099,7 +1098,7 @@ cc_test(
 cc_test(
     name = "wycheproof_aead_test",
     srcs = ["wycheproof_aead_test.cc"],
-    data = ["//testvectors:aes_gcm"],
+    data = ["//:testvectors_v1"],
     deps = [
         ":wycheproof_aead",
         "//tink/util:test_util",

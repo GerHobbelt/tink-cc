@@ -1,3 +1,6 @@
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
+
 package(
     default_testonly = 1,
     default_visibility = ["//:__subpackages__"],
@@ -87,18 +90,22 @@ cc_library(
         "//tink/subtle:common_enums",
         "//tink/util:status",
         "//tink/util:statusor",
+        "//tink/util:test_util",
         "@abseil-cpp//absl/log",
         "@abseil-cpp//absl/status",
         "@abseil-cpp//absl/strings",
         "@abseil-cpp//absl/strings:string_view",
-        "@protobuf//:protobuf",
+        "@protobuf",
     ],
 )
 
 cc_test(
     name = "wycheproof_util_test",
     srcs = ["wycheproof_util_test.cc"],
-    data = ["//testvectors:rsa_pss"],
+    data = [
+        "//:testvectors",
+        "//:testvectors_v1",
+    ],
     deps = [
         ":wycheproof_util",
         "//tink/subtle:common_enums",

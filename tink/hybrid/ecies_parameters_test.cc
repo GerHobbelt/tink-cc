@@ -19,10 +19,12 @@
 #include <memory>
 #include <string>
 #include <tuple>
+#include <utility>
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "tink/aead/aes_ctr_hmac_aead_parameters.h"
@@ -30,7 +32,6 @@
 #include "tink/aead/xchacha20_poly1305_parameters.h"
 #include "tink/daead/aes_siv_parameters.h"
 #include "tink/parameters.h"
-#include "tink/util/statusor.h"
 #include "tink/util/test_matchers.h"
 #include "tink/util/test_util.h"
 
@@ -42,6 +43,7 @@ using ::crypto::tink::test::IsOk;
 using ::crypto::tink::test::StatusIs;
 using ::testing::Combine;
 using ::testing::Eq;
+using ::testing::Gt;
 using ::testing::IsTrue;
 using ::testing::NotNull;
 using ::testing::TestWithParam;
@@ -112,6 +114,7 @@ TEST_P(EciesParametersTest, Build) {
   EXPECT_THAT(parameters->GetSalt(), Eq(salt));
   EXPECT_THAT(parameters->GetVariant(), Eq(variant.variant));
   EXPECT_THAT(parameters->HasIdRequirement(), Eq(variant.has_id_requirement));
+  EXPECT_THAT(parameters->GetPrivateKeyLength(), Gt(0));
 }
 
 TEST(EciesParametersTest, BuildWithX25519Curve) {
@@ -348,14 +351,7 @@ TEST(EciesParametersTest, CopyConstructor) {
 
   EciesParameters copy(*parameters);
 
-  EXPECT_THAT(copy.GetCurveType(), Eq(EciesParameters::CurveType::kNistP256));
-  EXPECT_THAT(copy.GetHashType(), Eq(EciesParameters::HashType::kSha256));
-  EXPECT_THAT(copy.GetNistCurvePointFormat(),
-              Eq(EciesParameters::PointFormat::kUncompressed));
-  EXPECT_THAT(copy.GetDemId(), Eq(EciesParameters::DemId::kAes256SivRaw));
-  EXPECT_THAT(copy.GetSalt(), Eq(test::HexDecodeOrDie(kSalt)));
-  EXPECT_THAT(copy.GetVariant(), Eq(EciesParameters::Variant::kTink));
-  EXPECT_THAT(copy.HasIdRequirement(), IsTrue());
+  EXPECT_THAT(copy, Eq(*parameters));
 }
 
 TEST(EciesParametersTest, CopyAssignment) {
@@ -370,16 +366,63 @@ TEST(EciesParametersTest, CopyAssignment) {
           .Build();
   ASSERT_THAT(parameters, IsOk());
 
-  EciesParameters copy = *parameters;
+  absl::StatusOr<EciesParameters> copy =
+      EciesParameters::Builder()
+          .SetCurveType(EciesParameters::CurveType::kNistP256)
+          .SetHashType(EciesParameters::HashType::kSha256)
+          .SetNistCurvePointFormat(EciesParameters::PointFormat::kUncompressed)
+          .SetDemId(EciesParameters::DemId::kAes128GcmRaw)
+          .SetVariant(EciesParameters::Variant::kNoPrefix)
+          .Build();
+  ASSERT_THAT(copy, IsOk());
 
-  EXPECT_THAT(copy.GetCurveType(), Eq(EciesParameters::CurveType::kNistP256));
-  EXPECT_THAT(copy.GetHashType(), Eq(EciesParameters::HashType::kSha256));
-  EXPECT_THAT(copy.GetNistCurvePointFormat(),
-              Eq(EciesParameters::PointFormat::kUncompressed));
-  EXPECT_THAT(copy.GetDemId(), Eq(EciesParameters::DemId::kAes256SivRaw));
-  EXPECT_THAT(copy.GetSalt(), Eq(test::HexDecodeOrDie(kSalt)));
-  EXPECT_THAT(copy.GetVariant(), Eq(EciesParameters::Variant::kTink));
-  EXPECT_THAT(copy.HasIdRequirement(), IsTrue());
+  *copy = *parameters;
+
+  EXPECT_THAT(*copy, Eq(*parameters));
+}
+
+TEST(EciesParametersTest, MoveConstructor) {
+  absl::StatusOr<EciesParameters> parameters =
+      EciesParameters::Builder()
+          .SetCurveType(EciesParameters::CurveType::kX25519)
+          .SetHashType(EciesParameters::HashType::kSha256)
+          .SetDemId(EciesParameters::DemId::kAes256SivRaw)
+          .SetSalt(test::HexDecodeOrDie(kSalt))
+          .SetVariant(EciesParameters::Variant::kTink)
+          .Build();
+  ASSERT_THAT(parameters, IsOk());
+
+  EciesParameters expected = *parameters;
+  EciesParameters moved(std::move(*parameters));
+
+  EXPECT_THAT(moved, Eq(expected));
+}
+
+TEST(EciesParametersTest, MoveAssignment) {
+  absl::StatusOr<EciesParameters> parameters =
+      EciesParameters::Builder()
+          .SetCurveType(EciesParameters::CurveType::kX25519)
+          .SetHashType(EciesParameters::HashType::kSha256)
+          .SetDemId(EciesParameters::DemId::kAes256SivRaw)
+          .SetSalt(test::HexDecodeOrDie(kSalt))
+          .SetVariant(EciesParameters::Variant::kTink)
+          .Build();
+  ASSERT_THAT(parameters, IsOk());
+
+  absl::StatusOr<EciesParameters> moved =
+      EciesParameters::Builder()
+          .SetCurveType(EciesParameters::CurveType::kNistP256)
+          .SetHashType(EciesParameters::HashType::kSha256)
+          .SetNistCurvePointFormat(EciesParameters::PointFormat::kUncompressed)
+          .SetDemId(EciesParameters::DemId::kAes128GcmRaw)
+          .SetVariant(EciesParameters::Variant::kNoPrefix)
+          .Build();
+  ASSERT_THAT(moved, IsOk());
+
+  EciesParameters expected = *parameters;
+  *moved = std::move(*parameters);
+
+  EXPECT_THAT(*moved, Eq(expected));
 }
 
 TEST_P(EciesParametersTest, ParametersEqual) {

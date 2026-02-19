@@ -49,6 +49,9 @@ tink_cc_library(
     tink::core::insecure_secret_key_access
     tink::core::partial_key_access
     tink::core::restricted_big_integer
+    tink::core::restricted_data
+    tink::core::secret_data
+    tink::internal::util
     tink::signature::rsa_ssa_pss_parameters
     tink::signature::rsa_ssa_pss_private_key
     tink::signature::rsa_ssa_pss_public_key

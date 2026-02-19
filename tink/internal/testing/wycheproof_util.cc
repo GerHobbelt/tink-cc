@@ -32,6 +32,7 @@
 #include "tink/subtle/common_enums.h"
 #include "tink/util/status.h"
 #include "tink/util/statusor.h"
+#include "tink/util/test_util.h"
 
 namespace crypto {
 namespace tink {
@@ -45,49 +46,10 @@ using ::crypto::tink::subtle::HashType;
 using ::google::protobuf::util::JsonParseOptions;
 using ::google::protobuf::util::JsonStringToMessage;
 
-// TODO(tholenst): factor these helpers out to an "util"-class.
-absl::StatusOr<std::string> HexDecode(absl::string_view hex) {
-  if (hex.size() % 2 != 0) {
-    return absl::Status(absl::StatusCode::kInvalidArgument,
-                        "Input has odd size.");
-  }
-  std::string decoded(hex.size() / 2, static_cast<char>(0));
-  for (size_t i = 0; i < hex.size(); ++i) {
-    char c = hex[i];
-    char val;
-    if ('0' <= c && c <= '9')
-      val = c - '0';
-    else if ('a' <= c && c <= 'f')
-      val = c - 'a' + 10;
-    else if ('A' <= c && c <= 'F')
-      val = c - 'A' + 10;
-    else
-      return absl::Status(absl::StatusCode::kInvalidArgument,
-                          "Not hexadecimal");
-    decoded[i / 2] = (decoded[i / 2] << 4) | val;
-  }
-  return decoded;
-}
-
-std::string HexDecodeOrDie(absl::string_view hex) {
-  return HexDecode(hex).value();
-}
-
-}  // namespace
-
-std::string GetBytesFromHexValue(const google::protobuf::Value &val) {
-  std::string s(val.string_value());
-  if (s.size() % 2 != 0) {
-    // ECDH private key may have odd length.
-    s = "0" + s;
-  }
-  return HexDecodeOrDie(s);
-}
-
-absl::StatusOr<google::protobuf::Struct> ReadTestVectors(
-    const std::string &filename) {
-  std::string test_vectors_path = crypto::tink::internal::RunfilesPath(
-      absl::StrCat("testvectors/", filename));
+absl::StatusOr<google::protobuf::Struct> ReadTestVectorsInternal(
+    const std::string& vectors_dir, const std::string& filename) {
+  std::string test_vectors_path =
+      crypto::tink::internal::RunfilesPath(absl::StrCat(vectors_dir, filename));
 
   std::ifstream input_stream;
   input_stream.open(test_vectors_path);
@@ -102,6 +64,29 @@ absl::StatusOr<google::protobuf::Struct> ReadTestVectors(
     return absl::Status(absl::StatusCode::kInvalidArgument, "invalid JSON");
   }
   return proto;
+}
+
+}  // namespace
+
+std::string GetBytesFromHexValue(const google::protobuf::Value& val) {
+  std::string s(val.string_value());
+  if (s.size() % 2 != 0) {
+    // ECDH private key may have odd length.
+    s = "0" + s;
+  }
+  return crypto::tink::test::HexDecodeOrDie(s);
+}
+
+absl::StatusOr<google::protobuf::Struct> ReadTestVectors(
+    const std::string& filename) {
+  return ReadTestVectorsInternal("testvectors/",
+                                 filename);
+}
+
+absl::StatusOr<google::protobuf::Struct> ReadTestVectorsV1(
+    const std::string& filename) {
+  return ReadTestVectorsInternal("testvectors_v1/",
+                                 filename);
 }
 
 HashType GetHashTypeFromValue(const google::protobuf::Value &val) {
@@ -144,7 +129,7 @@ std::string GetIntegerFromHexValue(const google::protobuf::Value &val) {
       hex = "0" + hex;
     }
   }
-  return HexDecode(hex).value();
+  return crypto::tink::test::HexDecode(hex).value();
 }
 
 }  // namespace wycheproof_testing

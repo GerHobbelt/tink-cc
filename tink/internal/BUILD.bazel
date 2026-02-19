@@ -1,3 +1,8 @@
+load("@protobuf//bazel:cc_proto_library.bzl", "cc_proto_library")
+load("@protobuf//bazel:proto_library.bzl", "proto_library")
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
+
 package(default_visibility = ["//:__subpackages__"])
 
 licenses(["notice"])
@@ -27,8 +32,15 @@ cc_library(
     hdrs = ["util.h"],
     include_prefix = "tink/internal",
     deps = [
+        ":safe_stringops",
+        ":secret_buffer",
+        "//tink:secret_data",
+        "//tink/util:secret_data",
+        "@abseil-cpp//absl/algorithm:container",
         "@abseil-cpp//absl/base:core_headers",
         "@abseil-cpp//absl/log:absl_log",
+        "@abseil-cpp//absl/status",
+        "@abseil-cpp//absl/status:statusor",
         "@abseil-cpp//absl/strings",
     ],
 )
@@ -190,10 +202,7 @@ cc_library(
         ":ssl_unique_ptr",
         ":ssl_util",
         "//tink:secret_data",
-        "//tink/config:tink_fips",
         "//tink/subtle:common_enums",
-        "//tink/util:errors",
-        "//tink/util:secret_data",
         "@abseil-cpp//absl/status",
         "@abseil-cpp//absl/status:statusor",
         "@abseil-cpp//absl/strings",
@@ -254,6 +263,10 @@ cc_test(
     srcs = ["util_test.cc"],
     deps = [
         ":util",
+        "//tink:secret_data",
+        "//tink/util:secret_data",
+        "//tink/util:test_matchers",
+        "//tink/util:test_util",
         "@abseil-cpp//absl/strings",
         "@googletest//:gtest_main",
     ],
@@ -306,7 +319,7 @@ cc_test(
         ":key_info",
         "//proto:tink_cc_proto",
         "@googletest//:gtest_main",
-        "@protobuf//:protobuf",
+        "@protobuf",
     ],
 )
 
@@ -414,10 +427,9 @@ cc_test(
         ":bn_util",
         ":rsa_util",
         ":ssl_unique_ptr",
+        "//tink:secret_data",
         "//tink/subtle:random",
         "//tink/util:secret_data",
-        "//tink/util:status",
-        "//tink/util:statusor",
         "//tink/util:test_matchers",
         "//tink/util:test_util",
         "@abseil-cpp//absl/status",
@@ -431,11 +443,7 @@ cc_test(
 cc_test(
     name = "ec_util_test",
     srcs = ["ec_util_test.cc"],
-    data = [
-        "//testvectors:ecdh",
-        "//testvectors:ecdsa_webcrypto",
-        "//testvectors:eddsa",
-    ],
+    data = ["//:testvectors_v1"],
     deps = [
         ":bn_util",
         ":ec_util",
@@ -535,17 +543,16 @@ cc_test(
     name = "monitoring_util_test",
     srcs = ["monitoring_util_test.cc"],
     deps = [
-        ":monitoring",
+        ":monitoring_key_set_info",
         ":monitoring_util",
         "//proto:tink_cc_proto",
         "//tink:key_status",
         "//tink:primitive_set",
-        "//tink/util:status",
-        "//tink/util:statusor",
         "//tink/util:test_matchers",
         "@abseil-cpp//absl/container:flat_hash_map",
         "@abseil-cpp//absl/memory",
         "@abseil-cpp//absl/status",
+        "@abseil-cpp//absl/status:statusor",
         "@abseil-cpp//absl/strings",
         "@googletest//:gtest_main",
     ],
