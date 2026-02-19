@@ -18,13 +18,18 @@
 #define TINK_JWT_JWT_RSA_SSA_PKCS1_PROTO_SERIALIZATION_H_
 
 #include "absl/status/status.h"
+#include "tink/internal/mutable_serialization_registry.h"
+#include "tink/jwt/internal/jwt_rsa_ssa_pkcs1_proto_serialization_impl.h"
 
 namespace crypto {
 namespace tink {
 
-// Registers proto parsers and serializers for JWT RSASSA-PKCS1 parameters and
-// keys.
-absl::Status RegisterJwtRsaSsaPkcs1ProtoSerialization();
+// Registers proto parsers and serializers for JWT RSA-SSA-PKCS1 parameters and
+// keys into global serialization registry.
+inline absl::Status RegisterJwtRsaSsaPkcs1ProtoSerialization() {
+  return internal::RegisterJwtRsaSsaPkcs1ProtoSerializationWithMutableRegistry(
+      internal::MutableSerializationRegistry::GlobalInstance());
+}
 
 }  // namespace tink
 }  // namespace crypto

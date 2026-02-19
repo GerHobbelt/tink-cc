@@ -18,18 +18,15 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <type_traits>
+#include <optional>
+#include <string>
 
 #include "absl/base/attributes.h"
 #include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "tink/internal/proto_parser_options.h"
 #include "tink/internal/proto_parser_state.h"
-#include "tink/internal/proto_parser_string_like_helpers.h"
 #include "tink/internal/proto_parsing_helpers.h"
-#include "tink/secret_data.h"
 
 namespace crypto {
 namespace tink {
@@ -59,7 +56,8 @@ class Field {
 
   // Serializes the field into the given serialization state. Returns true if
   // the serialization was successful.
-  virtual absl::Status SerializeWithTagInto(SerializationState& out) const = 0;
+  virtual ABSL_MUST_USE_RESULT bool SerializeWithTagInto(
+      SerializationState& out) const = 0;
 
   // Returns the size of the serialized field, including the tag.
   virtual size_t GetSerializedSizeIncludingTag() const = 0;
@@ -72,11 +70,25 @@ class Field {
   WireType wire_type_;
 };
 
+// Represents a proto field that owns a uint32_t.
+//
+// Note:
+// * if options == ProtoFieldOptions::kAlwaysPresent, then the field is
+//   always present (i.e., has_value() never returns false). This forces
+//   serialization as well, which is useful if the field is LEGACY_REQUIRED in
+//   proto.
+// * if options == ProtoFieldOptions::kExplicit, then the field is serialized
+//   only if the value is set (even if with a default value).
+// * if options == ProtoFieldOptions::kImplicit, then has_value() always returns
+//   true; the field is serialized only if not equal to the default value (0).
+//   (Note: Message implementations with kImplicit fields should not
+//   expose `has_*` methods for compatibility with Protobufs.)
+//
+// This class is not thread-safe.
 class Uint32Field : public Field {
  public:
-  explicit Uint32Field(uint32_t field_number,
-                       ProtoFieldOptions options = ProtoFieldOptions::kNone)
-      : Field(field_number, WireType::kVarint), options_(options) {}
+  explicit Uint32Field(uint32_t field_number, ProtoFieldOptions options =
+                                                  ProtoFieldOptions::kExplicit);
 
   // Copyable and movable.
   Uint32Field(const Uint32Field&) = default;
@@ -84,50 +96,41 @@ class Uint32Field : public Field {
   Uint32Field(Uint32Field&&) noexcept = default;
   Uint32Field& operator=(Uint32Field&&) noexcept = default;
 
-  void Clear() override { value_ = 0; }
-  bool ConsumeIntoMember(ParsingState& serialized) override {
-    absl::StatusOr<uint32_t> result = ConsumeVarintIntoUint32(serialized);
-    if (!result.ok()) {
-      return false;
-    }
-    value_ = *result;
-    return true;
-  }
-  absl::Status SerializeWithTagInto(SerializationState& out) const override {
-    if (!RequiresSerialization()) {
-      return absl::OkStatus();
-    }
-    absl::Status status =
-        SerializeWireTypeAndFieldNumber(GetWireType(), FieldNumber(), out);
-    if (!status.ok()) {
-      return status;
-    }
-    return SerializeVarint(value_, out);
-  }
-  size_t GetSerializedSizeIncludingTag() const override {
-    if (!RequiresSerialization()) {
-      return 0;
-    }
-    return WireTypeAndFieldNumberLength(GetWireType(), FieldNumber()) +
-           VarintLength(value_);
-  }
+  void Clear() override;
+  bool ConsumeIntoMember(ParsingState& serialized) override;
+  bool SerializeWithTagInto(SerializationState& out) const override;
+  size_t GetSerializedSizeIncludingTag() const override;
 
+  bool has_value() const { return value_.has_value(); }
   void set_value(uint32_t value) { value_ = value; }
-  uint32_t value() const { return value_; }
+  uint32_t value() const { return value_.value_or(0); }
 
  private:
-  bool RequiresSerialization() const {
-    return options_ == ProtoFieldOptions::kAlwaysSerialize || value_ != 0;
-  }
+  bool RequiresSerialization() const;
 
-  uint32_t value_ = 0;
+  std::optional<uint32_t> value_ = 0;
   ProtoFieldOptions options_;
 };
 
+// Represents a proto field that owns a uint64_t.
+//
+// Note:
+// * if options == ProtoFieldOptions::kAlwaysPresent, then the field is
+//   always present (i.e., has_value() never returns false). This forces
+//   serialization as well, which is useful if the field is LEGACY_REQUIRED in
+//   proto.
+// * if options == ProtoFieldOptions::kExplicit, then the field is serialized
+//   only if the value is set (even if with a default value).
+// * if options == ProtoFieldOptions::kImplicit, then has_value() always returns
+//   true; the field is serialized only if not equal to the default value (0).
+//   (Note: Message implementations with kImplicit fields should not
+//   expose `has_*` methods for compatibility with Protobufs.)
+//
+// This class is not thread-safe.
 class Uint64Field : public Field {
  public:
-  explicit Uint64Field(uint64_t field_number)
-      : Field(field_number, WireType::kVarint) {}
+  explicit Uint64Field(uint64_t field_number, ProtoFieldOptions options =
+                                                  ProtoFieldOptions::kExplicit);
 
   // Copyable and movable.
   Uint64Field(const Uint64Field&) = default;
@@ -135,115 +138,64 @@ class Uint64Field : public Field {
   Uint64Field(Uint64Field&&) noexcept = default;
   Uint64Field& operator=(Uint64Field&&) noexcept = default;
 
-  void Clear() override { value_ = 0; }
+  void Clear() override;
+  bool ConsumeIntoMember(ParsingState& serialized) override;
+  bool SerializeWithTagInto(SerializationState& out) const override;
+  size_t GetSerializedSizeIncludingTag() const override;
 
-  bool ConsumeIntoMember(ParsingState& serialized) override {
-    absl::StatusOr<uint64_t> result = ConsumeVarintIntoUint64(serialized);
-    if (!result.ok()) {
-      return false;
-    }
-    value_ = *result;
-    return true;
-  }
-
-  absl::Status SerializeWithTagInto(SerializationState& out) const override {
-    if (value_ == 0) {
-      return absl::OkStatus();
-    }
-    absl::Status status =
-        SerializeWireTypeAndFieldNumber(GetWireType(), FieldNumber(), out);
-    if (!status.ok()) {
-      return status;
-    }
-    return SerializeVarint(value_, out);
-  }
-
-  size_t GetSerializedSizeIncludingTag() const override {
-    if (value_ == 0) {
-      return 0;
-    }
-    return WireTypeAndFieldNumberLength(GetWireType(), FieldNumber()) +
-           VarintLength(value_);
-  }
-
+  bool has_value() const { return value_.has_value(); }
   void set_value(uint64_t value) { value_ = value; }
-  uint64_t value() const { return value_; }
+  uint64_t value() const { return value_.value_or(0); }
 
  private:
-  uint64_t value_ = 0;
+  bool RequiresSerialization() const;
+
+  std::optional<uint64_t> value_ = 0;
+  ProtoFieldOptions options_;
 };
 
-template <typename StringLike>
+// Represents a proto field that owns a string.
+//
+// Note:
+// * if options == ProtoFieldOptions::kAlwaysPresent, then the field is
+//   always present (i.e., has_value() never returns false). This forces
+//   serialization as well, which is useful if the field is LEGACY_REQUIRED in
+//   proto.
+// * if options == ProtoFieldOptions::kExplicit, then the field is serialized
+//   only if the value is set (even if with a default value).
+// * if options == ProtoFieldOptions::kImplicit, then has_value() always returns
+//   true; the field is serialized only if not equal to the default value (empty
+//   string).
+//   (Note: Message implementations with kImplicit fields should not
+//   expose `has_*` methods for compatibility with Protobufs.)
+//
+// This class is not thread-safe.
 class BytesField final : public Field {
  public:
-  static_assert(!std::is_same<StringLike, ::crypto::tink::SecretData>::value,
-                "Use SecretDataField instead");
-
   explicit BytesField(uint32_t field_number,
-                      ProtoFieldOptions options = ProtoFieldOptions::kNone)
-      : Field(field_number, WireType::kLengthDelimited), options_(options) {}
+                      ProtoFieldOptions options = ProtoFieldOptions::kExplicit);
   // Copyable and movable.
   BytesField(const BytesField&) = default;
   BytesField& operator=(const BytesField&) = default;
   BytesField(BytesField&&) noexcept = default;
   BytesField& operator=(BytesField&&) noexcept = default;
 
-  void Clear() override { ClearStringLikeValue(value_); }
-  bool ConsumeIntoMember(ParsingState& serialized) override {
-    absl::StatusOr<absl::string_view> result =
-        ConsumeBytesReturnStringView(serialized);
-    if (!result.ok()) {
-      return false;
-    }
-    CopyIntoStringLikeValue(*result, value_);
-    return true;
-  }
-  absl::Status SerializeWithTagInto(SerializationState& out) const override {
-    if (!RequiresSerialization()) {
-      return absl::OkStatus();
-    }
+  void Clear() override;
+  bool ConsumeIntoMember(ParsingState& serialized) override;
+  bool SerializeWithTagInto(SerializationState& out) const override;
+  size_t GetSerializedSizeIncludingTag() const override;
 
-    if (absl::Status result =
-            SerializeWireTypeAndFieldNumber(GetWireType(), FieldNumber(), out);
-        !result.ok()) {
-      return result;
-    }
-    size_t size = SizeOfStringLikeValue(value_);
-
-    if (absl::Status result = SerializeVarint(size, out); !result.ok()) {
-      return result;
-    }
-    if (out.GetBuffer().size() < size) {
-      return absl::InvalidArgumentError(absl::StrCat(
-          "Output buffer too small: ", out.GetBuffer().size(), " < ", size));
-    }
-    SerializeStringLikeValue(value_, out.GetBuffer());
-    out.Advance(size);
-    return absl::OkStatus();
-  }
-
-  size_t GetSerializedSizeIncludingTag() const override {
-    if (!RequiresSerialization()) {
-      return 0;
-    }
-    size_t size = SizeOfStringLikeValue(value_);
-    return WireTypeAndFieldNumberLength(GetWireType(), FieldNumber()) +
-           VarintLength(size) + size;
-  }
-
-  void set_value(absl::string_view value) {
-    CopyIntoStringLikeValue(value, value_);
-  }
-  const StringLike& value() const { return value_; }
-  StringLike* mutable_value() { return &value_; }
+  bool has_value() const { return value_.has_value(); }
+  void set_value(absl::string_view value);
+  const std::string& value() const;
+  std::string* mutable_value();
 
  private:
-  bool RequiresSerialization() const {
-    return options_ == ProtoFieldOptions::kAlwaysSerialize ||
-           SizeOfStringLikeValue(value_) != 0;
-  }
+  bool RequiresSerialization() const;
 
-  StringLike value_;
+  const std::string& default_value() const;
+
+  std::optional<std::string> value_;
   ProtoFieldOptions options_;
 };
 

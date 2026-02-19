@@ -56,7 +56,7 @@ using ::crypto::tink::internal::proto_parsing::Message;
 using ::crypto::tink::internal::proto_parsing::SecretDataField;
 using ::crypto::tink::internal::proto_parsing::Uint32Field;
 
-class XChaCha20Poly1305KeyTP : public Message<XChaCha20Poly1305KeyTP> {
+class XChaCha20Poly1305KeyTP : public Message {
  public:
   XChaCha20Poly1305KeyTP() = default;
 
@@ -68,12 +68,12 @@ class XChaCha20Poly1305KeyTP : public Message<XChaCha20Poly1305KeyTP> {
     *key_value_.mutable_value() = util::SecretDataFromStringView(value);
   }
 
-  std::array<const Field*, 2> GetFields() const {
-    return {&version_, &key_value_};
-  }
-
  private:
-  Uint32Field version_{1};
+  size_t num_fields() const override { return 2; }
+  const Field* field(int i) const override {
+    return std::array<const Field*, 2>{&version_, &key_value_}[i];
+  }
+  Uint32Field version_{1, ProtoFieldOptions::kImplicit};
   SecretDataField key_value_{3};
 };
 

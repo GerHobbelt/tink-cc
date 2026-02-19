@@ -214,31 +214,11 @@ tink_cc_library(
 tink_cc_library(
   NAME jwt_hmac_proto_serialization
   SRCS
-    jwt_hmac_proto_serialization.cc
     jwt_hmac_proto_serialization.h
   DEPS
-    tink::jwt::jwt_hmac_key
-    tink::jwt::jwt_hmac_parameters
     absl::status
-    absl::statusor
-    absl::string_view
-    absl::optional
-    tink::core::partial_key_access
-    tink::core::restricted_data
-    tink::core::secret_data
-    tink::core::secret_key_access_token
-    tink::internal::key_parser
-    tink::internal::key_serializer
     tink::internal::mutable_serialization_registry
-    tink::internal::parameters_parser
-    tink::internal::parameters_serializer
-    tink::internal::proto_key_serialization
-    tink::internal::proto_parameters_serialization
-    tink::internal::proto_parser_enum_field
-    tink::internal::proto_parser_fields
-    tink::internal::proto_parser_message
-    tink::internal::proto_parser_secret_data_field
-    tink::internal::tink_proto_structs
+    tink::jwt::internal::jwt_hmac_proto_serialization_impl
 )
 
 tink_cc_library(
@@ -335,37 +315,11 @@ tink_cc_library(
 tink_cc_library(
   NAME jwt_ecdsa_proto_serialization
   SRCS
-    jwt_ecdsa_proto_serialization.cc
     jwt_ecdsa_proto_serialization.h
   DEPS
-    tink::jwt::jwt_ecdsa_parameters
-    tink::jwt::jwt_ecdsa_private_key
-    tink::jwt::jwt_ecdsa_public_key
     absl::status
-    absl::statusor
-    absl::string_view
-    absl::optional
-    tink::core::big_integer
-    tink::core::ec_point
-    tink::core::insecure_secret_key_access
-    tink::core::partial_key_access
-    tink::core::restricted_big_integer
-    tink::core::restricted_data
-    tink::core::secret_data
-    tink::core::secret_key_access_token
-    tink::internal::bn_encoding_util
-    tink::internal::key_parser
-    tink::internal::key_serializer
     tink::internal::mutable_serialization_registry
-    tink::internal::parameters_parser
-    tink::internal::parameters_serializer
-    tink::internal::proto_key_serialization
-    tink::internal::proto_parameters_serialization
-    tink::internal::proto_parser_enum_field
-    tink::internal::proto_parser_fields
-    tink::internal::proto_parser_message
-    tink::internal::proto_parser_secret_data_field
-    tink::internal::tink_proto_structs
+    tink::jwt::internal::jwt_ecdsa_proto_serialization_impl
 )
 
 tink_cc_library(
@@ -433,35 +387,11 @@ tink_cc_library(
 tink_cc_library(
   NAME jwt_rsa_ssa_pkcs1_proto_serialization
   SRCS
-    jwt_rsa_ssa_pkcs1_proto_serialization.cc
     jwt_rsa_ssa_pkcs1_proto_serialization.h
   DEPS
-    tink::jwt::jwt_rsa_ssa_pkcs1_parameters
-    tink::jwt::jwt_rsa_ssa_pkcs1_private_key
-    tink::jwt::jwt_rsa_ssa_pkcs1_public_key
     absl::status
-    absl::statusor
-    absl::string_view
-    absl::optional
-    tink::core::big_integer
-    tink::core::insecure_secret_key_access
-    tink::core::partial_key_access
-    tink::core::restricted_big_integer
-    tink::core::restricted_data
-    tink::core::secret_data
-    tink::core::secret_key_access_token
-    tink::internal::key_parser
-    tink::internal::key_serializer
     tink::internal::mutable_serialization_registry
-    tink::internal::parameters_parser
-    tink::internal::parameters_serializer
-    tink::internal::proto_key_serialization
-    tink::internal::proto_parameters_serialization
-    tink::internal::proto_parser_enum_field
-    tink::internal::proto_parser_fields
-    tink::internal::proto_parser_message
-    tink::internal::proto_parser_secret_data_field
-    tink::internal::tink_proto_structs
+    tink::jwt::internal::jwt_rsa_ssa_pkcs1_proto_serialization_impl
 )
 
 tink_cc_library(
@@ -529,35 +459,11 @@ tink_cc_library(
 tink_cc_library(
   NAME jwt_rsa_ssa_pss_proto_serialization
   SRCS
-    jwt_rsa_ssa_pss_proto_serialization.cc
     jwt_rsa_ssa_pss_proto_serialization.h
   DEPS
-    tink::jwt::jwt_rsa_ssa_pss_parameters
-    tink::jwt::jwt_rsa_ssa_pss_private_key
-    tink::jwt::jwt_rsa_ssa_pss_public_key
     absl::status
-    absl::statusor
-    absl::string_view
-    absl::optional
-    tink::core::big_integer
-    tink::core::insecure_secret_key_access
-    tink::core::partial_key_access
-    tink::core::restricted_big_integer
-    tink::core::restricted_data
-    tink::core::secret_data
-    tink::core::secret_key_access_token
-    tink::internal::key_parser
-    tink::internal::key_serializer
     tink::internal::mutable_serialization_registry
-    tink::internal::parameters_parser
-    tink::internal::parameters_serializer
-    tink::internal::proto_key_serialization
-    tink::internal::proto_parameters_serialization
-    tink::internal::proto_parser_enum_field
-    tink::internal::proto_parser_fields
-    tink::internal::proto_parser_message
-    tink::internal::proto_parser_secret_data_field
-    tink::internal::tink_proto_structs
+    tink::jwt::internal::jwt_rsa_ssa_pss_proto_serialization_impl
 )
 
 tink_cc_library(

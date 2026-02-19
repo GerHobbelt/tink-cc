@@ -18,12 +18,18 @@
 #define TINK_SIGNATURE_INTERNAL_ML_DSA_PROTO_SERIALIZATION_H_
 
 #include "absl/status/status.h"
+#include "tink/internal/mutable_serialization_registry.h"
+#include "tink/signature/internal/ml_dsa_proto_serialization_impl.h"
 
 namespace crypto {
 namespace tink {
 
-// Registers proto parsers and serializers for ML-DSA parameters and keys.
-absl::Status RegisterMlDsaProtoSerialization();
+// Registers proto parsers and serializers for ML-DSA parameters and keys into
+// global serialization registry.
+inline absl::Status RegisterMlDsaProtoSerialization() {
+  return internal::RegisterMlDsaProtoSerializationWithMutableRegistry(
+      internal::MutableSerializationRegistry::GlobalInstance());
+}
 
 }  // namespace tink
 }  // namespace crypto

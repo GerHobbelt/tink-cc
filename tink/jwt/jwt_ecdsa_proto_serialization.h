@@ -18,12 +18,18 @@
 #define TINK_JWT_JWT_ECDSA_PROTO_SERIALIZATION_H_
 
 #include "absl/status/status.h"
+#include "tink/internal/mutable_serialization_registry.h"
+#include "tink/jwt/internal/jwt_ecdsa_proto_serialization_impl.h"
 
 namespace crypto {
 namespace tink {
 
-// Registers proto parsers and serializers for JWT ECDSA parameters and keys.
-absl::Status RegisterJwtEcdsaProtoSerialization();
+// Registers proto parsers and serializers for JWT ECDSA parameters and keys
+// into global serialization registry.
+inline absl::Status RegisterJwtEcdsaProtoSerialization() {
+  return internal::RegisterJwtEcdsaProtoSerializationWithMutableRegistry(
+      internal::MutableSerializationRegistry::GlobalInstance());
+}
 
 }  // namespace tink
 }  // namespace crypto

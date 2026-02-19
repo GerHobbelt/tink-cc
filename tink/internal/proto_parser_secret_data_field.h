@@ -13,25 +13,18 @@
 // limitations under the License.
 //
 ///////////////////////////////////////////////////////////////////////////////
-#ifndef TINK_INTERNAL_PROTO_PARSER_SECRET_DATA_OWNING_FIELD_H_
-#define TINK_INTERNAL_PROTO_PARSER_SECRET_DATA_OWNING_FIELD_H_
+#ifndef TINK_INTERNAL_PROTO_PARSER_SECRET_DATA_FIELD_H_
+#define TINK_INTERNAL_PROTO_PARSER_SECRET_DATA_FIELD_H_
 
 #include <cstddef>
 #include <cstdint>
+#include <optional>
 
-#include "absl/crc/crc32c.h"
 #include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
-#include "tink/internal/call_with_core_dump_protection.h"
 #include "tink/internal/proto_parser_fields.h"
 #include "tink/internal/proto_parser_options.h"
 #include "tink/internal/proto_parser_state.h"
-#include "tink/internal/proto_parsing_helpers.h"
-#include "tink/internal/safe_stringops.h"
 #include "tink/secret_data.h"
-#include "tink/util/secret_data.h"
 
 namespace crypto {
 namespace tink {
@@ -39,81 +32,46 @@ namespace internal {
 namespace proto_parsing {
 
 // SecretDataField is a Field that owns a SecretData.
+//
+// Note:
+// * if options == ProtoFieldOptions::kAlwaysPresent, then the field is
+//   always present (i.e., has_value() is always true). This forces
+//   serialization as well, which is useful if the field is LEGACY_REQUIRED in
+//   proto.
+// * if options == ProtoFieldOptions::kExplicit, then the field is serialized
+//   only if the value is set (even if with a default value).
+// * if options == ProtoFieldOptions::kImplicit, then has_value() always returns
+//   true; the field is serialized only if not equal to the default value.
+//   (Note: Message implementations with kImplicit fields should not expose
+//   `has_*` methods for compatibility with Protobufs.)
+//
+// This class is not thread-safe.
 class SecretDataField final : public Field {
  public:
-  explicit SecretDataField(uint32_t field_number,
-                           ProtoFieldOptions options = ProtoFieldOptions::kNone)
-      : Field(field_number, WireType::kLengthDelimited), options_(options) {}
+  explicit SecretDataField(
+      uint32_t field_number,
+      ProtoFieldOptions options = ProtoFieldOptions::kExplicit);
   // Copyable and movable.
   SecretDataField(const SecretDataField&) = default;
   SecretDataField& operator=(const SecretDataField&) = default;
   SecretDataField(SecretDataField&&) noexcept = default;
   SecretDataField& operator=(SecretDataField&&) noexcept = default;
 
-  void Clear() override { value_ = SecretData(); }
-  bool ConsumeIntoMember(ParsingState& serialized) override {
-    absl::StatusOr<uint32_t> length = ConsumeVarintForSize(serialized);
-    if (!length.ok()) {
-      return false;
-    }
-    if (*length > serialized.RemainingData().size()) {
-      return false;
-    }
-    absl::string_view secret_bytes =
-        serialized.RemainingData().substr(0, *length);
-#if TINK_CPP_SECRET_DATA_IS_STD_VECTOR
-    value_ = util::SecretDataFromStringView(secret_bytes);
-    serialized.Advance(*length);
-#else
-    value_ = CallWithCoreDumpProtection([&]() {
-      absl::crc32c_t crc = serialized.AdvanceAndGetCrc(*length);
-      return SecretData(secret_bytes, crc);
-    });
-#endif
-    return true;
-  }
-  absl::Status SerializeWithTagInto(SerializationState& out) const override {
-    if (value_.empty() && options_ != ProtoFieldOptions::kAlwaysSerialize) {
-      return absl::OkStatus();
-    }
-    if (absl::Status result = SerializeWireTypeAndFieldNumber(
-            WireType::kLengthDelimited, FieldNumber(), out);
-        !result.ok()) {
-      return result;
-    }
-    if (absl::Status result = SerializeVarint(value_.size(), out);
-        !result.ok()) {
-      return result;
-    }
-    absl::string_view data_view = util::SecretDataAsStringView(value_);
-    if (out.GetBuffer().size() < data_view.size()) {
-      return absl::InvalidArgumentError(
-          absl::StrCat("Output buffer too small: ", out.GetBuffer().size(),
-                       " < ", data_view.size()));
-    }
-    SafeMemCopy(out.GetBuffer().data(), data_view.data(), data_view.size());
-#ifdef TINK_CPP_SECRET_DATA_IS_STD_VECTOR
-    out.Advance(data_view.size());
-#else
-    CallWithCoreDumpProtection(
-        [&]() { out.AdvanceWithCrc(data_view.size(), value_.GetCrc32c()); });
-#endif
-    return absl::OkStatus();
-  }
-  size_t GetSerializedSizeIncludingTag() const override {
-    if (value_.empty() && options_ != ProtoFieldOptions::kAlwaysSerialize) {
-      return 0;
-    }
-    return WireTypeAndFieldNumberLength(WireType::kLengthDelimited,
-                                        FieldNumber()) +
-           VarintLength(value_.size()) + value_.size();
-  }
+  void Clear() override;
+  bool ConsumeIntoMember(ParsingState& serialized) override;
+  bool SerializeWithTagInto(SerializationState& out) const override;
+  size_t GetSerializedSizeIncludingTag() const override;
 
-  const SecretData& value() const { return value_; }
-  SecretData* mutable_value() { return &value_; }
+  bool has_value() const;
+  const SecretData& value() const;
+  SecretData* mutable_value();
 
  private:
-  SecretData value_;
+  bool RequiresSerialization() const;
+
+  const SecretData& default_value() const;
+
+  std::optional<SecretData> value_;
   ProtoFieldOptions options_;
 };
 
@@ -122,4 +80,4 @@ class SecretDataField final : public Field {
 }  // namespace tink
 }  // namespace crypto
 
-#endif  // TINK_INTERNAL_PROTO_PARSER_SECRET_DATA_OWNING_FIELD_H_
+#endif  // TINK_INTERNAL_PROTO_PARSER_SECRET_DATA_FIELD_H_

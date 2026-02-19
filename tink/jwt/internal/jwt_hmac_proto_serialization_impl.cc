@@ -14,9 +14,10 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "tink/jwt/jwt_hmac_proto_serialization.h"
+#include "tink/jwt/internal/jwt_hmac_proto_serialization_impl.h"
 
 #include <array>
+#include <cstddef>
 #include <cstdint>
 #include <string>
 #include <utility>
@@ -36,6 +37,7 @@
 #include "tink/internal/proto_parser_fields.h"
 #include "tink/internal/proto_parser_message.h"
 #include "tink/internal/proto_parser_secret_data_field.h"
+#include "tink/internal/serialization_registry.h"
 #include "tink/internal/tink_proto_structs.h"
 #include "tink/jwt/jwt_hmac_key.h"
 #include "tink/jwt/jwt_hmac_parameters.h"
@@ -46,28 +48,27 @@
 
 namespace crypto {
 namespace tink {
+namespace internal {
 namespace {
 
 using ::crypto::tink::internal::proto_parsing::BytesField;
 using ::crypto::tink::internal::proto_parsing::EnumField;
 using ::crypto::tink::internal::proto_parsing::Field;
 using ::crypto::tink::internal::proto_parsing::Message;
-using ::crypto::tink::internal::proto_parsing::MessageFieldWithPresence;
+using ::crypto::tink::internal::proto_parsing::MessageField;
 using ::crypto::tink::internal::proto_parsing::SecretDataField;
 using ::crypto::tink::internal::proto_parsing::Uint32Field;
 
 using JwtHmacProtoParametersParserImpl =
-    internal::ParametersParserImpl<internal::ProtoParametersSerialization,
-                                   JwtHmacParameters>;
+    ParametersParserImpl<ProtoParametersSerialization, JwtHmacParameters>;
 using JwtHmacProtoParametersSerializerImpl =
-    internal::ParametersSerializerImpl<JwtHmacParameters,
-                                       internal::ProtoParametersSerialization>;
+    ParametersSerializerImpl<JwtHmacParameters, ProtoParametersSerialization>;
 using JwtHmacProtoKeyParserImpl =
-    internal::KeyParserImpl<internal::ProtoKeySerialization, JwtHmacKey>;
+    KeyParserImpl<ProtoKeySerialization, JwtHmacKey>;
 using JwtHmacProtoKeySerializerImpl =
-    internal::KeySerializerImpl<JwtHmacKey, internal::ProtoKeySerialization>;
+    KeySerializerImpl<JwtHmacKey, ProtoKeySerialization>;
 
-class JwtHmacCustomKidTP : public Message<JwtHmacCustomKidTP> {
+class JwtHmacCustomKidTP : public Message {
  public:
   JwtHmacCustomKidTP() = default;
   using Message::SerializeAsString;
@@ -75,10 +76,13 @@ class JwtHmacCustomKidTP : public Message<JwtHmacCustomKidTP> {
   const std::string& value() const { return value_.value(); }
   void set_value(absl::string_view value) { value_.set_value(value); }
 
-  std::array<const Field*, 1> GetFields() const { return {&value_}; }
-
  private:
-  BytesField<std::string> value_{1};
+  size_t num_fields() const override { return 1; }
+  const Field* field(int i) const override {
+    return std::array<const Field*, 1>{&value_}[i];
+  }
+
+  BytesField value_{1};
 };
 
 bool JwtHmacAlgorithmValid(int value) { return value >= 0 && value <= 3; }
@@ -90,7 +94,7 @@ enum class JwtHmacAlgorithmEnum : uint32_t {
   kHS512 = 3,
 };
 
-class JwtHmacKeyTP : public Message<JwtHmacKeyTP> {
+class JwtHmacKeyTP : public Message {
  public:
   JwtHmacKeyTP() = default;
   using Message::SerializeAsString;
@@ -117,18 +121,20 @@ class JwtHmacKeyTP : public Message<JwtHmacKeyTP> {
     *custom_kid_.mutable_value() = custom_kid;
   }
 
-  std::array<const Field*, 4> GetFields() const {
-    return {&version_, &algorithm_, &key_value_, &custom_kid_};
+ private:
+  size_t num_fields() const override { return 4; }
+  const Field* field(int i) const override {
+    return std::array<const Field*, 4>{&version_, &algorithm_, &key_value_,
+                                       &custom_kid_}[i];
   }
 
- private:
-  Uint32Field version_{1};
+  Uint32Field version_{1, ProtoFieldOptions::kImplicit};
   EnumField<JwtHmacAlgorithmEnum> algorithm_{2, &JwtHmacAlgorithmValid};
   SecretDataField key_value_{3};
-  MessageFieldWithPresence<JwtHmacCustomKidTP> custom_kid_{4};
+  MessageField<JwtHmacCustomKidTP> custom_kid_{4};
 };
 
-class JwtHmacKeyFormatTP : public Message<JwtHmacKeyFormatTP> {
+class JwtHmacKeyFormatTP : public Message {
  public:
   JwtHmacKeyFormatTP() = default;
   using Message::SerializeAsString;
@@ -144,28 +150,29 @@ class JwtHmacKeyFormatTP : public Message<JwtHmacKeyFormatTP> {
   uint32_t key_size() const { return key_size_.value(); }
   void set_key_size(uint32_t key_size) { key_size_.set_value(key_size); }
 
-  std::array<const Field*, 3> GetFields() const {
-    return {&version_, &algorithm_, &key_size_};
+ private:
+  size_t num_fields() const override { return 3; }
+  const Field* field(int i) const override {
+    return std::array<const Field*, 3>{&version_, &algorithm_, &key_size_}[i];
   }
 
- private:
-  Uint32Field version_{1};
+  Uint32Field version_{1, ProtoFieldOptions::kImplicit};
   EnumField<JwtHmacAlgorithmEnum> algorithm_{2, &JwtHmacAlgorithmValid};
-  Uint32Field key_size_{3};
+  Uint32Field key_size_{3, ProtoFieldOptions::kImplicit};
 };
 
 const absl::string_view kTypeUrl =
     "type.googleapis.com/google.crypto.tink.JwtHmacKey";
 
 absl::StatusOr<JwtHmacParameters::KidStrategy> ToKidStrategy(
-    internal::OutputPrefixTypeEnum output_prefix_type, bool has_custom_kid) {
+    OutputPrefixTypeEnum output_prefix_type, bool has_custom_kid) {
   switch (output_prefix_type) {
-    case internal::OutputPrefixTypeEnum::kRaw:
+    case OutputPrefixTypeEnum::kRaw:
       if (has_custom_kid) {
         return JwtHmacParameters::KidStrategy::kCustom;
       }
       return JwtHmacParameters::KidStrategy::kIgnored;
-    case internal::OutputPrefixTypeEnum::kTink:
+    case OutputPrefixTypeEnum::kTink:
       return JwtHmacParameters::KidStrategy::kBase64EncodedKeyId;
     default:
       return absl::InvalidArgumentError(
@@ -173,15 +180,15 @@ absl::StatusOr<JwtHmacParameters::KidStrategy> ToKidStrategy(
   }
 }
 
-absl::StatusOr<internal::OutputPrefixTypeEnum> ToOutputPrefixType(
+absl::StatusOr<OutputPrefixTypeEnum> ToOutputPrefixType(
     JwtHmacParameters::KidStrategy kid_strategy) {
   switch (kid_strategy) {
     case JwtHmacParameters::KidStrategy::kCustom:
-      return internal::OutputPrefixTypeEnum::kRaw;
+      return OutputPrefixTypeEnum::kRaw;
     case JwtHmacParameters::KidStrategy::kIgnored:
-      return internal::OutputPrefixTypeEnum::kRaw;
+      return OutputPrefixTypeEnum::kRaw;
     case JwtHmacParameters::KidStrategy::kBase64EncodedKeyId:
-      return internal::OutputPrefixTypeEnum::kTink;
+      return OutputPrefixTypeEnum::kTink;
     default:
       return absl::InvalidArgumentError(
           "Could not determine JwtHmacParameters::KidStrategy.");
@@ -219,7 +226,7 @@ absl::StatusOr<JwtHmacAlgorithmEnum> ToProtoAlgorithm(
 }
 
 absl::StatusOr<JwtHmacParameters> ToParameters(
-    int key_size_in_bytes, internal::OutputPrefixTypeEnum output_prefix_type,
+    int key_size_in_bytes, OutputPrefixTypeEnum output_prefix_type,
     JwtHmacAlgorithmEnum proto_algorithm, bool has_custom_kid) {
   absl::StatusOr<JwtHmacParameters::KidStrategy> kid_strategy =
       ToKidStrategy(output_prefix_type, has_custom_kid);
@@ -236,8 +243,8 @@ absl::StatusOr<JwtHmacParameters> ToParameters(
 }
 
 absl::StatusOr<JwtHmacParameters> ParseParameters(
-    const internal::ProtoParametersSerialization& serialization) {
-  const internal::KeyTemplateTP& key_template = serialization.GetKeyTemplate();
+    const ProtoParametersSerialization& serialization) {
+  const KeyTemplateTP& key_template = serialization.GetKeyTemplate();
   if (key_template.type_url() != kTypeUrl) {
     return absl::InvalidArgumentError(
         "Wrong type URL when parsing JwtHmacParameters.");
@@ -257,13 +264,13 @@ absl::StatusOr<JwtHmacParameters> ParseParameters(
                       proto_key_format.algorithm(), /*has_custom_kid=*/false);
 }
 
-absl::StatusOr<internal::ProtoParametersSerialization> SerializeParameters(
+absl::StatusOr<ProtoParametersSerialization> SerializeParameters(
     const JwtHmacParameters& parameters) {
   if (parameters.GetKidStrategy() == JwtHmacParameters::KidStrategy::kCustom) {
     return absl::InvalidArgumentError(
         "Unable to serialize JwtHmacParameters::KidStrategy::kCustom.");
   }
-  absl::StatusOr<internal::OutputPrefixTypeEnum> output_prefix_type =
+  absl::StatusOr<OutputPrefixTypeEnum> output_prefix_type =
       ToOutputPrefixType(parameters.GetKidStrategy());
   if (!output_prefix_type.ok()) {
     return output_prefix_type.status();
@@ -279,12 +286,12 @@ absl::StatusOr<internal::ProtoParametersSerialization> SerializeParameters(
   proto_key_format.set_key_size(parameters.KeySizeInBytes());
   proto_key_format.set_algorithm(*proto_algorithm);
 
-  return internal::ProtoParametersSerialization::Create(
+  return ProtoParametersSerialization::Create(
       kTypeUrl, *output_prefix_type, proto_key_format.SerializeAsString());
 }
 
 absl::StatusOr<JwtHmacKey> ParseKey(
-    const internal::ProtoKeySerialization& serialization,
+    const ProtoKeySerialization& serialization,
     absl::optional<SecretKeyAccessToken> token) {
   if (!token.has_value()) {
     return absl::InvalidArgumentError("SecretKeyAccess is required.");
@@ -324,7 +331,7 @@ absl::StatusOr<JwtHmacKey> ParseKey(
   return builder.Build(GetPartialKeyAccess());
 }
 
-absl::StatusOr<internal::ProtoKeySerialization> SerializeKey(
+absl::StatusOr<ProtoKeySerialization> SerializeKey(
     const JwtHmacKey& key, absl::optional<SecretKeyAccessToken> token) {
   if (!token.has_value()) {
     return absl::InvalidArgumentError("SecretKeyAccess is required.");
@@ -349,15 +356,15 @@ absl::StatusOr<internal::ProtoKeySerialization> SerializeKey(
     proto_key.mutable_custom_kid()->set_value(*key.GetKid());
   }
 
-  absl::StatusOr<internal::OutputPrefixTypeEnum> output_prefix_type =
+  absl::StatusOr<OutputPrefixTypeEnum> output_prefix_type =
       ToOutputPrefixType(key.GetParameters().GetKidStrategy());
   if (!output_prefix_type.ok()) {
     return output_prefix_type.status();
   }
 
-  return internal::ProtoKeySerialization::Create(
+  return ProtoKeySerialization::Create(
       kTypeUrl, RestrictedData(proto_key.SerializeAsSecretData(), *token),
-      internal::KeyMaterialTypeEnum::kSymmetric, *output_prefix_type,
+      KeyMaterialTypeEnum::kSymmetric, *output_prefix_type,
       key.GetIdRequirement());
 }
 
@@ -385,30 +392,50 @@ JwtHmacProtoKeySerializerImpl* JwtHmacProtoKeySerializer() {
 
 }  // namespace
 
-absl::Status RegisterJwtHmacProtoSerialization() {
-  absl::Status status =
-      internal::MutableSerializationRegistry::GlobalInstance()
-          .RegisterParametersParser(JwtHmacProtoParametersParser());
-  if (!status.ok()) {
+absl::Status RegisterJwtHmacProtoSerializationWithMutableRegistry(
+    MutableSerializationRegistry& registry) {
+  if (absl::Status status =
+          registry.RegisterParametersParser(JwtHmacProtoParametersParser());
+      !status.ok()) {
     return status;
   }
 
-  status =
-      internal::MutableSerializationRegistry::GlobalInstance()
-          .RegisterParametersSerializer(JwtHmacProtoParametersSerializer());
-  if (!status.ok()) {
+  if (absl::Status status = registry.RegisterParametersSerializer(
+          JwtHmacProtoParametersSerializer());
+      !status.ok()) {
     return status;
   }
 
-  status = internal::MutableSerializationRegistry::GlobalInstance()
-               .RegisterKeyParser(JwtHmacProtoKeyParser());
-  if (!status.ok()) {
+  if (absl::Status status = registry.RegisterKeyParser(JwtHmacProtoKeyParser());
+      !status.ok()) {
     return status;
   }
 
-  return internal::MutableSerializationRegistry::GlobalInstance()
-      .RegisterKeySerializer(JwtHmacProtoKeySerializer());
+  return registry.RegisterKeySerializer(JwtHmacProtoKeySerializer());
 }
 
+absl::Status RegisterJwtHmacProtoSerializationWithRegistryBuilder(
+    SerializationRegistry::Builder& builder) {
+  if (absl::Status status =
+          builder.RegisterParametersParser(JwtHmacProtoParametersParser());
+      !status.ok()) {
+    return status;
+  }
+
+  if (absl::Status status = builder.RegisterParametersSerializer(
+          JwtHmacProtoParametersSerializer());
+      !status.ok()) {
+    return status;
+  }
+
+  if (absl::Status status = builder.RegisterKeyParser(JwtHmacProtoKeyParser());
+      !status.ok()) {
+    return status;
+  }
+
+  return builder.RegisterKeySerializer(JwtHmacProtoKeySerializer());
+}
+
+}  // namespace internal
 }  // namespace tink
 }  // namespace crypto

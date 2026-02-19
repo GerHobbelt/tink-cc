@@ -18,12 +18,18 @@
 #define TINK_JWT_JWT_HMAC_PROTO_SERIALIZATION_H_
 
 #include "absl/status/status.h"
+#include "tink/internal/mutable_serialization_registry.h"
+#include "tink/jwt/internal/jwt_hmac_proto_serialization_impl.h"
 
 namespace crypto {
 namespace tink {
 
-// Registers proto parsers and serializers for JWT HMAC parameters and keys.
-absl::Status RegisterJwtHmacProtoSerialization();
+// Registers proto parsers and serializers for JWT HMAC parameters and keys
+// into global serialization registry.
+inline absl::Status RegisterJwtHmacProtoSerialization() {
+  return internal::RegisterJwtHmacProtoSerializationWithMutableRegistry(
+      internal::MutableSerializationRegistry::GlobalInstance());
+}
 
 }  // namespace tink
 }  // namespace crypto
