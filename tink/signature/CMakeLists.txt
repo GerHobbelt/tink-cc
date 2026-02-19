@@ -654,6 +654,7 @@ tink_cc_library(
     tink::signature::rsa_ssa_pkcs1_parameters
     tink::signature::rsa_ssa_pkcs1_private_key
     tink::signature::rsa_ssa_pkcs1_public_key
+    absl::nullability
     absl::status
     absl::statusor
     absl::string_view
@@ -673,7 +674,9 @@ tink_cc_library(
     tink::internal::parameters_serializer
     tink::internal::proto_key_serialization
     tink::internal::proto_parameters_serialization
-    tink::internal::proto_parser
+    tink::internal::proto_parser_enum_field
+    tink::internal::proto_parser_message
+    tink::internal::proto_parser_owning_fields
     tink::internal::tink_proto_structs
     tink::util::secret_data
 )

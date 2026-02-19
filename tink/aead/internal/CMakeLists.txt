@@ -887,7 +887,8 @@ tink_cc_library(
     tink::internal::parameters_serializer
     tink::internal::proto_key_serialization
     tink::internal::proto_parameters_serialization
-    tink::internal::proto_parser
+    tink::internal::proto_parser_message
+    tink::internal::proto_parser_owning_fields
     tink::internal::serialization_registry
     tink::internal::tink_proto_structs
     tink::util::status
@@ -1153,13 +1154,13 @@ tink_cc_test(
 tink_cc_library(
   NAME aes_ctr_hmac_proto_structs
   SRCS
-    aes_ctr_hmac_proto_structs.cc
     aes_ctr_hmac_proto_structs.h
   DEPS
-    absl::no_destructor
-    tink::internal::proto_parser
+    absl::string_view
+    tink::core::secret_data
+    tink::internal::proto_parser_message
+    tink::internal::proto_parser_owning_fields
     tink::mac::internal::hmac_proto_structs
-    tink::util::secret_data
 )
 
 tink_cc_test(
@@ -1170,7 +1171,10 @@ tink_cc_test(
     tink::aead::internal::aes_ctr_hmac_proto_structs
     gmock
     absl::statusor
+    absl::strings
     tink::internal::common_proto_enums
+    tink::internal::testing::field_with_number
+    tink::mac::internal::hmac_proto_structs
     tink::util::secret_data
     tink::util::test_matchers
     tink::util::test_util
