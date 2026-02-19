@@ -786,6 +786,8 @@ tink_cc_library(
     core/restricted_big_integer.cc
     restricted_big_integer.h
   DEPS
+    tink::core::restricted_data
+    tink::core::secret_data
     tink::core::secret_key_access_token
     absl::string_view
     crypto
@@ -866,6 +868,7 @@ tink_cc_test(
     tink::core::binary_keyset_reader
     gmock
     absl::status
+    tink::util::test_matchers
     tink::util::test_util
     tink::proto::tink_cc_proto
 )
@@ -1048,6 +1051,7 @@ tink_cc_test(
     tink::aead::aead_config
     tink::aead::aes_gcm_key_manager
     tink::util::test_keyset_handle
+    tink::util::test_matchers
     tink::proto::aes_gcm_cc_proto
     tink::proto::tink_cc_proto
 )
@@ -1064,6 +1068,7 @@ tink_cc_test(
     absl::status
     tink::util::status
     tink::util::test_keyset_handle
+    tink::util::test_matchers
     tink::util::test_util
     tink::proto::tink_cc_proto
 )

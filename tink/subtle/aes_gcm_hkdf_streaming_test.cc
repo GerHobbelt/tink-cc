@@ -17,7 +17,6 @@
 #include "tink/subtle/aes_gcm_hkdf_streaming.h"
 
 #include <memory>
-#include <sstream>
 #include <string>
 #include <utility>
 
@@ -29,16 +28,10 @@
 #include "absl/strings/str_cat.h"
 #include "tink/config/tink_fips.h"
 #include "tink/internal/test_random_access_stream.h"
-#include "tink/output_stream.h"
 #include "tink/random_access_stream.h"
 #include "tink/subtle/common_enums.h"
 #include "tink/subtle/random.h"
 #include "tink/subtle/streaming_aead_test_util.h"
-#include "tink/subtle/test_util.h"
-#include "tink/util/istream_input_stream.h"
-#include "tink/util/ostream_output_stream.h"
-#include "tink/util/status.h"
-#include "tink/util/statusor.h"
 #include "tink/util/test_matchers.h"
 #include "tink/util/test_util.h"
 
@@ -51,6 +44,7 @@ using ::crypto::tink::test::IsOk;
 using ::crypto::tink::test::IsOkAndHolds;
 using ::crypto::tink::test::StatusIs;
 using ::testing::Eq;
+using ::testing::Not;
 
 TEST(AesGcmHkdfStreamingTest, testBasic) {
   if (IsFipsModeEnabled()) {
@@ -75,14 +69,14 @@ TEST(AesGcmHkdfStreamingTest, testBasic) {
             params.ciphertext_segment_size = ct_segment_size;
             params.ciphertext_offset = ciphertext_offset;
             auto result = AesGcmHkdfStreaming::New(std::move(params));
-            EXPECT_TRUE(result.ok()) << result.status();
+            EXPECT_THAT(result, IsOk());
             auto streaming_aead = std::move(result.value());
 
             // Try to get an encrypting stream to a "null" ct_destination.
             std::string associated_data = "some associated data";
             auto failed_result =
                 streaming_aead->NewEncryptingStream(nullptr, associated_data);
-            EXPECT_FALSE(failed_result.ok());
+            EXPECT_THAT(failed_result, Not(IsOk()));
             EXPECT_EQ(absl::StatusCode::kInvalidArgument,
                       failed_result.status().code());
             EXPECT_PRED_FORMAT2(testing::IsSubstring, "non-null",
@@ -110,12 +104,12 @@ TEST(AesGcmHkdfStreamingTest, testIkmSmallerThanDerivedKey) {
   AesGcmHkdfStreaming::Params params;
   int ikm_size = 16;
   params.ikm = Random::GetRandomKeyBytes(ikm_size);
-  params.derived_key_size = 17;
+  params.derived_key_size = 32;
   params.ciphertext_segment_size = 100;
   params.ciphertext_offset = 10;
   params.hkdf_hash = SHA256;
   auto result = AesGcmHkdfStreaming::New(std::move(params));
-  EXPECT_FALSE(result.ok());
+  EXPECT_THAT(result, Not(IsOk()));
   EXPECT_EQ(absl::StatusCode::kInvalidArgument, result.status().code());
   EXPECT_PRED_FORMAT2(testing::IsSubstring, "ikm too small",
                       std::string(result.status().message()));
@@ -128,13 +122,13 @@ TEST(AesGcmHkdfStreamingTest, testIkmSize) {
   for (int ikm_size : {5, 10, 15}) {
     AesGcmHkdfStreaming::Params params;
     params.ikm = Random::GetRandomKeyBytes(ikm_size);
-    params.derived_key_size = 17;
+    params.derived_key_size = 32;
     params.ciphertext_segment_size = 100;
     params.ciphertext_offset = 0;
     params.hkdf_hash = SHA256;
 
     auto result = AesGcmHkdfStreaming::New(std::move(params));
-    EXPECT_FALSE(result.ok());
+    EXPECT_THAT(result, Not(IsOk()));
     EXPECT_EQ(absl::StatusCode::kInvalidArgument, result.status().code());
     EXPECT_PRED_FORMAT2(testing::IsSubstring, "ikm too small",
                         std::string(result.status().message()));
@@ -154,7 +148,7 @@ TEST(AesGcmHkdfStreamingTest, testWrongHkdfHash) {
   params.hkdf_hash = SHA384;
 
   auto result = AesGcmHkdfStreaming::New(std::move(params));
-  EXPECT_FALSE(result.ok());
+  EXPECT_THAT(result, Not(IsOk()));
   EXPECT_EQ(absl::StatusCode::kInvalidArgument, result.status().code());
   EXPECT_PRED_FORMAT2(testing::IsSubstring, "unsupported hkdf_hash",
                       std::string(result.status().message()));
@@ -173,7 +167,7 @@ TEST(AesGcmHkdfStreamingTest, testWrongDerivedKeySize) {
   params.hkdf_hash = SHA256;
 
   auto result = AesGcmHkdfStreaming::New(std::move(params));
-  EXPECT_FALSE(result.ok());
+  EXPECT_THAT(result, Not(IsOk()));
   EXPECT_EQ(absl::StatusCode::kInvalidArgument, result.status().code());
   EXPECT_PRED_FORMAT2(testing::IsSubstring, "must be 16 or 32",
                       std::string(result.status().message()));
@@ -192,7 +186,7 @@ TEST(AesGcmHkdfStreamingTest, testWrongCiphertextOffset) {
   params.hkdf_hash = SHA256;
 
   auto result = AesGcmHkdfStreaming::New(std::move(params));
-  EXPECT_FALSE(result.ok());
+  EXPECT_THAT(result, Not(IsOk()));
   EXPECT_EQ(absl::StatusCode::kInvalidArgument, result.status().code());
   EXPECT_PRED_FORMAT2(testing::IsSubstring, "must be non-negative",
                       std::string(result.status().message()));
@@ -211,7 +205,7 @@ TEST(AesGcmHkdfStreamingTest, testWrongCiphertextSegmentSize) {
   params.hkdf_hash = SHA256;
 
   auto result = AesGcmHkdfStreaming::New(std::move(params));
-  EXPECT_FALSE(result.ok());
+  EXPECT_THAT(result, Not(IsOk()));
   EXPECT_EQ(absl::StatusCode::kInvalidArgument, result.status().code());
   EXPECT_PRED_FORMAT2(testing::IsSubstring, "ciphertext_segment_size too small",
                       std::string(result.status().message()));
@@ -229,7 +223,7 @@ TEST(AesGcmHkdfStreamingTest, SizeIsUnauthenticated) {
   params.ciphertext_offset = 0;
   absl::StatusOr<std::unique_ptr<AesGcmHkdfStreaming>> streaming_aead =
       AesGcmHkdfStreaming::New(std::move(params));
-  ASSERT_THAT(streaming_aead.status(), IsOk());
+  ASSERT_THAT(streaming_aead, IsOk());
 
   std::string associated_data = "some associated data";
   // The header is 24 = 0x18 bytes for this key and Tink verifies that the
@@ -244,7 +238,7 @@ TEST(AesGcmHkdfStreamingTest, SizeIsUnauthenticated) {
               absl::make_unique<internal::TestRandomAccessStream>(
                   wrong_ciphertext),
               associated_data);
-  ASSERT_THAT(plaintext_stream.status(), IsOk());
+  ASSERT_THAT(plaintext_stream, IsOk());
   // 53 is the length of "wrong_ciphertext" minus the overhead (header + tag).
   EXPECT_THAT((*plaintext_stream)->size(), IsOkAndHolds(Eq(53)));
 }

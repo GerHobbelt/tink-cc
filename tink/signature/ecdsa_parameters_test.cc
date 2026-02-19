@@ -17,6 +17,7 @@
 #include "tink/signature/ecdsa_parameters.h"
 
 #include <memory>
+#include <utility>
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -254,12 +255,7 @@ TEST(EcdsaParametersTest, CopyConstructor) {
 
   EcdsaParameters copy(*parameters);
 
-  EXPECT_THAT(copy.GetCurveType(), Eq(EcdsaParameters::CurveType::kNistP256));
-  EXPECT_THAT(copy.GetHashType(), Eq(EcdsaParameters::HashType::kSha256));
-  EXPECT_THAT(copy.GetSignatureEncoding(),
-              Eq(EcdsaParameters::SignatureEncoding::kDer));
-  EXPECT_THAT(copy.GetVariant(), Eq(EcdsaParameters::Variant::kTink));
-  EXPECT_THAT(copy.HasIdRequirement(), IsTrue());
+  EXPECT_THAT(copy, Eq(*parameters));
 }
 
 TEST(EcdsaParametersTest, CopyAssignment) {
@@ -272,14 +268,59 @@ TEST(EcdsaParametersTest, CopyAssignment) {
           .Build();
   ASSERT_THAT(parameters, IsOk());
 
-  EcdsaParameters copy = *parameters;
+  absl::StatusOr<EcdsaParameters> copy =
+      EcdsaParameters::Builder()
+          .SetCurveType(EcdsaParameters::CurveType::kNistP384)
+          .SetHashType(EcdsaParameters::HashType::kSha384)
+          .SetSignatureEncoding(EcdsaParameters::SignatureEncoding::kIeeeP1363)
+          .SetVariant(EcdsaParameters::Variant::kLegacy)
+          .Build();
+  ASSERT_THAT(copy, IsOk());
 
-  EXPECT_THAT(copy.GetCurveType(), Eq(EcdsaParameters::CurveType::kNistP256));
-  EXPECT_THAT(copy.GetHashType(), Eq(EcdsaParameters::HashType::kSha256));
-  EXPECT_THAT(copy.GetSignatureEncoding(),
-              Eq(EcdsaParameters::SignatureEncoding::kDer));
-  EXPECT_THAT(copy.GetVariant(), Eq(EcdsaParameters::Variant::kTink));
-  EXPECT_THAT(copy.HasIdRequirement(), IsTrue());
+  *copy = *parameters;
+
+  EXPECT_THAT(*copy, Eq(*parameters));
+}
+
+TEST(EcdsaParametersTest, MoveConstructor) {
+  absl::StatusOr<EcdsaParameters> parameters =
+      EcdsaParameters::Builder()
+          .SetCurveType(EcdsaParameters::CurveType::kNistP256)
+          .SetHashType(EcdsaParameters::HashType::kSha256)
+          .SetSignatureEncoding(EcdsaParameters::SignatureEncoding::kDer)
+          .SetVariant(EcdsaParameters::Variant::kTink)
+          .Build();
+  ASSERT_THAT(parameters, IsOk());
+
+  EcdsaParameters expected = *parameters;
+  EcdsaParameters moved(std::move(*parameters));
+
+  EXPECT_THAT(moved, Eq(expected));
+}
+
+TEST(EcdsaParametersTest, MoveAssignment) {
+  absl::StatusOr<EcdsaParameters> parameters =
+      EcdsaParameters::Builder()
+          .SetCurveType(EcdsaParameters::CurveType::kNistP256)
+          .SetHashType(EcdsaParameters::HashType::kSha256)
+          .SetSignatureEncoding(EcdsaParameters::SignatureEncoding::kDer)
+          .SetVariant(EcdsaParameters::Variant::kTink)
+          .Build();
+  ASSERT_THAT(parameters, IsOk());
+
+  absl::StatusOr<EcdsaParameters> moved =
+      EcdsaParameters::Builder()
+          .SetCurveType(EcdsaParameters::CurveType::kNistP384)
+          .SetHashType(EcdsaParameters::HashType::kSha384)
+          .SetSignatureEncoding(EcdsaParameters::SignatureEncoding::kIeeeP1363)
+          .SetVariant(EcdsaParameters::Variant::kLegacy)
+          .Build();
+  ASSERT_THAT(moved, IsOk());
+
+  EcdsaParameters expected = *parameters;
+  *moved = std::move(*parameters);
+
+  EXPECT_THAT(*moved, Eq(expected));
 }
 
 TEST_P(EcdsaParametersTest, ParametersEquals) {
@@ -428,15 +469,14 @@ TEST(EcdsaParametersTest, GetPrivateKeyLengthP256) {
   EXPECT_THAT(parameters->GetPrivateKeyLength(), Eq(32));
 }
 
-
 TEST(EcdsaParametersTest, GetPrivateKeyLengthP384) {
   absl::StatusOr<EcdsaParameters> parameters =
-    EcdsaParameters::Builder()
-    .SetCurveType(EcdsaParameters::CurveType::kNistP384)
-    .SetHashType(EcdsaParameters::HashType::kSha512)
-        .SetSignatureEncoding(EcdsaParameters::SignatureEncoding::kDer)
-        .SetVariant(EcdsaParameters::Variant::kTink)
-        .Build();
+      EcdsaParameters::Builder()
+          .SetCurveType(EcdsaParameters::CurveType::kNistP384)
+          .SetHashType(EcdsaParameters::HashType::kSha512)
+          .SetSignatureEncoding(EcdsaParameters::SignatureEncoding::kDer)
+          .SetVariant(EcdsaParameters::Variant::kTink)
+          .Build();
   ASSERT_THAT(parameters, IsOk());
 
   EXPECT_THAT(parameters->GetPrivateKeyLength(), Eq(48));
@@ -454,7 +494,6 @@ TEST(EcdsaParametersTest, GetPrivateKeyLengthP521) {
 
   EXPECT_THAT(parameters->GetPrivateKeyLength(), Eq(66));
 }
-
 
 }  // namespace
 }  // namespace tink

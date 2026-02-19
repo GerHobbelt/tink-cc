@@ -141,26 +141,25 @@ TEST_F(SignatureConfigTest, PublicKeySignWrapperRegistered) {
                     "not available";
   }
 
-  ASSERT_TRUE(SignatureConfig::Register().ok());
+  ASSERT_THAT(SignatureConfig::Register(), IsOk());
 
   google::crypto::tink::KeysetInfo::KeyInfo key_info;
   key_info.set_status(google::crypto::tink::KeyStatusType::ENABLED);
   key_info.set_key_id(1234);
   key_info.set_output_prefix_type(google::crypto::tink::OutputPrefixType::TINK);
-  auto primitive_set = absl::make_unique<PrimitiveSet<PublicKeySign>>();
-  ASSERT_THAT(
-      primitive_set->set_primary(
-          primitive_set
-              ->AddPrimitive(absl::make_unique<DummyPublicKeySign>("dummy"),
-                             key_info)
-              .value()),
-      IsOk());
+  PrimitiveSet<PublicKeySign>::Builder sign_set_builder;
+  sign_set_builder.AddPrimaryPrimitive(
+      absl::make_unique<DummyPublicKeySign>("dummy"), key_info);
+  absl::StatusOr<PrimitiveSet<PublicKeySign>> primitive_set =
+      std::move(sign_set_builder).Build();
+  ASSERT_THAT(primitive_set, IsOk());
 
-  auto wrapped = Registry::Wrap(std::move(primitive_set));
+  auto wrapped = Registry::Wrap(
+      std::make_unique<PrimitiveSet<PublicKeySign>>(*std::move(primitive_set)));
 
-  ASSERT_TRUE(wrapped.ok()) << wrapped.status();
+  ASSERT_THAT(wrapped, IsOk());
   auto signature_result = wrapped.value()->Sign("message");
-  ASSERT_TRUE(signature_result.ok());
+  ASSERT_THAT(signature_result, IsOk());
 
   std::string prefix = CryptoFormat::GetOutputPrefix(key_info).value();
   EXPECT_EQ(signature_result.value(),
@@ -176,28 +175,29 @@ TEST_F(SignatureConfigTest, PublicKeyVerifyWrapperRegistered) {
                     "not available";
   }
 
-  ASSERT_TRUE(SignatureConfig::Register().ok());
+  ASSERT_THAT(SignatureConfig::Register(), IsOk());
 
   google::crypto::tink::KeysetInfo::KeyInfo key_info;
   key_info.set_status(google::crypto::tink::KeyStatusType::ENABLED);
   key_info.set_key_id(1234);
   key_info.set_output_prefix_type(google::crypto::tink::OutputPrefixType::TINK);
-  auto primitive_set = absl::make_unique<PrimitiveSet<PublicKeyVerify>>();
-  ASSERT_THAT(
-      primitive_set->set_primary(
-          primitive_set
-              ->AddPrimitive(absl::make_unique<DummyPublicKeyVerify>("dummy"),
-                             key_info)
-              .value()),
-      IsOk());
+  PrimitiveSet<PublicKeyVerify>::Builder verify_set_builder;
+  verify_set_builder.AddPrimaryPrimitive(
+      absl::make_unique<DummyPublicKeyVerify>("dummy"), key_info);
+  absl::StatusOr<PrimitiveSet<PublicKeyVerify>> primitive_set =
+      std::move(verify_set_builder).Build();
+  ASSERT_THAT(primitive_set, IsOk());
+
   std::string prefix = CryptoFormat::GetOutputPrefix(key_info).value();
   std::string signature = DummyPublicKeySign("dummy").Sign("message").value();
 
-  auto wrapped = Registry::Wrap(std::move(primitive_set));
+  auto wrapped = Registry::Wrap(std::make_unique<PrimitiveSet<PublicKeyVerify>>(
+      *std::move(primitive_set)));
 
-  ASSERT_TRUE(wrapped.ok()) << wrapped.status();
-  ASSERT_TRUE(
-      wrapped.value()->Verify(absl::StrCat(prefix, signature), "message").ok());
+  ASSERT_THAT(wrapped, IsOk());
+  ASSERT_THAT(
+      wrapped.value()->Verify(absl::StrCat(prefix, signature), "message"),
+      IsOk());
 }
 
 // FIPS-only mode tests

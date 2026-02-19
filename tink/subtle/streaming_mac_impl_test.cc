@@ -45,6 +45,7 @@ using ::crypto::tink::test::IsOk;
 using ::crypto::tink::test::StatusIs;
 using ::crypto::tink::util::SecretDataFromStringView;
 using ::testing::HasSubstr;
+using ::testing::Not;
 
 // A dummy implementation of Stateful Mac interface.
 // An instance of DummyStatefulMac can be identified by a name specified
@@ -167,7 +168,7 @@ TEST(StreamingMacImplTest, ComputeCheckStreamPosition) {
   // Check position in first buffer returned by Next();
   void* buffer;
   absl::StatusOr<int> next_result = output_stream->Next(&buffer);
-  EXPECT_THAT(next_result, IsOk());
+  ASSERT_THAT(next_result, IsOk());
   int buffer_size = *next_result;
   EXPECT_EQ(buffer_size, output_stream->Position());
 
@@ -184,7 +185,7 @@ TEST(StreamingMacImplTest, ComputeCloseTwiceError) {
 
   // Try closing the stream again.
   auto reclose_status = output_stream->Close();
-  EXPECT_FALSE(reclose_status.ok());
+  EXPECT_THAT(reclose_status, Not(IsOk()));
   EXPECT_EQ(absl::StatusCode::kFailedPrecondition, reclose_status.code());
 }
 
@@ -267,7 +268,7 @@ TEST(StreamingMacImplTest, VerifyCheckStreamPosition) {
   // Check position in first buffer returned by Next();
   void* buffer;
   absl::StatusOr<int> next_result = output_stream->Next(&buffer);
-  EXPECT_THAT(next_result, IsOk());
+  ASSERT_THAT(next_result, IsOk());
   int buffer_size = *next_result;
   EXPECT_EQ(buffer_size, output_stream->Position());
 
@@ -285,7 +286,7 @@ TEST(StreamingMacImplTest, VerifyCloseTwiceError) {
 
   // Try closing the stream again.
   auto reclose_status = output_stream->Close();
-  EXPECT_FALSE(reclose_status.ok());
+  EXPECT_THAT(reclose_status, Not(IsOk()));
   EXPECT_EQ(absl::StatusCode::kFailedPrecondition, reclose_status.code());
 }
 

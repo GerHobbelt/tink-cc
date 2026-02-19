@@ -20,6 +20,8 @@
 #include <cstdint>
 
 #include "absl/strings/string_view.h"
+#include "tink/restricted_data.h"
+#include "tink/secret_data.h"
 #include "tink/secret_key_access_token.h"
 #include "tink/util/secret_data.h"
 

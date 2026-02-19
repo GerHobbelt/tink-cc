@@ -16,6 +16,7 @@
 
 #include "tink/jwt/jwk_set_converter.h"
 
+#include <cstddef>
 #include <memory>
 #include <string>
 #include <tuple>
@@ -559,7 +560,7 @@ INSTANTIATE_TEST_SUITE_P(
 
 class JwkSetToPublicKeysetHandleTest
     : public testing::TestWithParam<std::tuple<std::string, std::string>> {
-  void SetUp() override { ASSERT_TRUE(JwtSignatureRegister().ok()); }
+  void SetUp() override { ASSERT_THAT(JwtSignatureRegister(), IsOk()); }
 };
 
 TEST_P(JwkSetToPublicKeysetHandleTest, VerifyValidJwtWithSuccess) {
@@ -1187,7 +1188,7 @@ struct SmallCordinateTestCase {
   std::string name;
   std::string public_keyset;
   std::string jwk_set;
-  int expected_encoded_size;
+  size_t expected_encoded_size;
 };
 
 class JwkSetSmallCoordinateConverterTest

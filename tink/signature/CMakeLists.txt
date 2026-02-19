@@ -88,7 +88,9 @@ tink_cc_library(
     signature_key_templates.h
   DEPS
     absl::core_headers
+    absl::absl_check
     absl::memory
+    absl::statusor
     absl::strings
     crypto
     tink::internal::bn_util
@@ -665,7 +667,9 @@ tink_cc_library(
     rsa_ssa_pss_parameters.h
   DEPS
     tink::signature::signature_parameters
+    absl::absl_check
     absl::status
+    absl::statusor
     absl::strings
     absl::string_view
     absl::optional
@@ -675,7 +679,6 @@ tink_cc_library(
     tink::internal::bn_util
     tink::internal::rsa_util
     tink::internal::ssl_unique_ptr
-    tink::util::status
     tink::util::statusor
 )
 
@@ -748,8 +751,6 @@ tink_cc_library(
     absl::string_view
     absl::optional
     tink::core::parameters
-    tink::util::status
-    tink::util::statusor
 )
 
 tink_cc_library(
@@ -786,22 +787,28 @@ tink_cc_library(
     tink::signature::ecdsa_parameters
     tink::signature::ecdsa_public_key
     tink::signature::signature_private_key
+    absl::core_headers
     absl::status
+    absl::statusor
     absl::strings
+    absl::synchronization
+    absl::optional
     crypto
     tink::core::ec_point
     tink::core::insecure_secret_key_access
     tink::core::key
     tink::core::partial_key_access_token
     tink::core::restricted_big_integer
+    tink::core::restricted_data
     tink::internal::bn_util
     tink::internal::call_with_core_dump_protection
     tink::internal::ec_util
     tink::internal::err_util
+    tink::internal::safe_stringops
+    tink::internal::secret_buffer
     tink::internal::ssl_unique_ptr
     tink::subtle::common_enums
-    tink::util::status
-    tink::util::statusor
+    tink::util::secret_data
 )
 
 tink_cc_library(
@@ -1673,10 +1680,12 @@ tink_cc_test(
     tink::core::key
     tink::core::partial_key_access
     tink::core::restricted_big_integer
+    tink::core::restricted_data
     tink::internal::ec_util
     tink::subtle::common_enums
     tink::util::secret_data
     tink::util::test_matchers
+    tink::util::test_util
 )
 
 tink_cc_test(
@@ -1700,7 +1709,6 @@ tink_cc_test(
     tink::core::key
     tink::core::parameters
     tink::core::partial_key_access
-    tink::core::restricted_big_integer
     tink::core::restricted_data
     tink::internal::ec_util
     tink::internal::mutable_serialization_registry

@@ -127,26 +127,25 @@ TEST_F(MacConfigTest, MacWrappersRegistered) {
     GTEST_SKIP() << "Not supported in FIPS-only mode";
   }
 
-  ASSERT_TRUE(MacConfig::Register().ok());
+  ASSERT_THAT(MacConfig::Register(), IsOk());
 
   KeysetInfo::KeyInfo key_info;
   key_info.set_status(KeyStatusType::ENABLED);
   key_info.set_key_id(1234);
   key_info.set_output_prefix_type(OutputPrefixType::RAW);
-  auto primitive_set = absl::make_unique<PrimitiveSet<Mac>>();
-  ASSERT_TRUE(
-      primitive_set
-          ->set_primary(
-              primitive_set
-                  ->AddPrimitive(absl::make_unique<DummyMac>("dummy"), key_info)
-                  .value())
-          .ok());
+  PrimitiveSet<Mac>::Builder mac_set_builder;
+  mac_set_builder.AddPrimaryPrimitive(absl::make_unique<DummyMac>("dummy"),
+                                      key_info);
+  absl::StatusOr<PrimitiveSet<Mac>> primitive_set =
+      std::move(mac_set_builder).Build();
+  ASSERT_THAT(primitive_set, IsOk());
 
-  auto primitive_result = Registry::Wrap(std::move(primitive_set));
+  auto primitive_result = Registry::Wrap(
+      std::make_unique<PrimitiveSet<Mac>>(*std::move(primitive_set)));
 
-  ASSERT_TRUE(primitive_result.ok()) << primitive_result.status();
+  ASSERT_THAT(primitive_result, IsOk());
   auto mac_result = primitive_result.value()->ComputeMac("verified text");
-  ASSERT_TRUE(mac_result.ok());
+  ASSERT_THAT(mac_result, IsOk());
 
   EXPECT_TRUE(
       DummyMac("dummy").VerifyMac(mac_result.value(), "verified text").ok());
