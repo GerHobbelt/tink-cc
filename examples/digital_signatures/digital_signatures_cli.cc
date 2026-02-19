@@ -22,7 +22,7 @@
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
@@ -49,15 +49,15 @@ constexpr absl::string_view kVerify = "verify";
 
 void ValidateParams() {
   // [START_EXCLUDE]
-  CHECK(absl::GetFlag(FLAGS_mode) == kSign ||
+  ABSL_CHECK(absl::GetFlag(FLAGS_mode) == kSign ||
         absl::GetFlag(FLAGS_mode) == kVerify)
       << "Invalid mode; must be `" << kSign << "` or `" << kVerify << "`"
       << '\n';
-  CHECK(!absl::GetFlag(FLAGS_keyset_filename).empty())
+  ABSL_CHECK(!absl::GetFlag(FLAGS_keyset_filename).empty())
       << "Keyset file must be specified";
-  CHECK(!absl::GetFlag(FLAGS_input_filename).empty())
+  ABSL_CHECK(!absl::GetFlag(FLAGS_input_filename).empty())
       << "Input file must be specified";
-  CHECK(!absl::GetFlag(FLAGS_signature_filename).empty())
+  ABSL_CHECK(!absl::GetFlag(FLAGS_signature_filename).empty())
       << "Signature file must be specified";
   // [END_EXCLUDE]
 }
@@ -134,7 +134,7 @@ int main(int argc, char** argv) {
               << " over the content of " << input_filename << '\n';
   }
 
-  CHECK_OK(tink_cc_examples::DigitalSignatureCli(
+  ABSL_CHECK_OK(tink_cc_examples::DigitalSignatureCli(
       mode, keyset_filename, input_filename, signature_filename));
   return 0;
 }

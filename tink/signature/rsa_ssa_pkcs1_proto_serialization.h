@@ -18,12 +18,18 @@
 #define TINK_SIGNATURE_RSA_SSA_PKCS1_PROTO_SERIALIZATION_H_
 
 #include "absl/status/status.h"
+#include "tink/internal/mutable_serialization_registry.h"
+#include "tink/signature/internal/rsa_ssa_pkcs1_proto_serialization_impl.h"
 
 namespace crypto {
 namespace tink {
 
-// Registers proto parsers and serializers for RsaSsaPkcs1 parameters and keys.
-absl::Status RegisterRsaSsaPkcs1ProtoSerialization();
+// Registers proto parsers and serializers for RSA-SSA-PKCS1 parameters and keys
+// into global serialization registry.
+inline absl::Status RegisterRsaSsaPkcs1ProtoSerialization() {
+  return internal::RegisterRsaSsaPkcs1ProtoSerializationWithMutableRegistry(
+      internal::MutableSerializationRegistry::GlobalInstance());
+}
 
 }  // namespace tink
 }  // namespace crypto

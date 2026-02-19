@@ -34,9 +34,9 @@
 #include "tink/internal/proto_key_serialization.h"
 #include "tink/internal/proto_parameters_serialization.h"
 #include "tink/internal/proto_parser_enum_field.h"
+#include "tink/internal/proto_parser_fields.h"
 #include "tink/internal/proto_parser_message.h"
-#include "tink/internal/proto_parser_owning_fields.h"
-#include "tink/internal/proto_parser_secret_data_owning_field.h"
+#include "tink/internal/proto_parser_secret_data_field.h"
 #include "tink/internal/serialization_registry.h"
 #include "tink/internal/tink_proto_structs.h"
 #include "tink/partial_key_access.h"
@@ -51,17 +51,17 @@ namespace tink {
 namespace internal {
 namespace {
 
-using ::crypto::tink::internal::proto_parsing::EnumOwningField;
+using ::crypto::tink::internal::proto_parsing::BytesField;
+using ::crypto::tink::internal::proto_parsing::EnumField;
+using ::crypto::tink::internal::proto_parsing::Field;
 using ::crypto::tink::internal::proto_parsing::Message;
-using ::crypto::tink::internal::proto_parsing::MessageOwningField;
-using ::crypto::tink::internal::proto_parsing::OwningBytesField;
-using ::crypto::tink::internal::proto_parsing::OwningField;
-using ::crypto::tink::internal::proto_parsing::SecretDataOwningField;
-using ::crypto::tink::internal::proto_parsing::Uint32OwningField;
+using ::crypto::tink::internal::proto_parsing::MessageField;
+using ::crypto::tink::internal::proto_parsing::SecretDataField;
+using ::crypto::tink::internal::proto_parsing::Uint32Field;
 
-class ProtoHkdfPrfParams : public Message<ProtoHkdfPrfParams> {
+class HkdfPrfParamsTP : public Message<HkdfPrfParamsTP> {
  public:
-  ProtoHkdfPrfParams() = default;
+  HkdfPrfParamsTP() = default;
   using Message::SerializeAsString;
 
   HashTypeEnum hash() const { return hash_.value(); }
@@ -70,48 +70,46 @@ class ProtoHkdfPrfParams : public Message<ProtoHkdfPrfParams> {
   const std::string& salt() const { return salt_.value(); }
   void set_salt(absl::string_view salt) { salt_.set_value(salt); }
 
-  std::array<const OwningField*, 2> GetFields() const {
-    return {&hash_, &salt_};
-  }
+  std::array<const Field*, 2> GetFields() const { return {&hash_, &salt_}; }
 
  private:
-  EnumOwningField<HashTypeEnum> hash_{1, &HashTypeEnumIsValid};
-  OwningBytesField<std::string> salt_{2};
+  EnumField<HashTypeEnum> hash_{1, &HashTypeEnumIsValid};
+  BytesField<std::string> salt_{2};
 };
 
-class ProtoHkdfPrfKey : public Message<ProtoHkdfPrfKey> {
+class HkdfPrfKeyTP : public Message<HkdfPrfKeyTP> {
  public:
-  ProtoHkdfPrfKey() = default;
+  HkdfPrfKeyTP() = default;
   using Message::SerializeAsString;
 
   uint32_t version() const { return version_.value(); }
   void set_version(uint32_t version) { version_.set_value(version); }
 
-  const ProtoHkdfPrfParams& params() const { return params_.value(); }
-  ProtoHkdfPrfParams* mutable_params() { return params_.mutable_value(); }
+  const HkdfPrfParamsTP& params() const { return params_.value(); }
+  HkdfPrfParamsTP* mutable_params() { return params_.mutable_value(); }
 
   const SecretData& key_value() const { return key_value_.value(); }
   void set_key_value(SecretData key_value) {
     *key_value_.mutable_value() = std::move(key_value);
   }
 
-  std::array<const OwningField*, 3> GetFields() const {
+  std::array<const Field*, 3> GetFields() const {
     return {&version_, &params_, &key_value_};
   }
 
  private:
-  Uint32OwningField version_{1};
-  MessageOwningField<ProtoHkdfPrfParams> params_{2};
-  SecretDataOwningField key_value_{3};
+  Uint32Field version_{1};
+  MessageField<HkdfPrfParamsTP> params_{2};
+  SecretDataField key_value_{3};
 };
 
-class ProtoHkdfPrfKeyFormat : public Message<ProtoHkdfPrfKeyFormat> {
+class HkdfPrfKeyFormatTP : public Message<HkdfPrfKeyFormatTP> {
  public:
-  ProtoHkdfPrfKeyFormat() = default;
+  HkdfPrfKeyFormatTP() = default;
   using Message::SerializeAsString;
 
-  const ProtoHkdfPrfParams& params() const { return params_.value(); }
-  ProtoHkdfPrfParams* mutable_params() { return params_.mutable_value(); }
+  const HkdfPrfParamsTP& params() const { return params_.value(); }
+  HkdfPrfParamsTP* mutable_params() { return params_.mutable_value(); }
 
   uint32_t key_size() const { return key_size_.value(); }
   void set_key_size(uint32_t key_size) { key_size_.set_value(key_size); }
@@ -119,14 +117,14 @@ class ProtoHkdfPrfKeyFormat : public Message<ProtoHkdfPrfKeyFormat> {
   uint32_t version() const { return version_.value(); }
   void set_version(uint32_t version) { version_.set_value(version); }
 
-  std::array<const OwningField*, 3> GetFields() const {
+  std::array<const Field*, 3> GetFields() const {
     return {&params_, &key_size_, &version_};
   }
 
  private:
-  MessageOwningField<ProtoHkdfPrfParams> params_{1};
-  Uint32OwningField key_size_{2};
-  Uint32OwningField version_{3};
+  MessageField<HkdfPrfParamsTP> params_{1};
+  Uint32Field key_size_{2};
+  Uint32Field version_{3};
 };
 
 using HkdfPrfProtoParametersParserImpl =
@@ -179,19 +177,19 @@ absl::StatusOr<HashTypeEnum> ToProtoHashType(
 
 absl::StatusOr<HkdfPrfParameters> ParseParameters(
     const ProtoParametersSerialization& serialization) {
-  if (serialization.GetProtoKeyTemplate().type_url() != kTypeUrl) {
+  if (serialization.GetKeyTemplate().type_url() != kTypeUrl) {
     return absl::InvalidArgumentError(
         "Wrong type URL when parsing HkdfPrfParameters.");
   }
-  if (serialization.GetProtoKeyTemplate().output_prefix_type() !=
+  if (serialization.GetKeyTemplate().output_prefix_type() !=
       OutputPrefixTypeEnum::kRaw) {
     return absl::InvalidArgumentError(
         "Output prefix type must be RAW for HkdfPrfParameters.");
   }
 
-  ProtoHkdfPrfKeyFormat proto_key_format;
+  HkdfPrfKeyFormatTP proto_key_format;
   if (!proto_key_format.ParseFromString(
-          serialization.GetProtoKeyTemplate().value())) {
+          serialization.GetKeyTemplate().value())) {
     return absl::Status(absl::StatusCode::kInvalidArgument,
                         "Failed to parse HkdfPrfKeyFormat proto");
   }
@@ -223,7 +221,7 @@ absl::StatusOr<ProtoParametersSerialization> SerializeParameters(
     return proto_hash_type.status();
   }
 
-  ProtoHkdfPrfKeyFormat proto_key_format;
+  HkdfPrfKeyFormatTP proto_key_format;
   proto_key_format.set_version(0);
   proto_key_format.set_key_size(parameters.KeySizeInBytes());
   proto_key_format.mutable_params()->set_hash(*proto_hash_type);
@@ -251,7 +249,7 @@ absl::StatusOr<HkdfPrfKey> ParseKey(
         "Output prefix type must be RAW for HkdfPrfKey.");
   }
 
-  ProtoHkdfPrfKey proto_key;
+  HkdfPrfKeyTP proto_key;
   if (!proto_key.ParseFromString(
           serialization.SerializedKeyProto().GetSecret(*token))) {
     return absl::InvalidArgumentError("Failed to parse HkdfPrfKey proto");
@@ -300,7 +298,7 @@ absl::StatusOr<ProtoKeySerialization> SerializeKey(
     return proto_hash_type.status();
   }
 
-  ProtoHkdfPrfKey proto_key;
+  HkdfPrfKeyTP proto_key;
   proto_key.set_version(0);
   proto_key.mutable_params()->set_hash(*proto_hash_type);
   if (key.GetParameters().GetSalt().has_value()) {

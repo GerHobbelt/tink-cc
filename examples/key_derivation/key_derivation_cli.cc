@@ -22,7 +22,7 @@
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "absl/status/status.h"
 #include "tink/aead.h"
 #include "tink/aead/aead_config.h"
@@ -47,11 +47,11 @@ using ::crypto::tink::KeysetHandle;
 
 void ValidateParams() {
   // [START_EXCLUDE]
-  CHECK(!absl::GetFlag(FLAGS_keyset_filename).empty())
+  ABSL_CHECK(!absl::GetFlag(FLAGS_keyset_filename).empty())
       << "Keyset file must be specified";
-  CHECK(!absl::GetFlag(FLAGS_salt_filename).empty())
+  ABSL_CHECK(!absl::GetFlag(FLAGS_salt_filename).empty())
       << "Input file must be specified";
-  CHECK(!absl::GetFlag(FLAGS_derived_keyset_filename).empty())
+  ABSL_CHECK(!absl::GetFlag(FLAGS_derived_keyset_filename).empty())
       << "Output file must be specified";
   // [END_EXCLUDE]
 }
@@ -138,8 +138,8 @@ int main(int argc, char** argv) {
   std::clog << "The resulting derived keyset will be written to "
             << derived_keyset_filename << "." << '\n';
 
-  CHECK_OK(tink_cc_examples::KeyDerivationCli(keyset_filename, salt_filename,
-                                              derived_keyset_filename));
+  ABSL_CHECK_OK(tink_cc_examples::KeyDerivationCli(
+      keyset_filename, salt_filename, derived_keyset_filename));
   return 0;
 }
 // [END key-derivation-example]

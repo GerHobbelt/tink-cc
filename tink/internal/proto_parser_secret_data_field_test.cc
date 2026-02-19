@@ -1,4 +1,4 @@
-// Copyright 2024 Google LLC
+// Copyright 2025 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -48,10 +48,6 @@ using ::testing::IsTrue;
 using ::testing::Not;
 using ::testing::Test;
 
-struct ParsedStruct {
-  SecretData secret_data;
-};
-
 absl::crc32c_t GetCrc32c(const SecretData& secret_data) {
 #if TINK_CPP_SECRET_DATA_IS_STD_VECTOR
   return absl::ComputeCrc32c(SecretDataAsStringView(secret_data));
@@ -60,299 +56,319 @@ absl::crc32c_t GetCrc32c(const SecretData& secret_data) {
 #endif
 }
 
-TEST(SecretDataBytesField, ClearMemberWorks) {
-  SecretDataField<ParsedStruct> field(1, &ParsedStruct::secret_data);
-  ParsedStruct s;
-  s.secret_data = SecretDataFromStringView("hello");
-  field.ClearMember(s);
-  EXPECT_THAT(s.secret_data, IsEmpty());
-  EXPECT_THAT(GetCrc32c(s.secret_data), Eq(absl::crc32c_t{0}));
+TEST(SecretDataField, ClearMemberWorks) {
+  SecretDataField field(1);
+  *field.mutable_value() = SecretDataFromStringView("hello");
+  field.Clear();
+  EXPECT_THAT(field.value(), IsEmpty());
+  EXPECT_THAT(GetCrc32c(field.value()), Eq(absl::crc32c_t{0}));
 }
 
-TEST(SecretDataBytesField, ConsumeIntoMemberWithCrcSuccessCases) {
-  SecretDataField<ParsedStruct> field(1, &ParsedStruct::secret_data);
-  ParsedStruct s;
-  s.secret_data = SecretDataFromStringView("before");
+TEST(SecretDataField, ConsumeIntoMemberWithCrcSuccessCases) {
+  SecretDataField field(1);
+  *field.mutable_value() = SecretDataFromStringView("before");
 
   std::string bytes =
       absl::StrCat(/* 10 bytes */ HexDecodeOrDie("0a"), "1234567890XYZ");
   absl::crc32c_t crc_to_maintain = absl::crc32c_t{};
   ParsingState parsing_state = ParsingState(bytes, &crc_to_maintain);
 
-  EXPECT_THAT(field.ConsumeIntoMember(parsing_state, s), IsTrue());
+  EXPECT_THAT(field.ConsumeIntoMember(parsing_state), IsTrue());
 
-  EXPECT_THAT(SecretDataAsStringView(s.secret_data), Eq("1234567890"));
-  EXPECT_THAT(GetCrc32c(s.secret_data), Eq(absl::ComputeCrc32c("1234567890")));
+  EXPECT_THAT(SecretDataAsStringView(field.value()), Eq("1234567890"));
+  EXPECT_THAT(GetCrc32c(field.value()),
+              Eq(absl::ComputeCrc32c("1234567890")));
   EXPECT_THAT(parsing_state.RemainingData(), Eq("XYZ"));
   EXPECT_THAT(crc_to_maintain, absl::ComputeCrc32c(bytes.substr(0, 11)));
 }
 
-TEST(SecretDataBytesField, ConsumeIntoMemberWithoutCrc) {
-  SecretDataField<ParsedStruct> field(1, &ParsedStruct::secret_data);
-  ParsedStruct s;
-  s.secret_data = SecretDataFromStringView("before");
+TEST(SecretDataField, ConsumeIntoMemberWithoutCrc) {
+  SecretDataField field(1);
+  *field.mutable_value() = SecretDataFromStringView("before");
 
   std::string bytes =
       absl::StrCat(/* 10 bytes */ HexDecodeOrDie("0a"), "1234567890XYZ");
   ParsingState parsing_state = ParsingState(bytes);
 
-  EXPECT_THAT(field.ConsumeIntoMember(parsing_state, s), IsTrue());
+  EXPECT_THAT(field.ConsumeIntoMember(parsing_state), IsTrue());
 
-  EXPECT_THAT(SecretDataAsStringView(s.secret_data), Eq("1234567890"));
-  EXPECT_THAT(GetCrc32c(s.secret_data), Eq(absl::ComputeCrc32c("1234567890")));
+  EXPECT_THAT(SecretDataAsStringView(field.value()), Eq("1234567890"));
+  EXPECT_THAT(GetCrc32c(field.value()),
+              Eq(absl::ComputeCrc32c("1234567890")));
   EXPECT_THAT(parsing_state.RemainingData(), Eq("XYZ"));
 }
 
-TEST(SecretDataBytesField, ConsumeIntoMemberVarintSaysTooLong) {
-  SecretDataField<ParsedStruct> field(1, &ParsedStruct::secret_data);
-  ParsedStruct s;
-  s.secret_data = SecretDataFromStringView("before");
-
-  std::string bytes =
-      absl::StrCat(/* 10 bytes */ HexDecodeOrDie("0b"), "1234567890");
-  absl::crc32c_t crc_to_maintain = absl::crc32c_t{};
-  ParsingState parsing_state = ParsingState(bytes, &crc_to_maintain);
-
-  EXPECT_THAT(field.ConsumeIntoMember(parsing_state, s), IsFalse());
-}
-
-TEST(SecretDataBytesField, ConsumeIntoMemberWithoutCrcEmptyString) {
-  SecretDataField<ParsedStruct> field(1, &ParsedStruct::secret_data);
-  ParsedStruct s;
-  s.secret_data = SecretDataFromStringView("before");
+TEST(SecretDataField, ConsumeIntoMemberWithoutCrcEmptyString) {
+  SecretDataField field(1);
+  *field.mutable_value() = SecretDataFromStringView("before");
 
   std::string bytes = absl::StrCat(/* 0 bytes */ HexDecodeOrDie("00"), "abcde");
   ParsingState parsing_state = ParsingState(bytes);
 
-  EXPECT_THAT(field.ConsumeIntoMember(parsing_state, s), IsTrue());
+  EXPECT_THAT(field.ConsumeIntoMember(parsing_state), IsTrue());
 
-  EXPECT_THAT(SecretDataAsStringView(s.secret_data), Eq(""));
+  EXPECT_THAT(SecretDataAsStringView(field.value()), Eq(""));
   EXPECT_THAT(parsing_state.RemainingData(), Eq("abcde"));
 }
 
-TEST(SecretDataBytesField, ConsumeIntoMemberWithCrcEmptyString) {
-  SecretDataField<ParsedStruct> field(1, &ParsedStruct::secret_data);
-  ParsedStruct s;
-  s.secret_data = SecretDataFromStringView("before");
+TEST(SecretDataField, ConsumeIntoMemberWithCrcEmptyString) {
+  SecretDataField field(1);
+  *field.mutable_value() = SecretDataFromStringView("before");
 
   std::string bytes = absl::StrCat(/* 0 bytes */ HexDecodeOrDie("00"), "abcde");
   absl::crc32c_t crc_to_maintain = absl::crc32c_t{};
   ParsingState parsing_state = ParsingState(bytes, &crc_to_maintain);
 
-  EXPECT_THAT(field.ConsumeIntoMember(parsing_state, s), IsTrue());
+  EXPECT_THAT(field.ConsumeIntoMember(parsing_state), IsTrue());
 
-  EXPECT_THAT(SecretDataAsStringView(s.secret_data), Eq(""));
-  EXPECT_THAT(GetCrc32c(s.secret_data), Eq(absl::crc32c_t{0}));
+  EXPECT_THAT(SecretDataAsStringView(field.value()), Eq(""));
+  EXPECT_THAT(GetCrc32c(field.value()), Eq(absl::crc32c_t{0}));
   EXPECT_THAT(parsing_state.RemainingData(), Eq("abcde"));
   EXPECT_THAT(crc_to_maintain, absl::ComputeCrc32c(HexDecodeOrDie("00")));
 }
 
-TEST(SecretDataBytesField, EmptyWithoutVarint) {
-  SecretDataField<ParsedStruct> field(1, &ParsedStruct::secret_data);
-  ParsedStruct s;
-  s.secret_data = SecretDataFromStringView("before");
-
-  std::string bytes = "";
-  absl::crc32c_t crc_to_maintain = absl::crc32c_t{};
-  ParsingState parsing_state = ParsingState(bytes, &crc_to_maintain);
-
-  EXPECT_THAT(field.ConsumeIntoMember(parsing_state, s), IsFalse());
-}
-
-TEST(SecretDataBytesField, InvalidVarint) {
-  SecretDataField<ParsedStruct> field(1, &ParsedStruct::secret_data);
-  ParsedStruct s;
-  s.secret_data = SecretDataFromStringView("before");
-
-  std::string bytes = absl::StrCat(HexDecodeOrDie("808080808000"), "abcde");
-  absl::crc32c_t crc_to_maintain = absl::crc32c_t{};
-  ParsingState parsing_state = ParsingState(bytes, &crc_to_maintain);
-
-  EXPECT_THAT(field.ConsumeIntoMember(parsing_state, s), IsFalse());
-}
-
 // Tests that if the CRC is already populated, the field will just extend this.
-TEST(SecretDataBytesField, ExistingCRCIsExtendedWhenParsing) {
-  SecretDataField<ParsedStruct> field(1, &ParsedStruct::secret_data);
-  ParsedStruct s;
-  s.secret_data = SecretDataFromStringView("before");
+TEST(SecretDataField, ExistingCRCIsExtendedWhenParsing) {
+  SecretDataField field(1);
+  *field.mutable_value() = SecretDataFromStringView("before");
 
   std::string bytes =
       absl::StrCat(/* 10 bytes */ HexDecodeOrDie("0a"), "1234567890XYZ");
   absl::crc32c_t crc_to_maintain = absl::ComputeCrc32c("Existing");
   ParsingState parsing_state = ParsingState(bytes, &crc_to_maintain);
 
-  EXPECT_THAT(field.ConsumeIntoMember(parsing_state, s), IsTrue());
+  EXPECT_THAT(field.ConsumeIntoMember(parsing_state), IsTrue());
 
-  EXPECT_THAT(SecretDataAsStringView(s.secret_data), Eq("1234567890"));
-  EXPECT_THAT(GetCrc32c(s.secret_data), Eq(absl::ComputeCrc32c("1234567890")));
+  EXPECT_THAT(SecretDataAsStringView(field.value()), Eq("1234567890"));
+  EXPECT_THAT(GetCrc32c(field.value()),
+              Eq(absl::ComputeCrc32c("1234567890")));
   EXPECT_THAT(parsing_state.RemainingData(), Eq("XYZ"));
   EXPECT_THAT(crc_to_maintain,
               Eq(absl::ComputeCrc32c(absl::StrCat(
                   "Existing", HexDecodeOrDie("0a"), "1234567890"))));
 }
 
-TEST(SecretDataBytesField, SerializeEmptyWithoutCrcDoesntSerialize) {
-  SecretDataField<ParsedStruct> field(1, &ParsedStruct::secret_data);
-  ParsedStruct s;
-  s.secret_data = SecretDataFromStringView("");
+TEST(SecretDataField, SerializeEmptyWithoutCrcDoesntSerialize) {
+  SecretDataField field(1);
+  *field.mutable_value() = SecretDataFromStringView("");
 
   std::string buffer = "BUFFERBUFFERBUFFER";
   SerializationState state = SerializationState(absl::MakeSpan(buffer));
-  EXPECT_THAT(field.SerializeWithTagInto(state, s), IsOk());
+  EXPECT_THAT(field.SerializeWithTagInto(state), IsOk());
   EXPECT_THAT(&state.GetBuffer()[0], Eq(&buffer[0]));
 }
 
-TEST(SecretDataBytesField, SerializeEmptyWithCrcDoesntSerialize) {
-  SecretDataField<ParsedStruct> field(1, &ParsedStruct::secret_data);
-  ParsedStruct s;
-  s.secret_data = SecretDataFromStringView("");
+TEST(SecretDataField, SerializeEmptyWithCrcDoesntSerialize) {
+  SecretDataField field(1);
+  *field.mutable_value() = SecretDataFromStringView("");
 
   std::string buffer = "BUFFERBUFFERBUFFER";
   absl::crc32c_t crc{};
   SerializationState state = SerializationState(absl::MakeSpan(buffer), &crc);
-  EXPECT_THAT(field.SerializeWithTagInto(state, s), IsOk());
+  EXPECT_THAT(field.SerializeWithTagInto(state), IsOk());
   EXPECT_THAT(&state.GetBuffer()[0], Eq(&buffer[0]));
   EXPECT_THAT(crc, Eq(absl::crc32c_t{}));
 }
 
-TEST(SecretDataBytesField, SerializeEmptyWithoutCrcAlwaysSerialize) {
-  SecretDataField<ParsedStruct> field(1, &ParsedStruct::secret_data,
-                                      ProtoFieldOptions::kAlwaysSerialize);
-  ParsedStruct s;
-  s.secret_data = SecretDataFromStringView("");
+TEST(SecretDataField, SerializeEmptyWithoutCrcAlwaysSerialize) {
+  SecretDataField field(1, ProtoFieldOptions::kAlwaysSerialize);
+  *field.mutable_value() = SecretDataFromStringView("");
 
   std::string buffer = "BUFFERBUFFERBUFFER";
   SerializationState state = SerializationState(absl::MakeSpan(buffer));
-  EXPECT_THAT(field.SerializeWithTagInto(state, s), IsOk());
+  EXPECT_THAT(field.SerializeWithTagInto(state), IsOk());
   EXPECT_THAT(buffer.substr(0, 2), Eq(HexDecodeOrDie("0a00")));
   EXPECT_THAT(&state.GetBuffer()[0], Eq(&buffer[2]));
 }
 
-TEST(SecretDataBytesField, SerializeEmptyWithCrcAlwaysSerialize) {
-  SecretDataField<ParsedStruct> field(1, &ParsedStruct::secret_data,
-                                      ProtoFieldOptions::kAlwaysSerialize);
-  ParsedStruct s;
-  s.secret_data = SecretDataFromStringView("");
+TEST(SecretDataField, SerializeEmptyWithCrcAlwaysSerialize) {
+  SecretDataField field(1, ProtoFieldOptions::kAlwaysSerialize);
+  *field.mutable_value() = SecretDataFromStringView("");
 
   std::string buffer = "BUFFERBUFFERBUFFER";
   absl::crc32c_t crc{};
   SerializationState state = SerializationState(absl::MakeSpan(buffer), &crc);
-  EXPECT_THAT(field.SerializeWithTagInto(state, s), IsOk());
+  EXPECT_THAT(field.SerializeWithTagInto(state), IsOk());
   EXPECT_THAT(buffer.substr(0, 2), Eq(HexDecodeOrDie("0a00")));
   EXPECT_THAT(&state.GetBuffer()[0], Eq(&buffer[2]));
   EXPECT_THAT(crc, Eq(absl::ComputeCrc32c(HexDecodeOrDie("0a00"))));
 }
 
-TEST(SecretDataBytesField, SerializeNonEmptyWithCrc) {
-  SecretDataField<ParsedStruct> field(1, &ParsedStruct::secret_data);
-  ParsedStruct s;
+TEST(SecretDataField, SerializeNonEmptyWithCrc) {
+  SecretDataField field(1);
   std::string text = "this is some text";
-  s.secret_data = SecretDataFromStringView(text);
+  *field.mutable_value() = SecretDataFromStringView(text);
 
   std::string buffer = "BUFFERBUFFERBUFFERBUFFER";
   absl::crc32c_t crc{};
   SerializationState state = SerializationState(absl::MakeSpan(buffer), &crc);
-  EXPECT_THAT(field.GetSerializedSizeIncludingTag(s), Eq(19));
-  ASSERT_THAT(field.SerializeWithTagInto(state, s), IsOk());
+  EXPECT_THAT(field.GetSerializedSizeIncludingTag(), Eq(19));
+  ASSERT_THAT(field.SerializeWithTagInto(state), IsOk());
   EXPECT_THAT(state.GetBuffer().size(),
-              Eq(buffer.size() - field.GetSerializedSizeIncludingTag(s)));
+              Eq(buffer.size() - field.GetSerializedSizeIncludingTag()));
   EXPECT_THAT(&(state.GetBuffer())[0],
-              Eq(&buffer[field.GetSerializedSizeIncludingTag(s)]));
+              Eq(&buffer[field.GetSerializedSizeIncludingTag()]));
   EXPECT_THAT(buffer, Eq(absl::StrCat(HexDecodeOrDie("0a11"), text, "UFFER")));
   EXPECT_THAT(
       crc, Eq(absl::ComputeCrc32c(absl::StrCat(HexDecodeOrDie("0a11"), text))));
 }
 
-TEST(SecretDataBytesField, SerializeNonEmptyWithoutCrc) {
-  SecretDataField<ParsedStruct> field(1, &ParsedStruct::secret_data);
-  ParsedStruct s;
+TEST(SecretDataField, SerializeNonEmptyWithoutCrc) {
+  SecretDataField field(1);
   std::string text = "this is some text";
-  s.secret_data = SecretDataFromStringView(text);
+  *field.mutable_value() = SecretDataFromStringView(text);
 
   std::string buffer = "BUFFERBUFFERBUFFERBUFFER";
   SerializationState state = SerializationState(absl::MakeSpan(buffer));
-  EXPECT_THAT(field.GetSerializedSizeIncludingTag(s), Eq(19));
-  ASSERT_THAT(field.SerializeWithTagInto(state, s), IsOk());
+  EXPECT_THAT(field.GetSerializedSizeIncludingTag(), Eq(19));
+  ASSERT_THAT(field.SerializeWithTagInto(state), IsOk());
   EXPECT_THAT(state.GetBuffer().size(),
-              Eq(buffer.size() - field.GetSerializedSizeIncludingTag(s)));
+              Eq(buffer.size() - field.GetSerializedSizeIncludingTag()));
   EXPECT_THAT(&(state.GetBuffer())[0],
-              Eq(&buffer[field.GetSerializedSizeIncludingTag(s)]));
+              Eq(&buffer[field.GetSerializedSizeIncludingTag()]));
   EXPECT_THAT(buffer, Eq(absl::StrCat(HexDecodeOrDie("0a11"), text, "UFFER")));
 }
 
 #if not TINK_CPP_SECRET_DATA_IS_STD_VECTOR
-
 // Tests that when serializing a SecretDataField, the resulting CRC
 // is computed from the CRC of the field (and not the actual data).
-TEST(SecretDataBytesField, CrcIsComputedFromCrc) {
-  SecretDataField<ParsedStruct> field(1, &ParsedStruct::secret_data);
-  ParsedStruct s;
+TEST(SecretDataField, CrcIsComputedFromCrc) {
+  SecretDataField field(1);
   std::string text1 = "this is some text";
   std::string text2 = "this is different";
   // The buffer is computed from a different value than the CRC.
-  s.secret_data = SecretData(text1, absl::ComputeCrc32c(text2));
+  *field.mutable_value() = SecretData(text1, absl::ComputeCrc32c(text2));
 
   std::string buffer = "BUFFERBUFFERBUFFERBUFFER";
   absl::crc32c_t crc{};
   SerializationState state = SerializationState(absl::MakeSpan(buffer), &crc);
-  EXPECT_THAT(field.GetSerializedSizeIncludingTag(s), Eq(19));
-  ASSERT_THAT(field.SerializeWithTagInto(state, s), IsOk());
+  EXPECT_THAT(field.GetSerializedSizeIncludingTag(), Eq(19));
+  ASSERT_THAT(field.SerializeWithTagInto(state), IsOk());
   EXPECT_THAT(state.GetBuffer().size(),
-              Eq(buffer.size() - field.GetSerializedSizeIncludingTag(s)));
+              Eq(buffer.size() - field.GetSerializedSizeIncludingTag()));
   EXPECT_THAT(buffer, Eq(absl::StrCat(HexDecodeOrDie("0a11"), text1, "UFFER")));
   EXPECT_THAT(
       crc,
       Eq(absl::ComputeCrc32c(absl::StrCat(HexDecodeOrDie("0a11"), text2))));
 }
-
 #endif  // not TINK_CPP_SECRET_DATA_IS_STD_VECTOR
 
-TEST(SecretDataBytesField, SerializeTooSmallBuffer) {
-  SecretDataField<ParsedStruct> field(1, &ParsedStruct::secret_data);
-  ParsedStruct s;
+TEST(SecretDataField, SerializeTooSmallBuffer) {
+  SecretDataField field(1);
   std::string text = "this is some text";
-  s.secret_data = SecretDataFromStringView(text);
+  *field.mutable_value() = SecretDataFromStringView(text);
 
   std::string buffer = "BUFFERBUFFERBUFFE";
   absl::crc32c_t crc{};
   SerializationState state = SerializationState(absl::MakeSpan(buffer), &crc);
-  EXPECT_THAT(field.SerializeWithTagInto(state, s), Not(IsOk()));
+  EXPECT_THAT(field.SerializeWithTagInto(state), Not(IsOk()));
 }
 
 // The buffer won't even hold the varint.
-TEST(SecretDataBytesField, SerializeMuchTooSmallBuffer) {
-  SecretDataField<ParsedStruct> field(1, &ParsedStruct::secret_data);
-  ParsedStruct s;
+TEST(SecretDataField, SerializeMuchTooSmallBuffer) {
+  SecretDataField field(1);
   std::string text = "this is some text";
-  s.secret_data = SecretDataFromStringView(text);
+  *field.mutable_value() = SecretDataFromStringView(text);
 
   std::string buffer = "";
   absl::crc32c_t crc{};
   SerializationState state = SerializationState(absl::MakeSpan(buffer), &crc);
-  EXPECT_THAT(field.SerializeWithTagInto(state, s), Not(IsOk()));
+  EXPECT_THAT(field.SerializeWithTagInto(state), Not(IsOk()));
 }
 
 // Test that when serializing, the existing CRC in the state is extended by
 // the new data (and not overwritten)
-TEST(SecretDataBytesField, ExistingCrcIsExtended) {
-  SecretDataField<ParsedStruct> field(1, &ParsedStruct::secret_data);
-  ParsedStruct s;
+TEST(SecretDataField, ExistingCrcIsExtended) {
+  SecretDataField field(1);
   std::string text = "this is some text";
-  s.secret_data = SecretDataFromStringView(text);
+  *field.mutable_value() = SecretDataFromStringView(text);
 
   std::string buffer = "BUFFERBUFFERBUFFERBUFFER";
   absl::crc32c_t crc = absl::ComputeCrc32c("existing");
   SerializationState state = SerializationState(absl::MakeSpan(buffer), &crc);
-  EXPECT_THAT(field.GetSerializedSizeIncludingTag(s), Eq(19));
-  ASSERT_THAT(field.SerializeWithTagInto(state, s), IsOk());
+  EXPECT_THAT(field.GetSerializedSizeIncludingTag(), Eq(19));
+  ASSERT_THAT(field.SerializeWithTagInto(state), IsOk());
   EXPECT_THAT(state.GetBuffer().size(),
-              Eq(buffer.size() - field.GetSerializedSizeIncludingTag(s)));
+              Eq(buffer.size() - field.GetSerializedSizeIncludingTag()));
   EXPECT_THAT(&(state.GetBuffer())[0],
-              Eq(&buffer[field.GetSerializedSizeIncludingTag(s)]));
+              Eq(&buffer[field.GetSerializedSizeIncludingTag()]));
   EXPECT_THAT(buffer, Eq(absl::StrCat(HexDecodeOrDie("0a11"), text, "UFFER")));
   EXPECT_THAT(crc, Eq(absl::ComputeCrc32c(absl::StrCat(
                        "existing", HexDecodeOrDie("0a11"), text))));
+}
+
+TEST(SecretDataField, ConsumeIntoMemberFailsWithNotEnoughDataForLength) {
+  SecretDataField field(1);
+  *field.mutable_value() = SecretDataFromStringView("before");
+  // Varint indicates more data, but there is none.
+  std::string bytes = HexDecodeOrDie("81");
+  ParsingState parsing_state = ParsingState(bytes);
+
+  EXPECT_THAT(field.ConsumeIntoMember(parsing_state), IsFalse());
+}
+
+TEST(SecretDataField, ConsumeIntoMemberFailsWithNotEnoughDataForContent) {
+  SecretDataField field(1);
+  *field.mutable_value() = SecretDataFromStringView("before");
+  // 10 bytes length specified, but only 9 bytes available.
+  std::string bytes =
+      absl::StrCat(/* 10 bytes */ HexDecodeOrDie("0a"), "123456789");
+  ParsingState parsing_state = ParsingState(bytes);
+
+  EXPECT_THAT(field.ConsumeIntoMember(parsing_state), IsFalse());
+}
+
+TEST(SecretDataField, ConsumeIntoMemberFailsWithMalformedVarint) {
+  SecretDataField field(1);
+  *field.mutable_value() = SecretDataFromStringView("before");
+  // Varint is too long.
+  std::string bytes = HexDecodeOrDie("ffffffff8f");
+  ParsingState parsing_state = ParsingState(bytes);
+
+  EXPECT_THAT(field.ConsumeIntoMember(parsing_state), IsFalse());
+}
+
+TEST(SecretDataField, SerializeTooSmallBufferForSizeVarint) {
+  SecretDataField field(1);
+  // Size 128 requires 2 bytes for the varint encoding of the size.
+  std::string text(128, 'a');
+  *field.mutable_value() = SecretDataFromStringView(text);
+
+  // Buffer is big enough for tag (1 byte) but not full size varint (2 bytes).
+  std::string buffer = "BU";
+  SerializationState state = SerializationState(absl::MakeSpan(buffer));
+  EXPECT_THAT(field.SerializeWithTagInto(state), Not(IsOk()));
+}
+
+TEST(SecretDataField, CopyAndMove) {
+  SecretDataField field(123);
+  *field.mutable_value() = SecretDataFromStringView("some secret data");
+
+  // Test copy constructor
+  SecretDataField field_copy(field);
+  EXPECT_THAT(field_copy.FieldNumber(), Eq(123));
+  EXPECT_THAT(SecretDataAsStringView(field_copy.value()),
+              Eq("some secret data"));
+
+  // Test copy assignment
+  SecretDataField field_assign(456);
+  field_assign = field;
+  EXPECT_THAT(field_assign.FieldNumber(), Eq(123));
+  EXPECT_THAT(SecretDataAsStringView(field_assign.value()),
+              Eq("some secret data"));
+
+  // Test move constructor
+  SecretDataField field_move_construct(std::move(field));
+  EXPECT_THAT(field_move_construct.FieldNumber(), Eq(123));
+  EXPECT_THAT(SecretDataAsStringView(field_move_construct.value()),
+              Eq("some secret data"));
+
+  // Test move assignment
+  SecretDataField field_move_assign(789);
+  field_move_assign = std::move(field_copy);
+  EXPECT_THAT(field_move_assign.FieldNumber(), Eq(123));
+  EXPECT_THAT(SecretDataAsStringView(field_move_assign.value()),
+              Eq("some secret data"));
 }
 
 }  // namespace proto_parsing

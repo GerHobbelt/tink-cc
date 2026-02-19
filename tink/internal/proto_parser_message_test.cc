@@ -25,7 +25,7 @@
 #include "gtest/gtest.h"
 #include "absl/base/nullability.h"
 #include "absl/crc/crc32c.h"
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
@@ -34,7 +34,6 @@
 #include "tink/internal/proto_parser_enum_field.h"
 #include "tink/internal/proto_parser_fields.h"
 #include "tink/internal/proto_parser_options.h"
-#include "tink/internal/proto_parser_owning_fields.h"
 #include "tink/internal/proto_parser_state.h"
 #include "tink/internal/proto_parsing_helpers.h"
 #include "tink/internal/testing/field_with_number.h"
@@ -86,14 +85,13 @@ class InnerStruct final : public Message<InnerStruct> {
            uint32_member_2_.value() == other.uint32_member_2_.value();
   }
 
-  std::array<const OwningField*, 2> GetFields() const {
-    return std::array<const OwningField*, 2>{&uint32_member_1_,
-                                             &uint32_member_2_};
+  std::array<const Field*, 2> GetFields() const {
+    return std::array<const Field*, 2>{&uint32_member_1_, &uint32_member_2_};
   }
 
  private:
-  Uint32OwningField uint32_member_1_{1};
-  Uint32OwningField uint32_member_2_{2};
+  Uint32Field uint32_member_1_{1};
+  Uint32Field uint32_member_2_{2};
 };
 
 class OuterStruct : public Message<OuterStruct> {
@@ -103,12 +101,12 @@ class OuterStruct : public Message<OuterStruct> {
 
   using Message::SerializeAsString;
 
-  std::array<const OwningField*, 1> GetFields() const {
-    return std::array<const OwningField*, 1>{&inner_member_};
+  std::array<const Field*, 1> GetFields() const {
+    return std::array<const Field*, 1>{&inner_member_};
   }
 
  private:
-  MessageOwningField<InnerStruct> inner_member_{1};
+  MessageField<InnerStruct> inner_member_{1};
 };
 
 TEST(MessageTest, Clear) {
@@ -125,9 +123,9 @@ TEST(MessageTest, Clear) {
 // Serializes a varint using a wrong CRC.
 absl::Status SerializeVarintWrongCrc(uint64_t value,
                                      SerializationState& output) {
-  CHECK(output.HasCrc());
+  ABSL_CHECK(output.HasCrc());
   const int size = VarintLength(value);
-  CHECK_GE(size, output.GetBuffer().size());
+  ABSL_CHECK_GE(size, output.GetBuffer().size());
   absl::Span<char> output_buffer = output.GetBuffer();
   int i = 0;
   while (value >= 0x80) {
@@ -143,45 +141,41 @@ absl::Status SerializeVarintWrongCrc(uint64_t value,
 //
 // This is used to test that the CRC accumulated during serialization is used
 // for the returned SecretData.
-class Uint32OwningFieldWrongCrc : public OwningField {
+class Uint32FieldWrongCrc : public Field {
  public:
-  explicit Uint32OwningFieldWrongCrc(
+  explicit Uint32FieldWrongCrc(
       uint32_t field_number,
       ProtoFieldOptions options = ProtoFieldOptions::kNone)
-      : OwningField(field_number, WireType::kVarint),
-        field_(field_number, &Uint32OwningFieldWrongCrc::value_, options) {}
+      : Field(field_number, WireType::kVarint), field_(field_number, options) {}
 
   // Copyable and movable.
-  Uint32OwningFieldWrongCrc(const Uint32OwningFieldWrongCrc&) = default;
-  Uint32OwningFieldWrongCrc& operator=(const Uint32OwningFieldWrongCrc&) =
-      default;
-  Uint32OwningFieldWrongCrc(Uint32OwningFieldWrongCrc&&) noexcept = default;
-  Uint32OwningFieldWrongCrc& operator=(Uint32OwningFieldWrongCrc&&) noexcept =
-      default;
+  Uint32FieldWrongCrc(const Uint32FieldWrongCrc&) = default;
+  Uint32FieldWrongCrc& operator=(const Uint32FieldWrongCrc&) = default;
+  Uint32FieldWrongCrc(Uint32FieldWrongCrc&&) noexcept = default;
+  Uint32FieldWrongCrc& operator=(Uint32FieldWrongCrc&&) noexcept = default;
 
-  void Clear() override { value_ = 0; }
+  void Clear() override { field_.Clear(); }
   bool ConsumeIntoMember(ParsingState& serialized) override {
-    return field_.ConsumeIntoMember(serialized, *this);
+    return field_.ConsumeIntoMember(serialized);
   }
   absl::Status SerializeWithTagInto(SerializationState& out) const override {
     // Skip check for requires serialization.
     absl::Status status = SerializeWireTypeAndFieldNumber(
-        GetWireType(), field_.GetFieldNumber(), out);
+        GetWireType(), field_.FieldNumber(), out);
     if (!status.ok()) {
       return status;
     }
-    return SerializeVarintWrongCrc(value_, out);
+    return SerializeVarintWrongCrc(field_.value(), out);
   }
   size_t GetSerializedSizeIncludingTag() const override {
-    return field_.GetSerializedSizeIncludingTag(*this);
+    return field_.GetSerializedSizeIncludingTag();
   }
 
-  void set_value(uint32_t value) { value_ = value; }
-  uint32_t value() const { return value_; }
+  void set_value(uint32_t value) { field_.set_value(value); }
+  uint32_t value() const { return field_.value(); }
 
  private:
-  uint32_t value_ = 0;
-  Uint32Field<Uint32OwningFieldWrongCrc> field_;
+  Uint32Field field_;
 };
 
 class OuterProtoClassWithWrongCrc
@@ -194,13 +188,13 @@ class OuterProtoClassWithWrongCrc
 
   using Message::SerializeAsString;
 
-  std::array<const OwningField*, 2> GetFields() const {
-    return std::array<const OwningField*, 2>{&inner_member_, &uint32_member_};
+  std::array<const Field*, 2> GetFields() const {
+    return std::array<const Field*, 2>{&inner_member_, &uint32_member_};
   }
 
  private:
-  MessageOwningField<InnerStruct> inner_member_{1};
-  Uint32OwningFieldWrongCrc uint32_member_{2};
+  MessageField<InnerStruct> inner_member_{1};
+  Uint32FieldWrongCrc uint32_member_{2};
 };
 
 TEST(MessageTest, SerializeAsSecretDataFails) {
@@ -261,11 +255,11 @@ TEST(MessageTest, ParseFromStringSuccess) {
 }
 
 struct OuterMessageWithSecretData : public Message<OuterMessageWithSecretData> {
-  std::array<const OwningField*, 2> GetFields() const {
+  std::array<const Field*, 2> GetFields() const {
     return {&inner_member_field, &secret_data_field};
   }
-  MessageOwningField<InnerStruct> inner_member_field{1};
-  SecretDataOwningField secret_data_field{2};
+  MessageField<InnerStruct> inner_member_field{1};
+  SecretDataField secret_data_field{2};
 };
 
 TEST(MessageTest, ParseFromStringWithCrcSuccess) {
@@ -318,8 +312,8 @@ TEST(MessageTest, ParseFromStringFails) {
   EXPECT_FALSE(s.ParseFromString(bytes));
 }
 
-TEST(MessageOwningFieldTest, ClearMemberWorks) {
-  MessageOwningField<InnerStruct> field(1);
+TEST(MessageFieldTest, ClearMemberWorks) {
+  MessageField<InnerStruct> field(1);
   field.mutable_value()->set_uint32_member_1(123);
   field.mutable_value()->set_uint32_member_2(456);
   field.Clear();
@@ -327,8 +321,8 @@ TEST(MessageOwningFieldTest, ClearMemberWorks) {
   EXPECT_THAT(field.value().uint32_member_2(), Eq(0));
 }
 
-TEST(MessageOwningFieldTest, ConsumeIntoMemberSuccessCases) {
-  MessageOwningField<InnerStruct> field(1);
+TEST(MessageFieldTest, ConsumeIntoMemberSuccessCases) {
+  MessageField<InnerStruct> field(1);
   std::string bytes =
       absl::StrCat(/* 4 bytes */ HexDecodeOrDie("04"),
                    /* Int field, tag 1, value 0x23 */ HexDecodeOrDie("0823"),
@@ -341,8 +335,8 @@ TEST(MessageOwningFieldTest, ConsumeIntoMemberSuccessCases) {
   EXPECT_THAT(field.value().uint32_member_2(), Eq(0x7a));
 }
 
-TEST(MessageOwningFieldTest, ConsumeIntoMemberWithCrcSuccessCases) {
-  MessageOwningField<InnerStruct> field(1);
+TEST(MessageFieldTest, ConsumeIntoMemberWithCrcSuccessCases) {
+  MessageField<InnerStruct> field(1);
 
   std::string bytes =
       absl::StrCat(/* 4 bytes */ HexDecodeOrDie("04"),
@@ -358,8 +352,8 @@ TEST(MessageOwningFieldTest, ConsumeIntoMemberWithCrcSuccessCases) {
   EXPECT_THAT(field.value().uint32_member_2(), Eq(0x7a));
 }
 
-TEST(MessageOwningFieldTest, ConsumeIntoMemberEmptyString) {
-  MessageOwningField<InnerStruct> field(1);
+TEST(MessageFieldTest, ConsumeIntoMemberEmptyString) {
+  MessageField<InnerStruct> field(1);
   field.Clear();
 
   std::string bytes = HexDecodeOrDie("00");
@@ -371,8 +365,8 @@ TEST(MessageOwningFieldTest, ConsumeIntoMemberEmptyString) {
   EXPECT_THAT(field.value().uint32_member_2(), Eq(0));
 }
 
-TEST(MessageOwningFieldTest, ConsumeIntoMemberDoesNotClear) {
-  MessageOwningField<InnerStruct> field(1);
+TEST(MessageFieldTest, ConsumeIntoMemberDoesNotClear) {
+  MessageField<InnerStruct> field(1);
   field.mutable_value()->set_uint32_member_1(10);
   field.mutable_value()->set_uint32_member_2(0);
   std::string bytes = absl::StrCat(/* 4 bytes */ HexDecodeOrDie("02"),
@@ -386,16 +380,16 @@ TEST(MessageOwningFieldTest, ConsumeIntoMemberDoesNotClear) {
   EXPECT_THAT(field.value().uint32_member_2(), Eq(0x7a));
 }
 
-TEST(MessageOwningFieldTest, ConsumeIntoMemberVarintTooLong) {
-  MessageOwningField<InnerStruct> field(1);
+TEST(MessageFieldTest, ConsumeIntoMemberVarintTooLong) {
+  MessageField<InnerStruct> field(1);
   field.Clear();
   std::string bytes = /* LengthDelimetedLength: */ HexDecodeOrDie("01");
   ParsingState parsing_state = ParsingState(bytes);
   EXPECT_THAT(field.ConsumeIntoMember(parsing_state), IsFalse());
 }
 
-TEST(MessageOwningFieldTest, EmptyWithoutVarint) {
-  MessageOwningField<InnerStruct> field(1);
+TEST(MessageFieldTest, EmptyWithoutVarint) {
+  MessageField<InnerStruct> field(1);
   field.Clear();
 
   std::string bytes = "";
@@ -403,8 +397,8 @@ TEST(MessageOwningFieldTest, EmptyWithoutVarint) {
   EXPECT_THAT(field.ConsumeIntoMember(parsing_state), IsFalse());
 }
 
-TEST(MessageOwningFieldTest, InvalidVarint) {
-  MessageOwningField<InnerStruct> field(1);
+TEST(MessageFieldTest, InvalidVarint) {
+  MessageField<InnerStruct> field(1);
   field.Clear();
 
   std::string bytes = absl::StrCat(HexDecodeOrDie("808080808000"), "abcde");
@@ -412,8 +406,8 @@ TEST(MessageOwningFieldTest, InvalidVarint) {
   EXPECT_THAT(field.ConsumeIntoMember(parsing_state), IsFalse());
 }
 
-TEST(MessageOwningFieldTest, SerializeEmpty) {
-  MessageOwningField<InnerStruct> field(1);
+TEST(MessageFieldTest, SerializeEmpty) {
+  MessageField<InnerStruct> field(1);
   field.Clear();
   std::string buffer = "abc";
   SerializationState state = SerializationState(absl::MakeSpan(buffer));
@@ -423,8 +417,8 @@ TEST(MessageOwningFieldTest, SerializeEmpty) {
   EXPECT_THAT(buffer, Eq("abc"));
 }
 
-TEST(MessageOwningFieldTest, SerializeNonEmpty) {
-  MessageOwningField<InnerStruct> field(1);
+TEST(MessageFieldTest, SerializeNonEmpty) {
+  MessageField<InnerStruct> field(1);
   field.mutable_value()->set_uint32_member_1(0x23);
   field.mutable_value()->set_uint32_member_2(0x7a);
   std::string buffer = "BUFFERBUFFERBUFFERBUFFER";
@@ -441,8 +435,8 @@ TEST(MessageOwningFieldTest, SerializeNonEmpty) {
   EXPECT_THAT(buffer.substr(6), Eq("BUFFERBUFFERBUFFER"));
 }
 
-TEST(MessageOwningFieldTest, SerializeTooSmallBuffer) {
-  MessageOwningField<InnerStruct> field(1);
+TEST(MessageFieldTest, SerializeTooSmallBuffer) {
+  MessageField<InnerStruct> field(1);
   field.mutable_value()->set_uint32_member_1(0x23);
   field.mutable_value()->set_uint32_member_2(0x7a);
   std::string buffer = "BUFFE";
@@ -451,8 +445,8 @@ TEST(MessageOwningFieldTest, SerializeTooSmallBuffer) {
 }
 
 // The buffer can hold the tag, but not the varint of the length.
-TEST(MessageOwningFieldTest, SerializeSmallerBuffer) {
-  MessageOwningField<InnerStruct> field(1);
+TEST(MessageFieldTest, SerializeSmallerBuffer) {
+  MessageField<InnerStruct> field(1);
   field.mutable_value()->set_uint32_member_1(0x23);
   field.mutable_value()->set_uint32_member_2(0x7a);
   std::string buffer = "B";
@@ -461,8 +455,8 @@ TEST(MessageOwningFieldTest, SerializeSmallerBuffer) {
 }
 
 // The buffer won't even hold the varint.
-TEST(MessageOwningFieldTest, SerializeVerySmallBuffer) {
-  MessageOwningField<InnerStruct> field(1);
+TEST(MessageFieldTest, SerializeVerySmallBuffer) {
+  MessageField<InnerStruct> field(1);
   field.mutable_value()->set_uint32_member_1(0x23);
   field.mutable_value()->set_uint32_member_2(0x7a);
   std::string buffer;
@@ -471,10 +465,10 @@ TEST(MessageOwningFieldTest, SerializeVerySmallBuffer) {
 }
 
 // -----------------------------------------------------------------------------
-// RepeatedMessageOwningField tests.
+// RepeatedMessageField tests.
 
-TEST(RepeatedMessageOwningField, ConsumeIntoMemberSuccessCases) {
-  RepeatedMessageOwningField<InnerStruct> field{1};
+TEST(RepeatedMessageField, ConsumeIntoMemberSuccessCases) {
+  RepeatedMessageField<InnerStruct> field{1};
 
   std::string bytes = absl::StrCat(
       /* 4 bytes */ HexDecodeOrDie("04"),
@@ -491,8 +485,8 @@ TEST(RepeatedMessageOwningField, ConsumeIntoMemberSuccessCases) {
               ElementsAre(InnerStruct(0x23, 0x7a), InnerStruct(0x01, 0)));
 }
 
-TEST(RepeatedMessageOwningField, ConsumeIntoMemberWithCrcSuccessCases) {
-  RepeatedMessageOwningField<InnerStruct> field{1};
+TEST(RepeatedMessageField, ConsumeIntoMemberWithCrcSuccessCases) {
+  RepeatedMessageField<InnerStruct> field{1};
 
   std::string bytes = absl::StrCat(
       /* 4 bytes */ HexDecodeOrDie("04"),
@@ -511,16 +505,16 @@ TEST(RepeatedMessageOwningField, ConsumeIntoMemberWithCrcSuccessCases) {
               ElementsAre(InnerStruct(0x23, 0x7a), InnerStruct(0x01, 0)));
 }
 
-TEST(RepeatedMessageOwningField, ConsumeIntoMemberEmptyString) {
-  RepeatedMessageOwningField<InnerStruct> field{1};
+TEST(RepeatedMessageField, ConsumeIntoMemberEmptyString) {
+  RepeatedMessageField<InnerStruct> field{1};
   std::string bytes = HexDecodeOrDie("00");
   ParsingState parsing_state = ParsingState(bytes);
   EXPECT_THAT(field.ConsumeIntoMember(parsing_state), IsTrue());
   EXPECT_THAT(field.values(), ElementsAre(InnerStruct()));
 }
 
-TEST(RepeatedMessageOwningField, ConsumeIntoMemberAppends) {
-  RepeatedMessageOwningField<InnerStruct> field{1};
+TEST(RepeatedMessageField, ConsumeIntoMemberAppends) {
+  RepeatedMessageField<InnerStruct> field{1};
   field.mutable_values()->push_back(InnerStruct(123, 456));
   std::string bytes = absl::StrCat(
       /* 4 bytes */ HexDecodeOrDie("04"),
@@ -534,29 +528,29 @@ TEST(RepeatedMessageOwningField, ConsumeIntoMemberAppends) {
               ElementsAre(InnerStruct(123, 456), InnerStruct(0x23, 0x7a)));
 }
 
-TEST(RepeatedMessageOwningField, ConsumeIntoMemberVarintTooLong) {
-  RepeatedMessageOwningField<InnerStruct> field{1};
+TEST(RepeatedMessageField, ConsumeIntoMemberVarintTooLong) {
+  RepeatedMessageField<InnerStruct> field{1};
   std::string bytes = /* LengthDelimetedLength: */ HexDecodeOrDie("01");
   ParsingState parsing_state = ParsingState(bytes);
   EXPECT_THAT(field.ConsumeIntoMember(parsing_state), IsFalse());
 }
 
-TEST(RepeatedMessageOwningField, EmptyWithoutVarint) {
-  RepeatedMessageOwningField<InnerStruct> field{1};
+TEST(RepeatedMessageField, EmptyWithoutVarint) {
+  RepeatedMessageField<InnerStruct> field{1};
   std::string bytes = "";
   ParsingState parsing_state = ParsingState(bytes);
   EXPECT_THAT(field.ConsumeIntoMember(parsing_state), IsFalse());
 }
 
-TEST(RepeatedMessageOwningField, InvalidVarint) {
-  RepeatedMessageOwningField<InnerStruct> field{1};
+TEST(RepeatedMessageField, InvalidVarint) {
+  RepeatedMessageField<InnerStruct> field{1};
   std::string bytes = absl::StrCat(HexDecodeOrDie("808080808000"), "abcde");
   ParsingState parsing_state = ParsingState(bytes);
   EXPECT_THAT(field.ConsumeIntoMember(parsing_state), IsFalse());
 }
 
-TEST(RepeatedMessageOwningField, SerializeEmpty) {
-  RepeatedMessageOwningField<InnerStruct> field{1};
+TEST(RepeatedMessageField, SerializeEmpty) {
+  RepeatedMessageField<InnerStruct> field{1};
   std::string buffer = "abc";
   SerializationState state = SerializationState(absl::MakeSpan(buffer));
   EXPECT_THAT(field.GetSerializedSizeIncludingTag(), Eq(0));
@@ -565,8 +559,8 @@ TEST(RepeatedMessageOwningField, SerializeEmpty) {
   EXPECT_THAT(buffer, Eq("abc"));
 }
 
-TEST(RepeatedMessageOwningField, SerializeNonEmpty) {
-  RepeatedMessageOwningField<InnerStruct> field{1};
+TEST(RepeatedMessageField, SerializeNonEmpty) {
+  RepeatedMessageField<InnerStruct> field{1};
   field.mutable_values()->push_back(InnerStruct(0x23, 0x7a));
   field.mutable_values()->push_back(InnerStruct());
   field.mutable_values()->back().set_uint32_member_1((0x01));
@@ -586,8 +580,8 @@ TEST(RepeatedMessageOwningField, SerializeNonEmpty) {
   EXPECT_THAT(buffer.substr(10), Eq("ERBUFFERBUFFERBUFFERBUFFER"));
 }
 
-TEST(RepeatedMessageOwningField, SerializeNonEmptyWithEmptyInnerStruct) {
-  RepeatedMessageOwningField<InnerStruct> field{1};
+TEST(RepeatedMessageField, SerializeNonEmptyWithEmptyInnerStruct) {
+  RepeatedMessageField<InnerStruct> field{1};
   field.mutable_values()->push_back(InnerStruct());
   std::string buffer = "BUFFER";
   SerializationState state = SerializationState(absl::MakeSpan(buffer));
@@ -601,24 +595,24 @@ TEST(RepeatedMessageOwningField, SerializeNonEmptyWithEmptyInnerStruct) {
   EXPECT_THAT(buffer.substr(2), Eq("FFER"));
 }
 
-TEST(RepeatedMessageOwningField, SerializeTooSmallBuffer) {
-  RepeatedMessageOwningField<InnerStruct> field{1};
+TEST(RepeatedMessageField, SerializeTooSmallBuffer) {
+  RepeatedMessageField<InnerStruct> field{1};
   field.mutable_values()->push_back(InnerStruct(0x23, 0x7a));
   std::string buffer = "BUFFE";
   SerializationState state = SerializationState(absl::MakeSpan(buffer));
   EXPECT_THAT(field.SerializeWithTagInto(state), Not(IsOk()));
 }
 
-TEST(RepeatedMessageOwningField, SerializeSmallerBuffer) {
-  RepeatedMessageOwningField<InnerStruct> field{1};
+TEST(RepeatedMessageField, SerializeSmallerBuffer) {
+  RepeatedMessageField<InnerStruct> field{1};
   field.mutable_values()->push_back(InnerStruct(0x23, 0x7a));
   std::string buffer = "B";
   SerializationState state = SerializationState(absl::MakeSpan(buffer));
   EXPECT_THAT(field.SerializeWithTagInto(state), Not(IsOk()));
 }
 
-TEST(RepeatedMessageOwningField, SerializeVerySmallBuffer) {
-  RepeatedMessageOwningField<InnerStruct> field{1};
+TEST(RepeatedMessageField, SerializeVerySmallBuffer) {
+  RepeatedMessageField<InnerStruct> field{1};
   field.mutable_values()->push_back(InnerStruct(0x23, 0x7a));
   std::string buffer;
   SerializationState state = SerializationState(absl::MakeSpan(buffer));
@@ -641,16 +635,16 @@ class Submessage : public Message<Submessage> {
            bytes_field_.value() == other.bytes_field_.value();
   }
 
-  std::array<const OwningField*, 2> GetFields() const {
-    return std::array<const OwningField*, 2>{&uint32_field_, &bytes_field_};
+  std::array<const Field*, 2> GetFields() const {
+    return std::array<const Field*, 2>{&uint32_field_, &bytes_field_};
   }
 
  private:
-  Uint32OwningField uint32_field_{1};
+  Uint32Field uint32_field_{1};
   // Arbitrary padding to make sure pasing/serializing doesn't rely on
   // fields being contiguous in memory.
   [[maybe_unused]] uint8_t padding_[20] = {};
-  OwningBytesField<std::string> bytes_field_{2};
+  BytesField<std::string> bytes_field_{2};
 };
 
 enum class TestEnum : uint32_t {
@@ -684,9 +678,9 @@ class TestMessage : public Message<TestMessage> {
     return sub_message_field_.mutable_value();
   }
 
-  std::array<const OwningField*, 4> GetFields() const {
-    return std::array<const OwningField*, 4>{&uint32_field_, &bytes_field_,
-                                             &sub_message_field_, &enum_field_};
+  std::array<const Field*, 4> GetFields() const {
+    return std::array<const Field*, 4>{&uint32_field_, &bytes_field_,
+                                       &sub_message_field_, &enum_field_};
   }
 
   TestEnum enum_field() const { return enum_field_.value(); }
@@ -700,21 +694,21 @@ class TestMessage : public Message<TestMessage> {
   }
 
  private:
-  Uint32OwningField uint32_field_{1};
-  OwningBytesField<std::string> bytes_field_{2};
-  MessageOwningField<Submessage> sub_message_field_{3};
-  EnumOwningField<TestEnum> enum_field_{4, &TestEnum_IsValid, TestEnum::kZero};
+  Uint32Field uint32_field_{1};
+  BytesField<std::string> bytes_field_{2};
+  MessageField<Submessage> sub_message_field_{3};
+  EnumField<TestEnum> enum_field_{4, &TestEnum_IsValid, TestEnum::kZero};
 };
 
-TEST(MessageOwningFieldTest, CopyConstructor) {
-  MessageOwningField<TestMessage> field(1);
+TEST(MessageFieldTest, CopyConstructor) {
+  MessageField<TestMessage> field(1);
   field.mutable_value()->set_uint32_field(123);
   field.mutable_value()->set_bytes_field("test");
   field.mutable_value()->mutable_sub_message_field()->set_uint32_field(456);
   field.mutable_value()->mutable_sub_message_field()->set_bytes_field("field");
   field.mutable_value()->set_enum_field(TestEnum::kOne);
 
-  MessageOwningField<TestMessage> field2 = field;
+  MessageField<TestMessage> field2 = field;
   EXPECT_THAT(field2.value(), Eq(field.value()));
 
   // Make changes to field to verify that field2 is not changed.
@@ -726,14 +720,14 @@ TEST(MessageOwningFieldTest, CopyConstructor) {
   EXPECT_THAT(field2.value(), Not(Eq(field.value())));
 }
 
-TEST(MessageOwningFieldTest, CopyAssignment) {
-  MessageOwningField<TestMessage> field(1);
+TEST(MessageFieldTest, CopyAssignment) {
+  MessageField<TestMessage> field(1);
   field.mutable_value()->set_uint32_field(123);
   field.mutable_value()->set_bytes_field("test");
   field.mutable_value()->mutable_sub_message_field()->set_uint32_field(456);
   field.mutable_value()->mutable_sub_message_field()->set_bytes_field("field");
   field.mutable_value()->set_enum_field(TestEnum::kOne);
-  MessageOwningField<TestMessage> field2(2);
+  MessageField<TestMessage> field2(2);
   field2.mutable_value()->set_uint32_field(999);
 
   field2 = field;
@@ -748,14 +742,14 @@ TEST(MessageOwningFieldTest, CopyAssignment) {
   EXPECT_THAT(field2.value(), Not(Eq(field.value())));
 }
 
-TEST(MessageOwningFieldTest, MoveConstructor) {
-  MessageOwningField<TestMessage> field(1);
+TEST(MessageFieldTest, MoveConstructor) {
+  MessageField<TestMessage> field(1);
   field.mutable_value()->set_uint32_field(123);
   field.mutable_value()->set_bytes_field("test");
   field.mutable_value()->mutable_sub_message_field()->set_uint32_field(456);
   field.mutable_value()->mutable_sub_message_field()->set_bytes_field("field");
   field.mutable_value()->set_enum_field(TestEnum::kTwo);
-  MessageOwningField<TestMessage> field2 = std::move(field);
+  MessageField<TestMessage> field2 = std::move(field);
 
   // Verify field2 has the correct values.
   EXPECT_THAT(field2.value().uint32_field(), Eq(123));
@@ -764,14 +758,14 @@ TEST(MessageOwningFieldTest, MoveConstructor) {
   EXPECT_THAT(field2.value().sub_message_field().bytes_field(), Eq("field"));
 }
 
-TEST(MessageOwningFieldTest, MoveAssignment) {
-  MessageOwningField<TestMessage> field(1);
+TEST(MessageFieldTest, MoveAssignment) {
+  MessageField<TestMessage> field(1);
   field.mutable_value()->set_uint32_field(123);
   field.mutable_value()->set_bytes_field("test");
   field.mutable_value()->mutable_sub_message_field()->set_uint32_field(456);
   field.mutable_value()->mutable_sub_message_field()->set_bytes_field("field");
   field.mutable_value()->set_enum_field(TestEnum::kTwo);
-  MessageOwningField<TestMessage> field2(2);
+  MessageField<TestMessage> field2(2);
   field2.mutable_value()->set_uint32_field(999);
   field2 = std::move(field);
 
@@ -783,17 +777,17 @@ TEST(MessageOwningFieldTest, MoveAssignment) {
 }
 
 // -----------------------------------------------------------------------------
-// MessageOwningFieldWithPresence tests.
+// MessageFieldWithPresence tests.
 
-TEST(MessageOwningFieldWithPresenceTest, ClearMemberWorks) {
-  MessageOwningFieldWithPresence<InnerStruct> field{1};
+TEST(MessageFieldWithPresenceTest, ClearMemberWorks) {
+  MessageFieldWithPresence<InnerStruct> field{1};
   *field.mutable_value() = InnerStruct(123, 456);
   field.Clear();
   EXPECT_THAT(field.has_value(), IsFalse());
 }
 
-TEST(MessageOwningFieldWithPresenceTest, ConsumeIntoMemberSuccessCases) {
-  MessageOwningFieldWithPresence<InnerStruct> field{1};
+TEST(MessageFieldWithPresenceTest, ConsumeIntoMemberSuccessCases) {
+  MessageFieldWithPresence<InnerStruct> field{1};
 
   std::string bytes =
       absl::StrCat(/* 4 bytes */ HexDecodeOrDie("04"),
@@ -808,8 +802,8 @@ TEST(MessageOwningFieldWithPresenceTest, ConsumeIntoMemberSuccessCases) {
   EXPECT_THAT(field.value().uint32_member_2(), Eq(0x7a));
 }
 
-TEST(MessageOwningFieldWithPresenceTest, ConsumeIntoMemberWithCrcSuccessCases) {
-  MessageOwningFieldWithPresence<InnerStruct> field{1};
+TEST(MessageFieldWithPresenceTest, ConsumeIntoMemberWithCrcSuccessCases) {
+  MessageFieldWithPresence<InnerStruct> field{1};
 
   std::string bytes =
       absl::StrCat(/* 4 bytes */ HexDecodeOrDie("04"),
@@ -826,8 +820,8 @@ TEST(MessageOwningFieldWithPresenceTest, ConsumeIntoMemberWithCrcSuccessCases) {
   EXPECT_THAT(field.value().uint32_member_2(), Eq(0x7a));
 }
 
-TEST(MessageOwningFieldWithPresenceTest, ConsumeIntoMemberEmptyStringNullopt) {
-  MessageOwningFieldWithPresence<InnerStruct> field{1};
+TEST(MessageFieldWithPresenceTest, ConsumeIntoMemberEmptyStringNullopt) {
+  MessageFieldWithPresence<InnerStruct> field{1};
 
   std::string bytes = HexDecodeOrDie("00");
   ParsingState parsing_state = ParsingState(bytes);
@@ -837,8 +831,8 @@ TEST(MessageOwningFieldWithPresenceTest, ConsumeIntoMemberEmptyStringNullopt) {
   EXPECT_THAT(field.value().uint32_member_2(), Eq(0));
 }
 
-TEST(MessageOwningFieldWithPresenceTest, ConsumeIntoMemberEmptyString) {
-  MessageOwningFieldWithPresence<InnerStruct> field{1};
+TEST(MessageFieldWithPresenceTest, ConsumeIntoMemberEmptyString) {
+  MessageFieldWithPresence<InnerStruct> field{1};
   *field.mutable_value() = InnerStruct(10, 0);
 
   std::string bytes = HexDecodeOrDie("00");
@@ -851,8 +845,8 @@ TEST(MessageOwningFieldWithPresenceTest, ConsumeIntoMemberEmptyString) {
   EXPECT_THAT(field.value().uint32_member_2(), Eq(0));
 }
 
-TEST(MessageOwningFieldWithPresenceTest, ConsumeIntoMemberDoesNotClear) {
-  MessageOwningFieldWithPresence<InnerStruct> field{1};
+TEST(MessageFieldWithPresenceTest, ConsumeIntoMemberDoesNotClear) {
+  MessageFieldWithPresence<InnerStruct> field{1};
   *field.mutable_value() = InnerStruct(10, 0);
 
   std::string bytes = absl::StrCat(/* 4 bytes */ HexDecodeOrDie("02"),
@@ -867,9 +861,8 @@ TEST(MessageOwningFieldWithPresenceTest, ConsumeIntoMemberDoesNotClear) {
   EXPECT_THAT(field.value().uint32_member_2(), Eq(0x7a));
 }
 
-TEST(MessageOwningFieldWithPresenceTest,
-     ConsumeIntoMemberWithInnerStructNullopt) {
-  MessageOwningFieldWithPresence<InnerStruct> field{1};
+TEST(MessageFieldWithPresenceTest, ConsumeIntoMemberWithInnerStructNullopt) {
+  MessageFieldWithPresence<InnerStruct> field{1};
 
   std::string bytes = absl::StrCat(/* 4 bytes */ HexDecodeOrDie("02"),
                                    /* Int field, tag 2, value 0x7a */
@@ -883,24 +876,24 @@ TEST(MessageOwningFieldWithPresenceTest,
   EXPECT_THAT(field.value().uint32_member_2(), Eq(0x7a));
 }
 
-TEST(MessageOwningFieldWithPresenceTest, ConsumeIntoMemberVarintTooLong) {
-  MessageOwningFieldWithPresence<InnerStruct> field{1};
+TEST(MessageFieldWithPresenceTest, ConsumeIntoMemberVarintTooLong) {
+  MessageFieldWithPresence<InnerStruct> field{1};
 
   std::string bytes = /* LengthDelimetedLength: */ HexDecodeOrDie("01");
   ParsingState parsing_state = ParsingState(bytes);
   EXPECT_THAT(field.ConsumeIntoMember(parsing_state), IsFalse());
 }
 
-TEST(MessageOwningFieldWithPresenceTest, EmptyWithoutVarint) {
-  MessageOwningFieldWithPresence<InnerStruct> field{1};
+TEST(MessageFieldWithPresenceTest, EmptyWithoutVarint) {
+  MessageFieldWithPresence<InnerStruct> field{1};
 
   std::string bytes = "";
   ParsingState parsing_state = ParsingState(bytes);
   EXPECT_THAT(field.ConsumeIntoMember(parsing_state), IsFalse());
 }
 
-TEST(MessageOwningFieldWithPresenceTest, InvalidVarint) {
-  MessageOwningFieldWithPresence<InnerStruct> field{1};
+TEST(MessageFieldWithPresenceTest, InvalidVarint) {
+  MessageFieldWithPresence<InnerStruct> field{1};
 
   std::string bytes = absl::StrCat(HexDecodeOrDie("808080808000"), "abcde");
   ParsingState parsing_state = ParsingState(bytes);
@@ -908,9 +901,8 @@ TEST(MessageOwningFieldWithPresenceTest, InvalidVarint) {
 }
 
 // When the optional struct is not set, we produce an empty serialization.
-TEST(MessageOwningFieldWithPresenceTest,
-     SerializeNulloptProducesEmptySerialization) {
-  MessageOwningFieldWithPresence<InnerStruct> field{1};
+TEST(MessageFieldWithPresenceTest, SerializeNulloptProducesEmptySerialization) {
+  MessageFieldWithPresence<InnerStruct> field{1};
 
   std::string buffer = "abc";
   EXPECT_THAT(field.GetSerializedSizeIncludingTag(), Eq(0));
@@ -922,9 +914,9 @@ TEST(MessageOwningFieldWithPresenceTest,
 
 // When the optional struct is set to the default value, we produce a
 // serialization of the empty submessage.
-TEST(MessageOwningFieldWithPresenceTest,
+TEST(MessageFieldWithPresenceTest,
      SerializeInnerStructWithDefaultValuesProducesEmptySubmessage) {
-  MessageOwningFieldWithPresence<InnerStruct> field{1};
+  MessageFieldWithPresence<InnerStruct> field{1};
   *field.mutable_value() = InnerStruct{};
 
   std::string buffer = "abc";
@@ -936,8 +928,8 @@ TEST(MessageOwningFieldWithPresenceTest,
   EXPECT_THAT(buffer.substr(0, 2), Eq(FieldWithNumber(1).IsSubMessage({})));
 }
 
-TEST(MessageOwningFieldWithPresenceTest, SerializeNonEmpty) {
-  MessageOwningFieldWithPresence<InnerStruct> field{1};
+TEST(MessageFieldWithPresenceTest, SerializeNonEmpty) {
+  MessageFieldWithPresence<InnerStruct> field{1};
   *field.mutable_value() = InnerStruct(0x23, 0x7a);
   std::string buffer = "BUFFERBUFFERBUFFERBUFFER";
   SerializationState state = SerializationState(absl::MakeSpan(buffer));
@@ -953,8 +945,8 @@ TEST(MessageOwningFieldWithPresenceTest, SerializeNonEmpty) {
   EXPECT_THAT(buffer.substr(6), Eq("BUFFERBUFFERBUFFER"));
 }
 
-TEST(MessageOwningFieldWithPresenceTest, SerializeTooSmallBuffer) {
-  MessageOwningFieldWithPresence<InnerStruct> field{1};
+TEST(MessageFieldWithPresenceTest, SerializeTooSmallBuffer) {
+  MessageFieldWithPresence<InnerStruct> field{1};
   *field.mutable_value() = InnerStruct(0x23, 0x7a);
   std::string buffer = "BUFFE";
   SerializationState state = SerializationState(absl::MakeSpan(buffer));
@@ -962,8 +954,8 @@ TEST(MessageOwningFieldWithPresenceTest, SerializeTooSmallBuffer) {
 }
 
 // The buffer can hold the tag, but not the varint of the length.
-TEST(MessageOwningFieldWithPresenceTest, SerializeSmallerBuffer) {
-  MessageOwningFieldWithPresence<InnerStruct> field{1};
+TEST(MessageFieldWithPresenceTest, SerializeSmallerBuffer) {
+  MessageFieldWithPresence<InnerStruct> field{1};
   *field.mutable_value() = InnerStruct(0x23, 0x7a);
   std::string buffer = "B";
   SerializationState state = SerializationState(absl::MakeSpan(buffer));
@@ -971,8 +963,8 @@ TEST(MessageOwningFieldWithPresenceTest, SerializeSmallerBuffer) {
 }
 
 // The buffer won't even hold the varint.
-TEST(MessageOwningFieldWithPresenceTest, SerializeVerySmallBuffer) {
-  MessageOwningFieldWithPresence<InnerStruct> field{1};
+TEST(MessageFieldWithPresenceTest, SerializeVerySmallBuffer) {
+  MessageFieldWithPresence<InnerStruct> field{1};
   *field.mutable_value() = InnerStruct(0x23, 0x7a);
   std::string buffer;
   SerializationState state = SerializationState(absl::MakeSpan(buffer));
@@ -984,19 +976,18 @@ class MessageWithBrokenFieldOrder
  public:
   MessageWithBrokenFieldOrder() = default;
 
-  std::array<const OwningField*, 2> GetFields() const {
-    return std::array<const OwningField*, 2>{&uint32_member_2_,
-                                             &uint32_member_1_};
+  std::array<const Field*, 2> GetFields() const {
+    return std::array<const Field*, 2>{&uint32_member_2_, &uint32_member_1_};
   }
 
   using Message::ParseFromString;
 
  private:
-  Uint32OwningField uint32_member_1_{1};
-  Uint32OwningField uint32_member_2_{2};
+  Uint32Field uint32_member_1_{1};
+  Uint32Field uint32_member_2_{2};
 };
 
-TEST(MessageOwningFieldWithPresenceDeathTest, DiesOnParse) {
+TEST(MessageFieldWithPresenceDeathTest, DiesOnParse) {
   MessageWithBrokenFieldOrder message;
   EXPECT_DEBUG_DEATH(
       { message.ParseFromString(HexDecodeOrDie("0800")); },

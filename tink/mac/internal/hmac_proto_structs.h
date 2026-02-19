@@ -23,9 +23,9 @@
 #include "absl/strings/string_view.h"
 #include "tink/internal/common_proto_enums.h"
 #include "tink/internal/proto_parser_enum_field.h"
+#include "tink/internal/proto_parser_fields.h"
 #include "tink/internal/proto_parser_message.h"
-#include "tink/internal/proto_parser_owning_fields.h"
-#include "tink/internal/proto_parser_secret_data_owning_field.h"
+#include "tink/internal/proto_parser_secret_data_field.h"
 #include "tink/secret_data.h"
 #include "tink/util/secret_data.h"
 
@@ -33,9 +33,9 @@ namespace crypto {
 namespace tink {
 namespace internal {
 
-class ProtoHmacParams : public proto_parsing::Message<ProtoHmacParams> {
+class HmacParamsTP : public proto_parsing::Message<HmacParamsTP> {
  public:
-  ProtoHmacParams() = default;
+  HmacParamsTP() = default;
 
   HashTypeEnum hash() const { return hash_.value(); }
   void set_hash(HashTypeEnum value) { hash_.set_value(value); }
@@ -43,21 +43,21 @@ class ProtoHmacParams : public proto_parsing::Message<ProtoHmacParams> {
   uint32_t tag_size() const { return tag_size_.value(); }
   void set_tag_size(uint32_t value) { tag_size_.set_value(value); }
 
-  std::array<const proto_parsing::OwningField*, 2> GetFields() const {
+  std::array<const proto_parsing::Field*, 2> GetFields() const {
     return {&hash_, &tag_size_};
   }
 
  private:
-  proto_parsing::EnumOwningField<HashTypeEnum> hash_{1, &HashTypeEnumIsValid};
-  proto_parsing::Uint32OwningField tag_size_{2};
+  proto_parsing::EnumField<HashTypeEnum> hash_{1, &HashTypeEnumIsValid};
+  proto_parsing::Uint32Field tag_size_{2};
 };
 
-class ProtoHmacKeyFormat : public proto_parsing::Message<ProtoHmacKeyFormat> {
+class HmacKeyFormatTP : public proto_parsing::Message<HmacKeyFormatTP> {
  public:
-  ProtoHmacKeyFormat() = default;
+  HmacKeyFormatTP() = default;
 
-  const ProtoHmacParams& params() const { return params_.value(); }
-  ProtoHmacParams* mutable_params() { return params_.mutable_value(); }
+  const HmacParamsTP& params() const { return params_.value(); }
+  HmacParamsTP* mutable_params() { return params_.mutable_value(); }
 
   uint32_t key_size() const { return key_size_.value(); }
   void set_key_size(uint32_t value) { key_size_.set_value(value); }
@@ -68,39 +68,39 @@ class ProtoHmacKeyFormat : public proto_parsing::Message<ProtoHmacKeyFormat> {
   // This is OK because this class doesn't contain secret data.
   using Message::SerializeAsString;
 
-  std::array<const proto_parsing::OwningField*, 3> GetFields() const {
+  std::array<const proto_parsing::Field*, 3> GetFields() const {
     return {&params_, &key_size_, &version_};
   }
 
  private:
-  proto_parsing::MessageOwningField<ProtoHmacParams> params_{1};
-  proto_parsing::Uint32OwningField key_size_{2};
-  proto_parsing::Uint32OwningField version_{3};
+  proto_parsing::MessageField<HmacParamsTP> params_{1};
+  proto_parsing::Uint32Field key_size_{2};
+  proto_parsing::Uint32Field version_{3};
 };
 
-class ProtoHmacKey : public proto_parsing::Message<ProtoHmacKey> {
+class HmacKeyTP : public proto_parsing::Message<HmacKeyTP> {
  public:
-  ProtoHmacKey() = default;
+  HmacKeyTP() = default;
 
   uint32_t version() const { return version_.value(); }
   void set_version(uint32_t value) { version_.set_value(value); }
 
-  const ProtoHmacParams& params() const { return params_.value(); }
-  ProtoHmacParams* mutable_params() { return params_.mutable_value(); }
+  const HmacParamsTP& params() const { return params_.value(); }
+  HmacParamsTP* mutable_params() { return params_.mutable_value(); }
 
   const SecretData& key_value() const { return key_value_.value(); }
   void set_key_value(absl::string_view value) {
     *key_value_.mutable_value() = util::SecretDataFromStringView(value);
   }
 
-  std::array<const proto_parsing::OwningField*, 3> GetFields() const {
+  std::array<const proto_parsing::Field*, 3> GetFields() const {
     return {&version_, &params_, &key_value_};
   }
 
  private:
-  proto_parsing::Uint32OwningField version_{1};
-  proto_parsing::MessageOwningField<ProtoHmacParams> params_{2};
-  proto_parsing::SecretDataOwningField key_value_{3};
+  proto_parsing::Uint32Field version_{1};
+  proto_parsing::MessageField<HmacParamsTP> params_{2};
+  proto_parsing::SecretDataField key_value_{3};
 };
 
 }  // namespace internal

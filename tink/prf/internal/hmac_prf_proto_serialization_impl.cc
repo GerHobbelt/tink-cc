@@ -33,9 +33,9 @@
 #include "tink/internal/proto_key_serialization.h"
 #include "tink/internal/proto_parameters_serialization.h"
 #include "tink/internal/proto_parser_enum_field.h"
+#include "tink/internal/proto_parser_fields.h"
 #include "tink/internal/proto_parser_message.h"
-#include "tink/internal/proto_parser_owning_fields.h"
-#include "tink/internal/proto_parser_secret_data_owning_field.h"
+#include "tink/internal/proto_parser_secret_data_field.h"
 #include "tink/internal/serialization_registry.h"
 #include "tink/internal/tink_proto_structs.h"
 #include "tink/partial_key_access.h"
@@ -50,60 +50,60 @@ namespace tink {
 namespace internal {
 namespace {
 
-using ::crypto::tink::internal::proto_parsing::EnumOwningField;
+using ::crypto::tink::internal::proto_parsing::EnumField;
+using ::crypto::tink::internal::proto_parsing::Field;
 using ::crypto::tink::internal::proto_parsing::Message;
-using ::crypto::tink::internal::proto_parsing::MessageOwningField;
-using ::crypto::tink::internal::proto_parsing::OwningField;
-using ::crypto::tink::internal::proto_parsing::SecretDataOwningField;
-using ::crypto::tink::internal::proto_parsing::Uint32OwningField;
+using ::crypto::tink::internal::proto_parsing::MessageField;
+using ::crypto::tink::internal::proto_parsing::SecretDataField;
+using ::crypto::tink::internal::proto_parsing::Uint32Field;
 
-class ProtoHmacPrfParams : public Message<ProtoHmacPrfParams> {
+class HmacPrfParamsTP : public Message<HmacPrfParamsTP> {
  public:
-  ProtoHmacPrfParams() = default;
+  HmacPrfParamsTP() = default;
   using Message::SerializeAsString;
 
   HashTypeEnum hash() const { return hash_.value(); }
   void set_hash(HashTypeEnum hash) { hash_.set_value(hash); }
 
-  std::array<const OwningField*, 1> GetFields() const { return {&hash_}; }
+  std::array<const Field*, 1> GetFields() const { return {&hash_}; }
 
  private:
-  EnumOwningField<HashTypeEnum> hash_{1, &HashTypeEnumIsValid};
+  EnumField<HashTypeEnum> hash_{1, &HashTypeEnumIsValid};
 };
 
-class ProtoHmacPrfKey : public Message<ProtoHmacPrfKey> {
+class HmacPrfKeyTP : public Message<HmacPrfKeyTP> {
  public:
-  ProtoHmacPrfKey() = default;
+  HmacPrfKeyTP() = default;
   using Message::SerializeAsString;
 
   uint32_t version() const { return version_.value(); }
   void set_version(uint32_t version) { version_.set_value(version); }
 
-  const ProtoHmacPrfParams& params() const { return params_.value(); }
-  ProtoHmacPrfParams* mutable_params() { return params_.mutable_value(); }
+  const HmacPrfParamsTP& params() const { return params_.value(); }
+  HmacPrfParamsTP* mutable_params() { return params_.mutable_value(); }
 
   const SecretData& key_value() const { return key_value_.value(); }
   void set_key_value(SecretData key_value) {
     *key_value_.mutable_value() = std::move(key_value);
   }
 
-  std::array<const OwningField*, 3> GetFields() const {
+  std::array<const Field*, 3> GetFields() const {
     return {&version_, &params_, &key_value_};
   }
 
  private:
-  Uint32OwningField version_{1};
-  MessageOwningField<ProtoHmacPrfParams> params_{2};
-  SecretDataOwningField key_value_{3};
+  Uint32Field version_{1};
+  MessageField<HmacPrfParamsTP> params_{2};
+  SecretDataField key_value_{3};
 };
 
-class ProtoHmacPrfKeyFormat : public Message<ProtoHmacPrfKeyFormat> {
+class HmacPrfKeyFormatTP : public Message<HmacPrfKeyFormatTP> {
  public:
-  ProtoHmacPrfKeyFormat() = default;
+  HmacPrfKeyFormatTP() = default;
   using Message::SerializeAsString;
 
-  const ProtoHmacPrfParams& params() const { return params_.value(); }
-  ProtoHmacPrfParams* mutable_params() { return params_.mutable_value(); }
+  const HmacPrfParamsTP& params() const { return params_.value(); }
+  HmacPrfParamsTP* mutable_params() { return params_.mutable_value(); }
 
   uint32_t key_size() const { return key_size_.value(); }
   void set_key_size(uint32_t key_size) { key_size_.set_value(key_size); }
@@ -111,14 +111,14 @@ class ProtoHmacPrfKeyFormat : public Message<ProtoHmacPrfKeyFormat> {
   uint32_t version() const { return version_.value(); }
   void set_version(uint32_t version) { version_.set_value(version); }
 
-  std::array<const OwningField*, 3> GetFields() const {
+  std::array<const Field*, 3> GetFields() const {
     return {&params_, &key_size_, &version_};
   }
 
  private:
-  MessageOwningField<ProtoHmacPrfParams> params_{1};
-  Uint32OwningField key_size_{2};
-  Uint32OwningField version_{3};
+  MessageField<HmacPrfParamsTP> params_{1};
+  Uint32Field key_size_{2};
+  Uint32Field version_{3};
 };
 
 using HmacPrfProtoParametersParserImpl =
@@ -171,7 +171,7 @@ absl::StatusOr<HashTypeEnum> ToProtoHashType(
 
 absl::StatusOr<HmacPrfParameters> ParseParameters(
     const ProtoParametersSerialization& serialization) {
-  const ProtoKeyTemplate& key_template = serialization.GetProtoKeyTemplate();
+  const KeyTemplateTP& key_template = serialization.GetKeyTemplate();
   if (key_template.type_url() != kTypeUrl) {
     return absl::InvalidArgumentError(
         "Wrong type URL when parsing HmacPrfParameters.");
@@ -181,7 +181,7 @@ absl::StatusOr<HmacPrfParameters> ParseParameters(
         "Output prefix type must be RAW for HmacPrfParameters.");
   }
 
-  ProtoHmacPrfKeyFormat proto_key_format;
+  HmacPrfKeyFormatTP proto_key_format;
   if (!proto_key_format.ParseFromString(key_template.value())) {
     return absl::InvalidArgumentError("Failed to parse HmacPrfKeyFormat proto");
   }
@@ -206,7 +206,7 @@ absl::StatusOr<ProtoParametersSerialization> SerializeParameters(
     return proto_hash_type.status();
   }
 
-  ProtoHmacPrfKeyFormat proto_key_format;
+  HmacPrfKeyFormatTP proto_key_format;
   proto_key_format.mutable_params()->set_hash(*proto_hash_type);
   proto_key_format.set_key_size(parameters.KeySizeInBytes());
   proto_key_format.set_version(0);
@@ -231,7 +231,7 @@ absl::StatusOr<HmacPrfKey> ParseKey(
         "Output prefix type must be RAW for HmacPrfKey.");
   }
 
-  ProtoHmacPrfKey proto_key;
+  HmacPrfKeyTP proto_key;
   if (!proto_key.ParseFromString(
           serialization.SerializedKeyProto().GetSecret(*token))) {
     return absl::InvalidArgumentError("Failed to parse HmacPrfKey proto");
@@ -274,7 +274,7 @@ absl::StatusOr<ProtoKeySerialization> SerializeKey(
     return proto_hash_type.status();
   }
 
-  ProtoHmacPrfKey proto_key;
+  HmacPrfKeyTP proto_key;
   proto_key.set_version(0);
   proto_key.mutable_params()->set_hash(*proto_hash_type);
   proto_key.set_key_value(restricted_input->Get(*token));

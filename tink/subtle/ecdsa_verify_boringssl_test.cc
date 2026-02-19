@@ -1,4 +1,4 @@
-// Copyright 2017 Google Inc.
+// Copyright 2017 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "tink/internal/fips_utils.h"
@@ -173,7 +173,7 @@ bool TestSignatures(const std::string& filename,
                     subtle::EcdsaSignatureEncoding encoding) {
   absl::StatusOr<google::protobuf::Struct> parsed_input =
       ReadTestVectors(filename);
-  CHECK_OK(parsed_input.status());
+  ABSL_CHECK_OK(parsed_input.status());
   const google::protobuf::Value& test_groups =
       parsed_input->fields().at("testGroups");
   int passed_tests = 0;
@@ -224,7 +224,7 @@ bool TestSignatures(const std::string& filename,
     }
   }
   int num_tests = parsed_input->fields().at("numberOfTests").number_value();
-  CHECK_EQ(skipped_test_groups, expected_skipped_test_groups);
+  ABSL_CHECK_EQ(skipped_test_groups, expected_skipped_test_groups);
   std::cout << "total number of tests: " << num_tests;
   std::cout << "number of tests passed:" << passed_tests;
   std::cout << "number of tests failed:" << failed_tests;

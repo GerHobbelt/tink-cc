@@ -22,7 +22,7 @@
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
@@ -242,8 +242,8 @@ TEST_P(AesCmacProtoSerializationTest, SerializeParametersWithMutableRegistry) {
   const ProtoParametersSerialization* proto_serialization =
       dynamic_cast<const ProtoParametersSerialization*>(serialization->get());
   ASSERT_THAT(proto_serialization, NotNull());
-  const internal::ProtoKeyTemplate& key_template =
-      proto_serialization->GetProtoKeyTemplate();
+  const internal::KeyTemplateTP& key_template =
+      proto_serialization->GetKeyTemplate();
   EXPECT_THAT(key_template.type_url(),
               Eq("type.googleapis.com/google.crypto.tink.AesCmacKey"));
   EXPECT_THAT(key_template.output_prefix_type(),
@@ -275,8 +275,8 @@ TEST_P(AesCmacProtoSerializationTest, SerializeParametersWithRegistryBuilder) {
   const ProtoParametersSerialization* proto_serialization =
       dynamic_cast<const ProtoParametersSerialization*>(serialization->get());
   ASSERT_THAT(proto_serialization, NotNull());
-  const internal::ProtoKeyTemplate& key_template =
-      proto_serialization->GetProtoKeyTemplate();
+  const internal::KeyTemplateTP& key_template =
+      proto_serialization->GetKeyTemplate();
   EXPECT_THAT(key_template.type_url(),
               Eq("type.googleapis.com/google.crypto.tink.AesCmacKey"));
   EXPECT_THAT(key_template.output_prefix_type(),
@@ -610,7 +610,7 @@ TEST_P(ParseTest, ParserCorrectly) {
 KeyAndSerialization CanonicalKeyAndSerialization0() {
   absl::StatusOr<AesCmacParameters> parameters =
       AesCmacParameters::Create(16, 11, AesCmacParameters::Variant::kTink);
-  CHECK_OK(parameters);
+  ABSL_CHECK_OK(parameters);
 
   absl::StatusOr<AesCmacKey> key = AesCmacKey::Create(
       *parameters,
@@ -629,7 +629,7 @@ KeyAndSerialization CanonicalKeyAndSerialization0() {
 KeyAndSerialization CanonicalKeyAndSerialization1() {
   absl::StatusOr<AesCmacParameters> parameters =
       AesCmacParameters::Create(32, 11, AesCmacParameters::Variant::kNoPrefix);
-  CHECK_OK(parameters);
+  ABSL_CHECK_OK(parameters);
 
   absl::StatusOr<AesCmacKey> key =
       AesCmacKey::Create(*parameters,
@@ -650,7 +650,7 @@ KeyAndSerialization CanonicalKeyAndSerialization1() {
 KeyAndSerialization NonCanonicalKeyAndSerialization2() {
   absl::StatusOr<AesCmacParameters> parameters =
       AesCmacParameters::Create(32, 11, AesCmacParameters::Variant::kNoPrefix);
-  CHECK_OK(parameters);
+  ABSL_CHECK_OK(parameters);
 
   absl::StatusOr<AesCmacKey> key =
       AesCmacKey::Create(*parameters,

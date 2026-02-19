@@ -20,22 +20,22 @@
 #include <array>
 #include <cstdint>
 
+#include "tink/internal/proto_parser_fields.h"
 #include "tink/internal/proto_parser_message.h"
-#include "tink/internal/proto_parser_owning_fields.h"
 
 namespace crypto {
 namespace tink {
 namespace internal {
 
-class ProtoXChaCha20Poly1305KeyFormat
-    : public proto_parsing::Message<ProtoXChaCha20Poly1305KeyFormat> {
+class XChaCha20Poly1305KeyFormatTP
+    : public proto_parsing::Message<XChaCha20Poly1305KeyFormatTP> {
  public:
-  ProtoXChaCha20Poly1305KeyFormat() = default;
+  XChaCha20Poly1305KeyFormatTP() = default;
 
   uint32_t version() const { return version_.value(); }
   void set_version(uint32_t value) { version_.set_value(value); }
 
-  std::array<const proto_parsing::OwningField*, 1> GetFields() const {
+  std::array<const proto_parsing::Field*, 1> GetFields() const {
     return {&version_};
   }
 
@@ -43,7 +43,7 @@ class ProtoXChaCha20Poly1305KeyFormat
   using Message::SerializeAsString;
 
  private:
-  proto_parsing::Uint32OwningField version_{1};
+  proto_parsing::Uint32Field version_{1};
 };
 
 }  // namespace internal

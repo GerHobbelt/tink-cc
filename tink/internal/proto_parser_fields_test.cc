@@ -1,4 +1,4 @@
-// Copyright 2024 Google LLC
+// Copyright 2025 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -26,13 +26,9 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
-#include "tink/big_integer.h"
-#include "tink/insecure_secret_key_access.h"
 #include "tink/internal/proto_parser_options.h"
 #include "tink/internal/proto_parser_state.h"
-#include "tink/internal/secret_buffer.h"
-#include "tink/secret_data.h"
-#include "tink/util/secret_data.h"
+#include "tink/internal/proto_parsing_helpers.h"
 #include "tink/util/test_matchers.h"
 #include "tink/util/test_util.h"
 
@@ -45,8 +41,6 @@ namespace {
 using ::crypto::tink::test::HexDecodeOrDie;
 using ::crypto::tink::test::HexEncode;
 using ::crypto::tink::test::IsOk;
-using ::crypto::tink::util::SecretDataAsStringView;
-using ::crypto::tink::util::SecretDataFromStringView;
 using ::testing::Eq;
 using ::testing::IsEmpty;
 using ::testing::IsFalse;
@@ -58,99 +52,8 @@ constexpr int32_t kUint32Field1Number = 1;
 constexpr int32_t kUint32Field2Number = 2;
 constexpr int32_t kBytesField1Number = 3;
 
-struct ParsedStruct {
-  uint32_t uint32_member_1;
-  uint32_t uint32_member_2;
-  uint64_t uint64_member_1;
-  uint64_t uint64_member_2;
-  std::string string_member_1;
-  std::string string_member_2;
-  SecretData secret_data_member_1;
-  SecretData secret_data_member_2;
-};
-
-// String helpers ===========================================================
-
-TEST(ClearStringLikeValue, String) {
-  std::string s = "hi";
-  ClearStringLikeValue(s);
-  EXPECT_THAT(s, IsEmpty());
-}
-
-TEST(ClearStringLikeValue, SecretData) {
-  SecretData s = SecretDataFromStringView("hi");
-  ClearStringLikeValue(s);
-  EXPECT_THAT(s, IsEmpty());
-}
-
-TEST(ClearStringLikeValue, StringView) {
-  absl::string_view b = absl::string_view("hi");
-  ClearStringLikeValue(b);
-  EXPECT_THAT(b, Eq(""));
-}
-
-TEST(CopyIntoStringLikeValue, String) {
-  std::string s = "hi";
-  std::string t;
-  CopyIntoStringLikeValue(s, t);
-  EXPECT_THAT(t, Eq(s));
-}
-
-TEST(CopyIntoStringLikeValue, SecretData) {
-  std::string s = "hi";
-  SecretData t;
-  CopyIntoStringLikeValue(s, t);
-  EXPECT_THAT(SecretDataAsStringView(t), Eq(s));
-}
-
-TEST(CopyIntoStringLikeValue, BigInteger) {
-  std::string s = "hi";
-  absl::string_view dest;
-  CopyIntoStringLikeValue(s, dest);
-  EXPECT_THAT(dest, Eq(s));
-}
-
-TEST(SizeOfStringLikeValue, String) {
-  std::string s = "1234567";
-  EXPECT_THAT(SizeOfStringLikeValue(s), Eq(7));
-}
-
-TEST(SizeOfStringLikeValue, SecretData) {
-  SecretData s = SecretDataFromStringView("1234567");
-  EXPECT_THAT(SizeOfStringLikeValue(s), Eq(7));
-}
-
-TEST(SizeOfStringLikeValue, BigInteger) {
-  absl::string_view b = absl::string_view("1234567");
-  EXPECT_THAT(SizeOfStringLikeValue(b), Eq(7));
-}
-
-TEST(SerializeStringLikeValue, String) {
-  std::string s = "1234567";
-  std::string t;
-  t.resize(100);
-  SerializeStringLikeValue(s, absl::MakeSpan(t));
-  EXPECT_THAT(t.substr(0, 7), Eq("1234567"));
-}
-
-TEST(SerializeStringLikeValue, SecretData) {
-  std::string s = "1234567";
-  SecretBuffer t;
-  t.resize(100);
-  SerializeStringLikeValue(
-      s, absl::MakeSpan(reinterpret_cast<char*>(t.data()), t.size()));
-  EXPECT_THAT(t.AsStringView().substr(0, 7), Eq("1234567"));
-}
-
-TEST(SerializeStringLikeValue, BigInteger) {
-  absl::string_view s = "1234567";
-  std::string t;
-  t.resize(100);
-  SerializeStringLikeValue(s, absl::MakeSpan(t));
-  EXPECT_THAT(t.substr(0, 7), Eq("1234567"));
-}
-
 // Uint32Field ==============================================================
+
 std::vector<std::pair<std::string, uint32_t>>
 Uint32TestCasesParseAndSerialize() {
   return std::vector<std::pair<std::string, uint32_t>>{
@@ -169,108 +72,97 @@ std::vector<std::pair<std::string, uint32_t>> Uint32TestCasesParseOnly() {
   return result;
 }
 
-TEST(Uint32Field, ClearMemberWorks) {
-  Uint32Field<ParsedStruct> field(kUint32Field1Number,
-                                  &ParsedStruct::uint32_member_1);
-  ParsedStruct s;
-  s.uint32_member_1 = 123;
-  field.ClearMember(s);
-  EXPECT_THAT(s.uint32_member_1, Eq(0));
+TEST(Uint32Field, UninitializedValueIsZero) {
+  Uint32Field field(kUint32Field1Number);
+  EXPECT_THAT(field.value(), Eq(0));
+}
+
+TEST(Uint32Field, ClearWorks) {
+  Uint32Field field(kUint32Field1Number);
+  field.set_value(123);
+  field.Clear();
+  EXPECT_THAT(field.value(), Eq(0));
 }
 
 TEST(Uint32Field, ConsumeIntoMemberSuccessCases) {
-  Uint32Field<ParsedStruct> field(kUint32Field1Number,
-                                  &ParsedStruct::uint32_member_1);
-  ParsedStruct s;
-  s.uint32_member_1 = 999;
+  Uint32Field field(kUint32Field1Number);
+  field.set_value(999);
 
   for (std::pair<std::string, uint32_t> test_case :
        Uint32TestCasesParseOnly()) {
     SCOPED_TRACE(test_case.first);
     std::string serialized = HexDecodeOrDie(test_case.first);
     ParsingState parsing_state = ParsingState(serialized);
-    EXPECT_THAT(field.ConsumeIntoMember(parsing_state, s), IsTrue());
-    EXPECT_THAT(s.uint32_member_1, Eq(test_case.second));
+    EXPECT_THAT(field.ConsumeIntoMember(parsing_state), IsTrue());
+    EXPECT_THAT(field.value(), Eq(test_case.second));
     EXPECT_THAT(parsing_state.RemainingData(), IsEmpty());
   }
 }
 
 TEST(Uint32Field, ConsumeIntoMemberLeavesRemainingData) {
-  Uint32Field<ParsedStruct> field(kUint32Field1Number,
-                                  &ParsedStruct::uint32_member_1);
-  ParsedStruct s;
-  s.uint32_member_1 = 999;
+  Uint32Field field(kUint32Field1Number);
+  field.set_value(999);
   std::string serialized =
       absl::StrCat(HexDecodeOrDie("8001"), "remaining data");
   ParsingState parsing_state = ParsingState(serialized);
-  EXPECT_THAT(field.ConsumeIntoMember(parsing_state, s), IsTrue());
-  EXPECT_THAT(s.uint32_member_1, Eq(128));
+  EXPECT_THAT(field.ConsumeIntoMember(parsing_state), IsTrue());
+  EXPECT_THAT(field.value(), Eq(128));
   EXPECT_THAT(parsing_state.RemainingData(), Eq("remaining data"));
 }
 
 TEST(Uint32Field, ConsumeIntoMemberFailureCases) {
-  Uint32Field<ParsedStruct> field(kUint32Field1Number,
-                                  &ParsedStruct::uint32_member_1);
-  ParsedStruct s;
-
+  Uint32Field field(kUint32Field1Number);
   for (std::string test_case : {"", "faab"}) {
     SCOPED_TRACE(test_case);
     std::string serialized = HexDecodeOrDie(test_case);
     ParsingState parsing_state = ParsingState(serialized);
-    EXPECT_THAT(field.ConsumeIntoMember(parsing_state, s), IsFalse());
+    EXPECT_THAT(field.ConsumeIntoMember(parsing_state), IsFalse());
   }
 }
 
 TEST(Uint32Field, SerializeVarintSuccessCases) {
-  Uint32Field<ParsedStruct> field(kUint32Field1Number,
-                                  &ParsedStruct::uint32_member_1);
-  ParsedStruct s;
-
+  Uint32Field field(kUint32Field1Number);
   for (std::pair<std::string, uint32_t> test_case :
        Uint32TestCasesParseAndSerialize()) {
     SCOPED_TRACE(test_case.first);
     std::string expected_serialization =
         HexDecodeOrDie("08") + HexDecodeOrDie(test_case.first);
-    s.uint32_member_1 = test_case.second;
-    ASSERT_THAT(field.GetSerializedSizeIncludingTag(s),
+    field.set_value(test_case.second);
+    ASSERT_THAT(field.GetSerializedSizeIncludingTag(),
                 Eq(expected_serialization.size()));
 
     std::string buffer;
     buffer.resize(expected_serialization.size());
     SerializationState state = SerializationState(absl::MakeSpan(buffer));
-    EXPECT_THAT(field.SerializeWithTagInto(state, s), IsOk());
+    EXPECT_THAT(field.SerializeWithTagInto(state), IsOk());
     EXPECT_THAT(HexEncode(buffer), Eq(HexEncode(expected_serialization)));
     EXPECT_THAT(state.GetBuffer().size(), Eq(0));
   }
 }
 
 TEST(Uint32Field, SerializeVarintBufferTooSmall) {
-  Uint32Field<ParsedStruct> field(kUint32Field1Number,
-                                  &ParsedStruct::uint32_member_1);
-  ParsedStruct s;
+  Uint32Field field(kUint32Field1Number);
   for (std::pair<std::string, uint32_t> test_case :
        Uint32TestCasesParseAndSerialize()) {
     SCOPED_TRACE(test_case.first);
-    s.uint32_member_1 = test_case.second;
-    ASSERT_THAT(field.GetSerializedSizeIncludingTag(s),
+    field.set_value(test_case.second);
+    ASSERT_THAT(field.GetSerializedSizeIncludingTag(),
                 Eq(test_case.first.size() / 2 + 1));
 
     std::string buffer;
     buffer.resize(test_case.first.size() / 2);
     SerializationState state = SerializationState(absl::MakeSpan(buffer));
-    EXPECT_THAT(field.SerializeWithTagInto(state, s), Not(IsOk()));
+    EXPECT_THAT(field.SerializeWithTagInto(state), Not(IsOk()));
   }
 }
 
 TEST(Uint32Field, SerializeVarintLeavesRemainingData) {
-  Uint32Field<ParsedStruct> field(kUint32Field1Number,
-                                  &ParsedStruct::uint32_member_1);
+  Uint32Field field(kUint32Field1Number);
   std::string buffer = "abcdef";
   SerializationState buffer_span = SerializationState(absl::MakeSpan(buffer));
-  ParsedStruct s;
-  s.uint32_member_1 = 14882;
+  field.set_value(14882);
   // Will overwrite the first two bytes with 0xa274
-  EXPECT_THAT(field.SerializeWithTagInto(buffer_span, s), IsOk());
+  EXPECT_THAT(field.SerializeWithTagInto(buffer_span), IsOk());
   EXPECT_THAT(HexEncode(buffer), Eq("08a274646566"));
   std::string expected = "def";
   // Note: absl::MakeSpan("def").size() == 4 (will add null terminator).
@@ -278,358 +170,372 @@ TEST(Uint32Field, SerializeVarintLeavesRemainingData) {
 }
 
 TEST(Uint32Field, Empty) {
-  Uint32Field<ParsedStruct> field(kUint32Field1Number,
-                                  &ParsedStruct::uint32_member_1);
+  Uint32Field field(kUint32Field1Number);
   std::string buffer = "abcdef";
   SerializationState buffer_span = SerializationState(absl::MakeSpan(buffer));
-  ParsedStruct s;
-  s.uint32_member_1 = 0;
+  field.set_value(0);
 
-  ASSERT_THAT(field.GetSerializedSizeIncludingTag(s), Eq(0));
-  EXPECT_THAT(field.SerializeWithTagInto(buffer_span, s), IsOk());
+  ASSERT_THAT(field.GetSerializedSizeIncludingTag(), Eq(0));
+  EXPECT_THAT(field.SerializeWithTagInto(buffer_span), IsOk());
   std::string expected = "abcdef";
   // Note: absl::MakeSpan("abcdef").size() == 7 (will add null terminator).
   EXPECT_THAT(buffer_span.GetBuffer(), Eq(absl::MakeSpan(expected)));
 }
 
 TEST(Uint32Field, EmptyAlwaysSerialize) {
-  Uint32Field<ParsedStruct> field(kUint32Field1Number,
-                                  &ParsedStruct::uint32_member_1,
-                                  ProtoFieldOptions::kAlwaysSerialize);
+  Uint32Field field(kUint32Field1Number, ProtoFieldOptions::kAlwaysSerialize);
   std::string buffer = "abcdef";
   SerializationState buffer_span = SerializationState(absl::MakeSpan(buffer));
-  ParsedStruct s;
-  s.uint32_member_1 = 0;
+  field.set_value(0);
 
-  ASSERT_THAT(field.GetSerializedSizeIncludingTag(s), Eq(2));
-  EXPECT_THAT(field.SerializeWithTagInto(buffer_span, s), IsOk());
+  ASSERT_THAT(field.GetSerializedSizeIncludingTag(), Eq(2));
+  EXPECT_THAT(field.SerializeWithTagInto(buffer_span), IsOk());
   std::string expected = "cdef";
   // Note: absl::MakeSpan("abcdef").size() == 7 (will add null terminator).
   EXPECT_THAT(buffer_span.GetBuffer(), Eq(absl::MakeSpan(expected)));
   EXPECT_THAT(HexEncode(buffer.substr(0, 2)), Eq("0800"));
 }
 
-TEST(Uint32Field, GetFieldNumber) {
-  Uint32Field<ParsedStruct> field(kUint32Field1Number,
-                                  &ParsedStruct::uint32_member_1);
-  ASSERT_THAT(field.GetFieldNumber(), Eq(kUint32Field1Number));
-  Uint32Field<ParsedStruct> field2(kUint32Field2Number,
-                                   &ParsedStruct::uint32_member_2);
-  ASSERT_THAT(field2.GetFieldNumber(), Eq(kUint32Field2Number));
+TEST(Uint32Field, FieldNumber) {
+  Uint32Field field(kUint32Field1Number);
+  ASSERT_THAT(field.FieldNumber(), Eq(kUint32Field1Number));
+  Uint32Field field2(kUint32Field2Number);
+  ASSERT_THAT(field2.FieldNumber(), Eq(kUint32Field2Number));
+}
+
+TEST(Uint32Field, GetWireType) {
+  Uint32Field field(kUint32Field1Number);
+  EXPECT_THAT(field.GetWireType(), Eq(WireType::kVarint));
 }
 
 TEST(Uint32Field, CopyAndMove) {
-  Uint32Field<ParsedStruct> field1(kUint32Field1Number,
-                                   &ParsedStruct::uint32_member_1);
+  Uint32Field field1(kUint32Field1Number);
+  field1.set_value(123);
 
   // Test copy constructor
-  Uint32Field<ParsedStruct> field_copy(field1);
-  EXPECT_THAT(field_copy.GetFieldNumber(), Eq(kUint32Field1Number));
+  Uint32Field field_copy(field1);
+  EXPECT_THAT(field_copy.FieldNumber(), Eq(kUint32Field1Number));
+  EXPECT_THAT(field_copy.value(), Eq(123));
 
   // Test copy assignment
-  Uint32Field<ParsedStruct> field_assign = field1;
-  EXPECT_THAT(field_assign.GetFieldNumber(), Eq(kUint32Field1Number));
+  Uint32Field field_assign(kUint32Field2Number);
+  field_assign = field1;
+  EXPECT_THAT(field_assign.FieldNumber(), Eq(kUint32Field1Number));
+  EXPECT_THAT(field_assign.value(), Eq(123));
 
   // Test move constructor
-  Uint32Field<ParsedStruct> field_move(std::move(field1));
-  EXPECT_THAT(field_move.GetFieldNumber(), Eq(kUint32Field1Number));
+  Uint32Field field_move(std::move(field1));
+  EXPECT_THAT(field_move.FieldNumber(), Eq(kUint32Field1Number));
+  EXPECT_THAT(field_move.value(), Eq(123));
 
   // Test move assignment
-  Uint32Field<ParsedStruct> field_move_assign(kUint32Field2Number,
-                                              &ParsedStruct::uint32_member_2);
+  Uint32Field field_move_assign(kUint32Field2Number);
   field_move_assign = std::move(field_copy);
-  EXPECT_THAT(field_move_assign.GetFieldNumber(), Eq(kUint32Field1Number));
+  EXPECT_THAT(field_move_assign.FieldNumber(), Eq(kUint32Field1Number));
+  EXPECT_THAT(field_move_assign.value(), Eq(123));
 }
 
 // Uint64Field ==============================================================
 
+std::vector<std::pair<std::string, uint64_t>>
+Uint64TestCasesParseAndSerialize() {
+  return std::vector<std::pair<std::string, uint64_t>>{
+      {"01", 1},
+      {"7f", 127},
+      {"8001", 128},
+      {"a274", 14882},
+      {"ffffffff0f", 0xffffffffLL},
+      {"8080808010", 0x100000000LL},
+      {"f0bdf3d589cf959a12", 0x123456789abcdef0LL},
+      {"ffffffffffffffff7f", 0x7fffffffffffffffLL},
+      {"ffffffffffffffffff01", 0xffffffffffffffffLL},
+  };
+}
+
+std::vector<std::pair<std::string, uint64_t>> Uint64TestCasesParseOnly() {
+  std::vector<std::pair<std::string, uint64_t>> result =
+      Uint64TestCasesParseAndSerialize();
+  result.push_back({"00", 0});
+  // Padded up to 10 bytes.
+  result.push_back({"8000", 0});
+  result.push_back({"80808080808080808000", 0});
+  result.push_back({"8100", 1});
+  result.push_back({"ffffffffffffffffff0f", 0xFFFFFFFFFFFFFFFFLL});
+  result.push_back({"ffffffffffffffffff7f", 0xFFFFFFFFFFFFFFFFLL});
+  return result;
+}
+
+TEST(Uint64Field, ClearMemberWorks) {
+  Uint64Field field{1};
+  field.set_value(123);
+  field.Clear();
+  EXPECT_THAT(field.value(), testing::Eq(0));
+}
+
+TEST(Uint64Field, ConsumeIntoMemberSuccessCases) {
+  Uint64Field field{1};
+  field.set_value(999);
+
+  for (std::pair<std::string, uint64_t> test_case :
+       Uint64TestCasesParseOnly()) {
+    SCOPED_TRACE(test_case.first);
+    std::string serialized = HexDecodeOrDie(test_case.first);
+    ParsingState parsing_state = ParsingState(serialized);
+    EXPECT_THAT(field.ConsumeIntoMember(parsing_state), IsTrue());
+    EXPECT_THAT(field.value(), Eq(test_case.second));
+    EXPECT_THAT(parsing_state.RemainingData(), IsEmpty());
+  }
+}
+
+TEST(Uint64Field, ConsumeIntoMemberLeavesRemainingData) {
+  Uint64Field field{1};
+  field.set_value(999);
+  std::string serialized =
+      absl::StrCat(HexDecodeOrDie("8001"), "remaining data");
+  ParsingState parsing_state = ParsingState(serialized);
+  EXPECT_THAT(field.ConsumeIntoMember(parsing_state), IsTrue());
+  EXPECT_THAT(field.value(), Eq(128));
+  EXPECT_THAT(parsing_state.RemainingData(), Eq("remaining data"));
+}
+
+TEST(Uint64Field, ConsumeIntoMemberFailureCases) {
+  Uint64Field field{1};
+
+  for (std::string test_case : {"", "faab"}) {
+    SCOPED_TRACE(test_case);
+    std::string serialized = HexDecodeOrDie(test_case);
+    ParsingState parsing_state = ParsingState(serialized);
+    EXPECT_THAT(field.ConsumeIntoMember(parsing_state), IsFalse());
+  }
+}
+
+TEST(Uint64Field, SerializeVarintSuccessCases) {
+  Uint64Field field{1};
+
+  for (std::pair<std::string, uint64_t> test_case :
+       Uint64TestCasesParseAndSerialize()) {
+    SCOPED_TRACE(test_case.first);
+    std::string expected_serialization =
+        HexDecodeOrDie("08") + HexDecodeOrDie(test_case.first);
+    field.set_value(test_case.second);
+    EXPECT_THAT(field.GetSerializedSizeIncludingTag(),
+                Eq(expected_serialization.size()));
+
+    std::string buffer;
+    buffer.resize(expected_serialization.size());
+    SerializationState state = SerializationState(absl::MakeSpan(buffer));
+    EXPECT_THAT(field.SerializeWithTagInto(state), IsOk());
+    EXPECT_THAT(HexEncode(buffer), Eq(HexEncode(expected_serialization)));
+    EXPECT_THAT(state.GetBuffer().size(), Eq(0));
+  }
+}
+
+TEST(Uint64Field, SerializeVarintDifferentFieldNumberSuccessCases) {
+  Uint64Field field{12345};
+
+  for (std::pair<std::string, uint64_t> test_case :
+       Uint64TestCasesParseAndSerialize()) {
+    SCOPED_TRACE(test_case.first);
+    std::string expected_serialization =
+        HexDecodeOrDie("c88306") + HexDecodeOrDie(test_case.first);
+    field.set_value(test_case.second);
+    EXPECT_THAT(field.GetSerializedSizeIncludingTag(),
+                Eq(expected_serialization.size()));
+
+    std::string buffer;
+    buffer.resize(expected_serialization.size());
+    SerializationState state = SerializationState(absl::MakeSpan(buffer));
+    EXPECT_THAT(field.SerializeWithTagInto(state), IsOk());
+    EXPECT_THAT(HexEncode(buffer), Eq(HexEncode(expected_serialization)));
+    EXPECT_THAT(state.GetBuffer().size(), Eq(0));
+  }
+}
+
+TEST(Uint64Field, SerializeVarintBufferTooSmall) {
+  Uint64Field field{1};
+  for (std::pair<std::string, uint64_t> test_case :
+       Uint64TestCasesParseAndSerialize()) {
+    SCOPED_TRACE(test_case.first);
+    field.set_value(test_case.second);
+    ASSERT_THAT(field.GetSerializedSizeIncludingTag(),
+                Eq(test_case.first.size() / 2 + 1));
+
+    std::string buffer;
+    buffer.resize(test_case.first.size() / 2);
+    SerializationState state = SerializationState(absl::MakeSpan(buffer));
+    EXPECT_THAT(field.SerializeWithTagInto(state), Not(IsOk()));
+  }
+}
+
+TEST(Uint64Field, SerializeVarintLeavesRemainingData) {
+  Uint64Field field{1};
+  std::string buffer = "abcdef";
+  SerializationState buffer_span = SerializationState(absl::MakeSpan(buffer));
+  field.set_value(14882);
+  // Will overwrite the first two bytes with 0xa274
+  EXPECT_THAT(field.SerializeWithTagInto(buffer_span), IsOk());
+  EXPECT_THAT(HexEncode(buffer), Eq("08a274646566"));
+  std::string expected = "def";
+  // Note: absl::MakeSpan("def").size() == 4 (will add null terminator).
+  EXPECT_THAT(buffer_span.GetBuffer(), Eq(absl::MakeSpan(expected)));
+}
+
+TEST(Uint64Field, Empty) {
+  Uint64Field field{1};
+  std::string buffer = "abcdef";
+  SerializationState buffer_span = SerializationState(absl::MakeSpan(buffer));
+  field.set_value(0);
+
+  ASSERT_THAT(field.GetSerializedSizeIncludingTag(), Eq(0));
+  EXPECT_THAT(field.SerializeWithTagInto(buffer_span), IsOk());
+  std::string expected = "abcdef";
+  // Note: absl::MakeSpan("abcdef").size() == 7 (will add null terminator).
+  EXPECT_THAT(buffer_span.GetBuffer(), Eq(absl::MakeSpan(expected)));
+}
+
+TEST(Uint64Field, FieldNumber) {
+  Uint64Field field{1};
+  ASSERT_THAT(field.FieldNumber(), Eq(1));
+  Uint64Field field2{123};
+  ASSERT_THAT(field2.FieldNumber(), Eq(123));
+}
+
+TEST(Uint64Field, GetWireType) {
+  Uint64Field field{1};
+  EXPECT_THAT(field.GetWireType(), Eq(WireType::kVarint));
+}
+
 // StringBytesField ============================================================
 TEST(StringBytesField, ClearMemberWorks) {
-  BytesField<ParsedStruct, std::string> field(kBytesField1Number,
-                                              &ParsedStruct::string_member_1);
-  ParsedStruct s;
-  s.string_member_1 = "hello";
-  field.ClearMember(s);
-  EXPECT_THAT(s.string_member_1, Eq(""));
+  BytesField<std::string> field(kBytesField1Number);
+  field.set_value("hello");
+  field.Clear();
+  EXPECT_THAT(field.value(), Eq(""));
 }
 
 TEST(StringBytesField, ConsumeIntoMemberSuccessCases) {
-  BytesField<ParsedStruct, std::string> field(kBytesField1Number,
-                                              &ParsedStruct::string_member_1);
-  ParsedStruct s;
-  s.string_member_1 = "hello";
+  BytesField<std::string> field(kBytesField1Number);
+  field.set_value("hello");
 
   std::string bytes =
       absl::StrCat(/* 10 bytes */ HexDecodeOrDie("0a"), "1234567890XYZ");
   ParsingState parsing_state = ParsingState(bytes);
-  EXPECT_THAT(field.ConsumeIntoMember(parsing_state, s), IsTrue());
-  EXPECT_THAT(s.string_member_1, Eq("1234567890"));
+  EXPECT_THAT(field.ConsumeIntoMember(parsing_state), IsTrue());
+  EXPECT_THAT(field.value(), Eq("1234567890"));
   EXPECT_THAT(parsing_state.RemainingData(), Eq("XYZ"));
 }
 
 TEST(StringBytesField, ConsumeIntoMemberEmptyString) {
-  BytesField<ParsedStruct, std::string> field(kBytesField1Number,
-                                              &ParsedStruct::string_member_1);
-  ParsedStruct s;
-  s.string_member_1 = "hello";
+  BytesField<std::string> field(kBytesField1Number);
+  field.set_value("hello");
 
   std::string bytes = absl::StrCat(/* 0 bytes */ HexDecodeOrDie("00"), "abcde");
   ParsingState parsing_state = ParsingState(bytes);
-  EXPECT_THAT(field.ConsumeIntoMember(parsing_state, s), IsTrue());
-  EXPECT_THAT(s.string_member_1, Eq(""));
+  EXPECT_THAT(field.ConsumeIntoMember(parsing_state), IsTrue());
+  EXPECT_THAT(field.value(), Eq(""));
   EXPECT_THAT(parsing_state.RemainingData(), Eq("abcde"));
 }
 
 TEST(StringBytesField, EmptyWithoutVarint) {
-  BytesField<ParsedStruct, std::string> field(kBytesField1Number,
-                                              &ParsedStruct::string_member_1);
-  ParsedStruct s;
+  BytesField<std::string> field(kBytesField1Number);
 
   std::string bytes = "";
   ParsingState parsing_state = ParsingState(bytes);
-  EXPECT_THAT(field.ConsumeIntoMember(parsing_state, s), IsFalse());
+  EXPECT_THAT(field.ConsumeIntoMember(parsing_state), IsFalse());
 }
 
 TEST(StringBytesField, InvalidVarint) {
-  BytesField<ParsedStruct, std::string> field(kBytesField1Number,
-                                              &ParsedStruct::string_member_1);
-  ParsedStruct s;
+  BytesField<std::string> field(kBytesField1Number);
 
   std::string bytes = absl::StrCat(HexDecodeOrDie("808080808000"), "abcde");
   ParsingState parsing_state = ParsingState(bytes);
-  EXPECT_THAT(field.ConsumeIntoMember(parsing_state, s), IsFalse());
+  EXPECT_THAT(field.ConsumeIntoMember(parsing_state), IsFalse());
 }
 
 TEST(StringBytesField, SerializeEmpty) {
-  BytesField<ParsedStruct, std::string> field(kBytesField1Number,
-                                              &ParsedStruct::string_member_1);
-  ParsedStruct s;
-  s.string_member_1 = "";
+  BytesField<std::string> field(kBytesField1Number);
+  field.set_value("");
   std::string buffer = "a";
   SerializationState state = SerializationState(absl::MakeSpan(buffer));
-  EXPECT_THAT(field.GetSerializedSizeIncludingTag(s), Eq(0));
-  EXPECT_THAT(field.SerializeWithTagInto(state, s), IsOk());
+  EXPECT_THAT(field.GetSerializedSizeIncludingTag(), Eq(0));
+  EXPECT_THAT(field.SerializeWithTagInto(state), IsOk());
   EXPECT_THAT(state.GetBuffer().size(), Eq(1));
 }
 
 TEST(StringBytesField, SerializeEmptyAlwaysSerialize) {
-  BytesField<ParsedStruct, std::string> field(
-      kBytesField1Number, &ParsedStruct::string_member_1,
-      ProtoFieldOptions::kAlwaysSerialize);
-  ParsedStruct s;
-  s.string_member_1 = "";
+  BytesField<std::string> field(kBytesField1Number,
+                                ProtoFieldOptions::kAlwaysSerialize);
+  field.set_value("");
   std::string buffer = "ab";
   SerializationState state = SerializationState(absl::MakeSpan(buffer));
-  EXPECT_THAT(field.GetSerializedSizeIncludingTag(s), Eq(2));
-  EXPECT_THAT(field.SerializeWithTagInto(state, s), IsOk());
+  EXPECT_THAT(field.GetSerializedSizeIncludingTag(), Eq(2));
+  EXPECT_THAT(field.SerializeWithTagInto(state), IsOk());
   EXPECT_THAT(state.GetBuffer().size(), Eq(0));
   EXPECT_THAT(HexEncode(buffer), Eq("1a00"));
 }
 
 TEST(StringBytesField, SerializeNonEmpty) {
-  BytesField<ParsedStruct, std::string> field(kBytesField1Number,
-                                              &ParsedStruct::string_member_1);
-  ParsedStruct s;
-  s.string_member_1 = "This is some text";
+  BytesField<std::string> field(kBytesField1Number);
+  field.set_value("This is some text");
   std::string buffer = "BUFFERBUFFERBUFFERBUFFER";
   SerializationState state = SerializationState(absl::MakeSpan(buffer));
-  EXPECT_THAT(field.GetSerializedSizeIncludingTag(s), Eq(19));
-  EXPECT_THAT(field.SerializeWithTagInto(state, s), IsOk());
+  EXPECT_THAT(field.GetSerializedSizeIncludingTag(), Eq(19));
+  EXPECT_THAT(field.SerializeWithTagInto(state), IsOk());
   EXPECT_THAT(state.GetBuffer().size(),
-              Eq(buffer.size() - field.GetSerializedSizeIncludingTag(s)));
+              Eq(buffer.size() - field.GetSerializedSizeIncludingTag()));
   EXPECT_THAT(&(state.GetBuffer())[0],
-              Eq(&buffer[field.GetSerializedSizeIncludingTag(s)]));
+              Eq(&buffer[field.GetSerializedSizeIncludingTag()]));
   EXPECT_THAT(buffer, Eq(absl::StrCat(HexDecodeOrDie("1a11"),
                                       "This is some text", "UFFER")));
 }
 
 TEST(StringBytesField, SerializeTooSmallBuffer) {
-  BytesField<ParsedStruct, std::string> field(kBytesField1Number,
-                                              &ParsedStruct::string_member_1);
-  ParsedStruct s;
-  s.string_member_1 = "This is some text";
+  BytesField<std::string> field(kBytesField1Number);
+  field.set_value("This is some text");
   std::string buffer = "BUFFERBUFFERBUFF";
   SerializationState state = SerializationState(absl::MakeSpan(buffer));
-  EXPECT_THAT(field.SerializeWithTagInto(state, s), Not(IsOk()));
+  EXPECT_THAT(field.SerializeWithTagInto(state), Not(IsOk()));
 }
 
 // The buffer won't even hold the varint.
 TEST(StringBytesField, SerializeVerySmallBuffer) {
-  BytesField<ParsedStruct, std::string> field(kBytesField1Number,
-                                              &ParsedStruct::string_member_1);
-  ParsedStruct s;
-  s.string_member_1 = "This is some text";
+  BytesField<std::string> field(kBytesField1Number);
+  field.set_value("This is some text");
   std::string buffer;
   SerializationState buffer_span = SerializationState(absl::MakeSpan(buffer));
-  EXPECT_THAT(field.SerializeWithTagInto(buffer_span, s), Not(IsOk()));
+  EXPECT_THAT(field.SerializeWithTagInto(buffer_span), Not(IsOk()));
 }
 
-// SecretDataBytesField ========================================================
-TEST(SecretDataBytesField, ClearMemberWorks) {
-  BytesField<ParsedStruct, SecretData> field(
-      kBytesField1Number, &ParsedStruct::secret_data_member_1);
-  ParsedStruct s;
-  s.secret_data_member_1 = SecretDataFromStringView("hello");
-  field.ClearMember(s);
-  EXPECT_THAT(SecretDataAsStringView(s.secret_data_member_1), Eq(""));
-}
-
-TEST(SecretDataBytesField, ConsumeIntoMemberSuccessCases) {
-  BytesField<ParsedStruct, SecretData> field(
-      kBytesField1Number, &ParsedStruct::secret_data_member_1);
-  ParsedStruct s;
-  s.secret_data_member_1 = SecretDataFromStringView("hello");
-
-  std::string bytes =
-      absl::StrCat(/* 10 bytes */ HexDecodeOrDie("0a"), "1234567890XYZ");
-  ParsingState parsing_state = ParsingState(bytes);
-  EXPECT_THAT(field.ConsumeIntoMember(parsing_state, s), IsTrue());
-  EXPECT_THAT(SecretDataAsStringView(s.secret_data_member_1), Eq("1234567890"));
-  EXPECT_THAT(parsing_state.RemainingData(), Eq("XYZ"));
-}
-
-TEST(SecretDataBytesField, ConsumeIntoMemberEmptyString) {
-  BytesField<ParsedStruct, SecretData> field(
-      kBytesField1Number, &ParsedStruct::secret_data_member_1);
-  ParsedStruct s;
-  s.secret_data_member_1 = SecretDataFromStringView("hello");
-
-  std::string bytes = absl::StrCat(/* 0 bytes */ HexDecodeOrDie("00"), "abcde");
-  ParsingState parsing_state = ParsingState(bytes);
-  EXPECT_THAT(field.ConsumeIntoMember(parsing_state, s), IsTrue());
-  EXPECT_THAT(SecretDataAsStringView(s.secret_data_member_1), Eq(""));
-  EXPECT_THAT(parsing_state.RemainingData(), Eq("abcde"));
-}
-
-TEST(SecretDataBytesField, EmptyWithoutVarint) {
-  BytesField<ParsedStruct, SecretData> field(
-      kBytesField1Number, &ParsedStruct::secret_data_member_1);
-  ParsedStruct s;
-
-  std::string bytes = "";
-  ParsingState parsing_state = ParsingState(bytes);
-  EXPECT_THAT(field.ConsumeIntoMember(parsing_state, s), IsFalse());
-}
-
-TEST(SecretDataBytesField, InvalidVarint) {
-  BytesField<ParsedStruct, SecretData> field(
-      kBytesField1Number, &ParsedStruct::secret_data_member_1);
-  ParsedStruct s;
-
-  std::string bytes = absl::StrCat(HexDecodeOrDie("808080808000"), "abcde");
-  ParsingState parsing_state = ParsingState(bytes);
-  EXPECT_THAT(field.ConsumeIntoMember(parsing_state, s), IsFalse());
-}
-
-TEST(SecretDataBytesField, SerializeEmpty) {
-  BytesField<ParsedStruct, SecretData> field(
-      kBytesField1Number, &ParsedStruct::secret_data_member_1);
-  ParsedStruct s;
-  s.secret_data_member_1 = SecretDataFromStringView("");
-  std::string buffer = "a";
-  SerializationState state = SerializationState(absl::MakeSpan(buffer));
-  EXPECT_THAT(field.GetSerializedSizeIncludingTag(s), Eq(0));
-  EXPECT_THAT(field.SerializeWithTagInto(state, s), IsOk());
-  EXPECT_THAT(state.GetBuffer().size(), Eq(1));
-  EXPECT_THAT(HexEncode(buffer), Eq("61"));
-}
-
-TEST(SecretDataBytesField, SerializeEmptyAlwaysSerialize) {
-  BytesField<ParsedStruct, SecretData> field(
-      kBytesField1Number, &ParsedStruct::secret_data_member_1,
-      ProtoFieldOptions::kAlwaysSerialize);
-  ParsedStruct s;
-  s.secret_data_member_1 = SecretDataFromStringView("");
-  std::string buffer = "ab";
-  SerializationState state = SerializationState(absl::MakeSpan(buffer));
-  EXPECT_THAT(field.GetSerializedSizeIncludingTag(s), Eq(2));
-  EXPECT_THAT(field.SerializeWithTagInto(state, s), IsOk());
-  EXPECT_THAT(state.GetBuffer().size(), Eq(0));
-  EXPECT_THAT(HexEncode(buffer), Eq("1a00"));
-}
-
-TEST(SecretDataBytesField, SerializeNonEmpty) {
-  BytesField<ParsedStruct, SecretData> field(
-      kBytesField1Number, &ParsedStruct::secret_data_member_1);
-  ParsedStruct s;
-  s.secret_data_member_1 = SecretDataFromStringView("This is some text");
-  std::string buffer = "BUFFERBUFFERBUFFERBUFFER";
-  SerializationState state = SerializationState(absl::MakeSpan(buffer));
-  EXPECT_THAT(field.GetSerializedSizeIncludingTag(s), Eq(19));
-  EXPECT_THAT(field.SerializeWithTagInto(state, s), IsOk());
-  EXPECT_THAT(state.GetBuffer().size(),
-              Eq(buffer.size() - field.GetSerializedSizeIncludingTag(s)));
-  EXPECT_THAT(&(state.GetBuffer())[0],
-              Eq(&buffer[field.GetSerializedSizeIncludingTag(s)]));
-  EXPECT_THAT(buffer, Eq(absl::StrCat(HexDecodeOrDie("1a11"),
-                                      "This is some text", "UFFER")));
-}
-
-TEST(SecretDataBytesField, SerializeTooSmallBuffer) {
-  BytesField<ParsedStruct, SecretData> field(
-      kBytesField1Number, &ParsedStruct::secret_data_member_1);
-  ParsedStruct s;
-  s.secret_data_member_1 = SecretDataFromStringView("This is some text");
-  std::string buffer = "BUFFERBUFFERBUFF";
-  SerializationState state = SerializationState(absl::MakeSpan(buffer));
-  EXPECT_THAT(field.SerializeWithTagInto(state, s), Not(IsOk()));
-}
-
-// The buffer won't even hold the varint.
-TEST(SecretDataBytesField, SerializeVerySmallBuffer) {
-  BytesField<ParsedStruct, SecretData> field(
-      kBytesField1Number, &ParsedStruct::secret_data_member_1);
-  ParsedStruct s;
-  s.secret_data_member_1 = SecretDataFromStringView("This is some text");
-  std::string buffer;
-  SerializationState state = SerializationState(absl::MakeSpan(buffer));
-  EXPECT_THAT(field.SerializeWithTagInto(state, s), Not(IsOk()));
+TEST(StringBytesField, GetWireType) {
+  BytesField<std::string> field(kBytesField1Number);
+  EXPECT_THAT(field.GetWireType(), Eq(WireType::kLengthDelimited));
 }
 
 TEST(StringBytesField, CopyAndMove) {
-  BytesField<ParsedStruct, std::string> field1(kBytesField1Number,
-                                               &ParsedStruct::string_member_1);
+  BytesField<std::string> field1(kBytesField1Number);
+  field1.set_value("test_string");
 
   // Test copy constructor
-  BytesField<ParsedStruct, std::string> field_copy(field1);
-  EXPECT_THAT(field_copy.GetFieldNumber(), Eq(kBytesField1Number));
+  BytesField<std::string> field_copy(field1);
+  EXPECT_THAT(field_copy.FieldNumber(), Eq(kBytesField1Number));
+  EXPECT_THAT(field_copy.value(), Eq("test_string"));
 
   // Test copy assignment
-  BytesField<ParsedStruct, std::string> field_assign = field1;
-  EXPECT_THAT(field_assign.GetFieldNumber(), Eq(kBytesField1Number));
+  BytesField<std::string> field_assign(kUint32Field2Number);
+  field_assign = field1;
+  EXPECT_THAT(field_assign.FieldNumber(), Eq(kBytesField1Number));
+  EXPECT_THAT(field_assign.value(), Eq("test_string"));
 
   // Test move constructor
-  BytesField<ParsedStruct, std::string> field_move(std::move(field1));
-  EXPECT_THAT(field_move.GetFieldNumber(), Eq(kBytesField1Number));
+  BytesField<std::string> field_move(std::move(field1));
+  EXPECT_THAT(field_move.FieldNumber(), Eq(kBytesField1Number));
+  EXPECT_THAT(field_move.value(), Eq("test_string"));
 
   // Test move assignment
-  BytesField<ParsedStruct, std::string> field_move_assign(
-      kUint32Field2Number, &ParsedStruct::string_member_2);
+  BytesField<std::string> field_move_assign(kUint32Field2Number);
   field_move_assign = std::move(field_copy);
-  EXPECT_THAT(field_move_assign.GetFieldNumber(), Eq(kBytesField1Number));
-}
-
-TEST(SecretDataBytesField, CopyAndMove) {
-  BytesField<ParsedStruct, SecretData> field1(
-      kBytesField1Number, &ParsedStruct::secret_data_member_1);
-
-  // Test copy constructor
-  BytesField<ParsedStruct, SecretData> field_copy(field1);
-  EXPECT_THAT(field_copy.GetFieldNumber(), Eq(kBytesField1Number));
-
-  // Test copy assignment
-  BytesField<ParsedStruct, SecretData> field_assign = field1;
-  EXPECT_THAT(field_assign.GetFieldNumber(), Eq(kBytesField1Number));
-
-  // Test move constructor
-  BytesField<ParsedStruct, SecretData> field_move(std::move(field1));
-  EXPECT_THAT(field_move.GetFieldNumber(), Eq(kBytesField1Number));
-
-  // Test move assignment
-  BytesField<ParsedStruct, SecretData> field_move_assign(
-      kUint32Field2Number, &ParsedStruct::secret_data_member_2);
-  field_move_assign = std::move(field_copy);
-  EXPECT_THAT(field_move_assign.GetFieldNumber(), Eq(kBytesField1Number));
+  EXPECT_THAT(field_move_assign.FieldNumber(), Eq(kBytesField1Number));
+  EXPECT_THAT(field_move_assign.value(), Eq("test_string"));
 }
 
 }  // namespace

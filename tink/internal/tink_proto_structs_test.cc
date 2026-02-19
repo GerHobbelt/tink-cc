@@ -61,14 +61,14 @@ std::string GetSerializedKeyData(std::string_view type_url,
   return key_data.SerializeAsString();
 }
 
-TEST(ProtoKeyTemplateTest, ParseProtoKeyTemplate) {
+TEST(KeyTemplateTPTest, ParseKeyTemplateTP) {
   const std::string serialized_hmac_key_template =
       absl::StrCat(proto_testing::FieldWithNumber(1).IsString("type_url"),
                    proto_testing::FieldWithNumber(2).IsString("value"),
                    proto_testing::FieldWithNumber(3).IsVarint(
                        static_cast<int>(OutputPrefixTypeEnum::kTink)));
 
-  ProtoKeyTemplate key_template;
+  KeyTemplateTP key_template;
   ASSERT_THAT(key_template.ParseFromString(serialized_hmac_key_template),
               IsTrue());
   EXPECT_THAT(key_template.type_url(), Eq("type_url"));
@@ -77,24 +77,24 @@ TEST(ProtoKeyTemplateTest, ParseProtoKeyTemplate) {
               Eq(OutputPrefixTypeEnum::kTink));
 }
 
-TEST(ProtoKeyTemplateTest, ParseProtoKeyTemplateInvalid) {
-  ProtoKeyTemplate params;
+TEST(KeyTemplateTPTest, ParseKeyTemplateTPInvalid) {
+  KeyTemplateTP params;
   EXPECT_THAT(params.ParseFromString("invalid"), IsFalse());
 }
 
-TEST(ProtoKeyTemplateTest, ParseProtoKeyTemplateInvalidOutputPrefixType) {
+TEST(KeyTemplateTPTest, ParseKeyTemplateTPInvalidOutputPrefixType) {
   const std::string serialized_hmac_key_template =
       absl::StrCat(proto_testing::FieldWithNumber(1).IsString("type_url"),
                    proto_testing::FieldWithNumber(2).IsString("value"),
                    proto_testing::FieldWithNumber(3).IsVarint(6));
-  ProtoKeyTemplate params;
+  KeyTemplateTP params;
   EXPECT_THAT(params.ParseFromString(serialized_hmac_key_template), IsTrue());
   EXPECT_THAT(params.output_prefix_type(),
               Eq(OutputPrefixTypeEnum::kUnknownPrefix));
 }
 
-TEST(ProtoKeyTemplateTest, SerializeProtoKeyTemplate) {
-  ProtoKeyTemplate key_template;
+TEST(KeyTemplateTPTest, SerializeKeyTemplateTP) {
+  KeyTemplateTP key_template;
   key_template.set_output_prefix_type(OutputPrefixTypeEnum::kTink);
   key_template.set_type_url("type_url");
   key_template.set_value("value");
@@ -108,14 +108,14 @@ TEST(ProtoKeyTemplateTest, SerializeProtoKeyTemplate) {
                           static_cast<int>(OutputPrefixTypeEnum::kTink)))));
 }
 
-TEST(ProtoKeyDataTest, ParseProtoKeyData) {
+TEST(KeyDataTPTest, ParseKeyDataTP) {
   const std::string serialized_hmac_key_data = absl::StrCat(
       proto_testing::FieldWithNumber(1).IsString("type_url"),
       proto_testing::FieldWithNumber(2).IsString("key_material"),
       proto_testing::FieldWithNumber(3).IsVarint(
           static_cast<int>(KeyMaterialTypeEnum::kAsymmetricPrivate)));
 
-  ProtoKeyData key_data;
+  KeyDataTP key_data;
   ASSERT_THAT(key_data.ParseFromString(serialized_hmac_key_data), IsTrue());
   EXPECT_THAT(key_data.type_url(), Eq("type_url"));
   EXPECT_THAT(util::SecretDataAsStringView(key_data.value()),
@@ -124,24 +124,24 @@ TEST(ProtoKeyDataTest, ParseProtoKeyData) {
               Eq(KeyMaterialTypeEnum::kAsymmetricPrivate));
 }
 
-TEST(ProtoKeyDataTest, ParseProtoKeyDataInvalid) {
-  ProtoKeyData params;
+TEST(KeyDataTPTest, ParseKeyDataTPInvalid) {
+  KeyDataTP params;
   EXPECT_THAT(params.ParseFromString("invalid"), IsFalse());
 }
 
-TEST(ProtoKeyDataTest, ParseProtoKeyDataInvalidKeyMaterialType) {
+TEST(KeyDataTPTest, ParseKeyDataTPInvalidKeyMaterialType) {
   const std::string serialized_hmac_key_data =
       absl::StrCat(proto_testing::FieldWithNumber(1).IsString("type_url"),
                    proto_testing::FieldWithNumber(2).IsString("key_material"),
                    proto_testing::FieldWithNumber(3).IsVarint(5));
-  ProtoKeyData params;
+  KeyDataTP params;
   EXPECT_THAT(params.ParseFromString(serialized_hmac_key_data), IsTrue());
   EXPECT_THAT(params.key_material_type(),
               Eq(KeyMaterialTypeEnum::kUnknownKeyMaterial));
 }
 
-TEST(ProtoKeyDataTest, SerializeProtoKeyData) {
-  ProtoKeyData key_data;
+TEST(KeyDataTPTest, SerializeKeyDataTP) {
+  KeyDataTP key_data;
   key_data.set_type_url("type_url");
   key_data.set_value("value");
   key_data.set_key_material_type(KeyMaterialTypeEnum::kAsymmetricPrivate);
@@ -153,63 +153,6 @@ TEST(ProtoKeyDataTest, SerializeProtoKeyData) {
                   proto_testing::FieldWithNumber(2).IsString("value"),
                   proto_testing::FieldWithNumber(3).IsVarint(static_cast<int>(
                       KeyMaterialTypeEnum::kAsymmetricPrivate)))));
-}
-
-TEST(TinkProtoStructsTest, ParseKeyTemplateStruct) {
-  absl::StatusOr<KeyTemplateStruct> key_template_struct =
-      KeyTemplateStruct::GetParser().Parse(GetSerializedKeyTemplate(
-          "type_url", "value", OutputPrefixType::TINK));
-  ASSERT_THAT(key_template_struct, IsOk());
-
-  EXPECT_THAT(key_template_struct->type_url, Eq("type_url"));
-  EXPECT_THAT(key_template_struct->value, Eq("value"));
-  EXPECT_THAT(key_template_struct->output_prefix_type,
-              Eq(OutputPrefixTypeEnum::kTink));
-}
-
-TEST(TinkProtoStructsTest, SerializeKeyTemplateStruct) {
-  KeyTemplateStruct key_template_struct;
-  key_template_struct.type_url = "type_url",
-  key_template_struct.value = "value",
-  key_template_struct.output_prefix_type = OutputPrefixTypeEnum::kTink;
-  absl::StatusOr<std::string> serialized_key_template =
-      KeyTemplateStruct::GetParser().SerializeIntoString(key_template_struct);
-  ASSERT_THAT(serialized_key_template, IsOk());
-
-  KeyTemplate key_template;
-  key_template.ParseFromString(*serialized_key_template);
-  EXPECT_THAT(key_template.type_url(), Eq("type_url"));
-  EXPECT_THAT(key_template.value(), Eq("value"));
-  EXPECT_THAT(key_template.output_prefix_type(), Eq(OutputPrefixType::TINK));
-}
-
-TEST(TinkProtoStructsTest, ParseKeyDataStruct) {
-  absl::StatusOr<KeyDataStruct> key_data_struct =
-      KeyDataStruct::GetParser().Parse(
-          GetSerializedKeyData("type_url", "value", KeyData::SYMMETRIC));
-  ASSERT_THAT(key_data_struct, IsOk());
-
-  EXPECT_THAT(key_data_struct->type_url, Eq("type_url"));
-  EXPECT_THAT(util::SecretDataAsStringView(key_data_struct->value),
-              Eq("value"));
-  EXPECT_THAT(key_data_struct->key_material_type,
-              Eq(KeyMaterialTypeEnum::kSymmetric));
-}
-
-TEST(TinkProtoStructsTest, SerializeKeyDataStruct) {
-  KeyDataStruct key_data_struct;
-  key_data_struct.type_url = "type_url";
-  key_data_struct.value = util::SecretDataFromStringView("value");
-  key_data_struct.key_material_type = KeyMaterialTypeEnum::kSymmetric;
-  absl::StatusOr<SecretData> serialized_key_data =
-      KeyDataStruct::GetParser().SerializeIntoSecretData(key_data_struct);
-  ASSERT_THAT(serialized_key_data, IsOk());
-
-  KeyData key_data;
-  key_data.ParseFromString(util::SecretDataAsStringView(*serialized_key_data));
-  EXPECT_THAT(key_data.type_url(), Eq("type_url"));
-  EXPECT_THAT(key_data.value(), Eq("value"));
-  EXPECT_THAT(key_data.key_material_type(), Eq(KeyData::SYMMETRIC));
 }
 
 }  // namespace

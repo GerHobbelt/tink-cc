@@ -35,8 +35,8 @@
 #include "tink/internal/parameters_serializer.h"
 #include "tink/internal/proto_key_serialization.h"
 #include "tink/internal/proto_parameters_serialization.h"
+#include "tink/internal/proto_parser_fields.h"
 #include "tink/internal/proto_parser_message.h"
-#include "tink/internal/proto_parser_owning_fields.h"
 #include "tink/internal/serialization_registry.h"
 #include "tink/internal/tink_proto_structs.h"
 #include "tink/restricted_data.h"
@@ -48,11 +48,11 @@ namespace tink {
 namespace internal {
 namespace {
 
+using ::crypto::tink::internal::proto_parsing::BytesField;
+using ::crypto::tink::internal::proto_parsing::Field;
 using ::crypto::tink::internal::proto_parsing::Message;
-using ::crypto::tink::internal::proto_parsing::MessageOwningField;
-using ::crypto::tink::internal::proto_parsing::OwningBytesField;
-using ::crypto::tink::internal::proto_parsing::OwningField;
-using ::crypto::tink::internal::proto_parsing::Uint32OwningField;
+using ::crypto::tink::internal::proto_parsing::MessageField;
+using ::crypto::tink::internal::proto_parsing::Uint32Field;
 
 using LegacyKmsAeadProtoParametersParserImpl =
     internal::ParametersParserImpl<internal::ProtoParametersSerialization,
@@ -66,39 +66,39 @@ using LegacyKmsAeadProtoKeySerializerImpl =
     internal::KeySerializerImpl<LegacyKmsAeadKey,
                                 internal::ProtoKeySerialization>;
 
-class ProtoKmsAeadKeyFormat : public Message<ProtoKmsAeadKeyFormat> {
+class KmsAeadKeyFormatTP : public Message<KmsAeadKeyFormatTP> {
  public:
-  ProtoKmsAeadKeyFormat() = default;
+  KmsAeadKeyFormatTP() = default;
 
   const std::string& key_uri() const { return key_uri_.value(); }
   void set_key_uri(absl::string_view value) { key_uri_.set_value(value); }
 
-  std::array<const OwningField*, 1> GetFields() const { return {&key_uri_}; }
+  std::array<const Field*, 1> GetFields() const { return {&key_uri_}; }
 
   // This is OK because this class doesn't contain secret data.
   using Message::SerializeAsString;
 
  private:
-  OwningBytesField<std::string> key_uri_{1};
+  BytesField<std::string> key_uri_{1};
 };
 
-class ProtoKmsAeadKey : public Message<ProtoKmsAeadKey> {
+class KmsAeadKeyTP : public Message<KmsAeadKeyTP> {
  public:
-  ProtoKmsAeadKey() = default;
+  KmsAeadKeyTP() = default;
 
   uint32_t version() const { return version_.value(); }
   void set_version(uint32_t value) { version_.set_value(value); }
 
-  const ProtoKmsAeadKeyFormat& params() const { return params_.value(); }
-  ProtoKmsAeadKeyFormat* mutable_params() { return params_.mutable_value(); }
+  const KmsAeadKeyFormatTP& params() const { return params_.value(); }
+  KmsAeadKeyFormatTP* mutable_params() { return params_.mutable_value(); }
 
-  std::array<const OwningField*, 2> GetFields() const {
+  std::array<const Field*, 2> GetFields() const {
     return {&version_, &params_};
   }
 
  private:
-  Uint32OwningField version_{1};
-  MessageOwningField<ProtoKmsAeadKeyFormat> params_{2};
+  Uint32Field version_{1};
+  MessageField<KmsAeadKeyFormatTP> params_{2};
 };
 
 const absl::string_view kTypeUrl =
@@ -132,12 +132,12 @@ absl::StatusOr<OutputPrefixTypeEnum> ToOutputPrefixType(
 
 absl::StatusOr<LegacyKmsAeadParameters> ParseParameters(
     const internal::ProtoParametersSerialization& serialization) {
-  const ProtoKeyTemplate& key_template = serialization.GetProtoKeyTemplate();
+  const KeyTemplateTP& key_template = serialization.GetKeyTemplate();
   if (key_template.type_url() != kTypeUrl) {
     return absl::InvalidArgumentError(
         "Wrong type URL when parsing LegacyKmsAeadParameters.");
   }
-  ProtoKmsAeadKeyFormat key_format;
+  KmsAeadKeyFormatTP key_format;
   if (!key_format.ParseFromString(key_template.value())) {
     return absl::InvalidArgumentError("Failed to parse KmsAeadKeyFormat proto");
   }
@@ -157,7 +157,7 @@ absl::StatusOr<internal::ProtoParametersSerialization> SerializeParameters(
     return output_prefix_type.status();
   }
 
-  ProtoKmsAeadKeyFormat key_format;
+  KmsAeadKeyFormatTP key_format;
   key_format.set_key_uri(parameters.GetKeyUri());
 
   return internal::ProtoParametersSerialization::Create(
@@ -171,7 +171,7 @@ absl::StatusOr<LegacyKmsAeadKey> ParseKey(
     return absl::InvalidArgumentError(
         "Wrong type URL when parsing LegacyKmsAeadKey.");
   }
-  ProtoKmsAeadKey proto_key;
+  KmsAeadKeyTP proto_key;
   if (!proto_key.ParseFromString(serialization.SerializedKeyProto().GetSecret(
           GetInsecureSecretKeyAccessInternal()))) {
     return absl::InvalidArgumentError("Failed to parse KmsAeadKey proto");
@@ -197,7 +197,7 @@ absl::StatusOr<LegacyKmsAeadKey> ParseKey(
 
 absl::StatusOr<internal::ProtoKeySerialization> SerializeKey(
     const LegacyKmsAeadKey& key, absl::optional<SecretKeyAccessToken> token) {
-  ProtoKmsAeadKey proto_key;
+  KmsAeadKeyTP proto_key;
   proto_key.set_version(0);
   proto_key.mutable_params()->set_key_uri(key.GetParameters().GetKeyUri());
 

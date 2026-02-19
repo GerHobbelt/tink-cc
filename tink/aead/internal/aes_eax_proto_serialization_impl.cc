@@ -35,9 +35,9 @@
 #include "tink/internal/parameters_serializer.h"
 #include "tink/internal/proto_key_serialization.h"
 #include "tink/internal/proto_parameters_serialization.h"
+#include "tink/internal/proto_parser_fields.h"
 #include "tink/internal/proto_parser_message.h"
-#include "tink/internal/proto_parser_owning_fields.h"
-#include "tink/internal/proto_parser_secret_data_owning_field.h"
+#include "tink/internal/proto_parser_secret_data_field.h"
 #include "tink/internal/serialization_registry.h"
 #include "tink/internal/tink_proto_structs.h"
 #include "tink/partial_key_access.h"
@@ -50,12 +50,11 @@ namespace tink {
 namespace internal {
 namespace {
 
+using ::crypto::tink::internal::proto_parsing::Field;
 using ::crypto::tink::internal::proto_parsing::Message;
-using ::crypto::tink::internal::proto_parsing::MessageOwningField;
-using ::crypto::tink::internal::proto_parsing::OwningBytesField;
-using ::crypto::tink::internal::proto_parsing::OwningField;
-using ::crypto::tink::internal::proto_parsing::SecretDataOwningField;
-using ::crypto::tink::internal::proto_parsing::Uint32OwningField;
+using ::crypto::tink::internal::proto_parsing::MessageField;
+using ::crypto::tink::internal::proto_parsing::SecretDataField;
+using ::crypto::tink::internal::proto_parsing::Uint32Field;
 
 using AesEaxProtoParametersParserImpl =
     ParametersParserImpl<ProtoParametersSerialization, AesEaxParameters>;
@@ -69,30 +68,30 @@ using AesEaxProtoKeySerializerImpl =
 constexpr absl::string_view kTypeUrl =
     "type.googleapis.com/google.crypto.tink.AesEaxKey";
 
-class ProtoAesEaxParams : public Message<ProtoAesEaxParams> {
+class AesEaxParamsTP : public Message<AesEaxParamsTP> {
  public:
-  ProtoAesEaxParams() = default;
+  AesEaxParamsTP() = default;
 
   uint32_t iv_size() const { return iv_size_.value(); }
   void set_iv_size(uint32_t value) { iv_size_.set_value(value); }
 
-  std::array<const OwningField*, 1> GetFields() const { return {&iv_size_}; }
+  std::array<const Field*, 1> GetFields() const { return {&iv_size_}; }
 
  private:
-  Uint32OwningField iv_size_{1};
+  Uint32Field iv_size_{1};
 };
 
-class ProtoAesEaxKeyFormat : public Message<ProtoAesEaxKeyFormat> {
+class AesEaxKeyFormatTP : public Message<AesEaxKeyFormatTP> {
  public:
-  ProtoAesEaxKeyFormat() = default;
+  AesEaxKeyFormatTP() = default;
 
-  const ProtoAesEaxParams& params() const { return params_.value(); }
-  ProtoAesEaxParams* mutable_params() { return params_.mutable_value(); }
+  const AesEaxParamsTP& params() const { return params_.value(); }
+  AesEaxParamsTP* mutable_params() { return params_.mutable_value(); }
 
   uint32_t key_size() const { return key_size_.value(); }
   void set_key_size(uint32_t value) { key_size_.set_value(value); }
 
-  std::array<const OwningField*, 2> GetFields() const {
+  std::array<const Field*, 2> GetFields() const {
     return {&params_, &key_size_};
   }
 
@@ -100,33 +99,33 @@ class ProtoAesEaxKeyFormat : public Message<ProtoAesEaxKeyFormat> {
   using Message::SerializeAsString;
 
  private:
-  MessageOwningField<ProtoAesEaxParams> params_{1};
-  Uint32OwningField key_size_{2};
+  MessageField<AesEaxParamsTP> params_{1};
+  Uint32Field key_size_{2};
 };
 
-class ProtoAesEaxKey : public Message<ProtoAesEaxKey> {
+class AesEaxKeyTP : public Message<AesEaxKeyTP> {
  public:
-  ProtoAesEaxKey() = default;
+  AesEaxKeyTP() = default;
 
   uint32_t version() const { return version_.value(); }
   void set_version(uint32_t value) { version_.set_value(value); }
 
-  const ProtoAesEaxParams& params() const { return params_.value(); }
-  ProtoAesEaxParams* mutable_params() { return params_.mutable_value(); }
+  const AesEaxParamsTP& params() const { return params_.value(); }
+  AesEaxParamsTP* mutable_params() { return params_.mutable_value(); }
 
   const SecretData& key_value() const { return key_value_.value(); }
   void set_key_value(absl::string_view value) {
     *key_value_.mutable_value() = util::SecretDataFromStringView(value);
   }
 
-  std::array<const OwningField*, 3> GetFields() const {
+  std::array<const Field*, 3> GetFields() const {
     return {&version_, &params_, &key_value_};
   }
 
  private:
-  Uint32OwningField version_{1};
-  MessageOwningField<ProtoAesEaxParams> params_{2};
-  SecretDataOwningField key_value_{3};
+  Uint32Field version_{1};
+  MessageField<AesEaxParamsTP> params_{2};
+  SecretDataField key_value_{3};
 };
 
 absl::StatusOr<AesEaxParameters::Variant> ToVariant(
@@ -161,7 +160,7 @@ absl::StatusOr<OutputPrefixTypeEnum> ToOutputPrefixType(
   }
 }
 
-absl::StatusOr<ProtoAesEaxParams> GetProtoParams(
+absl::StatusOr<AesEaxParamsTP> GetProtoParams(
     const AesEaxParameters& parameters) {
   // Legacy Tink AES-EAX key proto format assumes 16-byte tags.
   if (parameters.GetTagSizeInBytes() != 16) {
@@ -169,22 +168,21 @@ absl::StatusOr<ProtoAesEaxParams> GetProtoParams(
         "Tink currently restricts AES-EAX tag size to 16 bytes.");
   }
 
-  ProtoAesEaxParams params;
+  AesEaxParamsTP params;
   params.set_iv_size(parameters.GetIvSizeInBytes());
   return params;
 }
 
 absl::StatusOr<AesEaxParameters> ParseParameters(
     const ProtoParametersSerialization& serialization) {
-  const internal::ProtoKeyTemplate& key_template =
-      serialization.GetProtoKeyTemplate();
+  const internal::KeyTemplateTP& key_template = serialization.GetKeyTemplate();
   if (key_template.type_url() != kTypeUrl) {
     return absl::InvalidArgumentError(
         absl::StrCat("Wrong type URL when parsing AesEaxParameters: ",
                      key_template.type_url()));
   }
 
-  ProtoAesEaxKeyFormat key_format;
+  AesEaxKeyFormatTP key_format;
   if (!key_format.ParseFromString(key_template.value())) {
     return absl::InvalidArgumentError("Failed to parse AesEaxKeyFormat proto");
   }
@@ -206,7 +204,7 @@ absl::StatusOr<AesEaxParameters> ParseParameters(
 
 absl::StatusOr<ProtoParametersSerialization> SerializeParameters(
     const AesEaxParameters& parameters) {
-  absl::StatusOr<ProtoAesEaxParams> params = GetProtoParams(parameters);
+  absl::StatusOr<AesEaxParamsTP> params = GetProtoParams(parameters);
   if (!params.ok()) {
     return params.status();
   }
@@ -217,7 +215,7 @@ absl::StatusOr<ProtoParametersSerialization> SerializeParameters(
     return output_prefix_type.status();
   }
 
-  ProtoAesEaxKeyFormat key_format;
+  AesEaxKeyFormatTP key_format;
   key_format.mutable_params()->set_iv_size(params->iv_size());
   key_format.set_key_size(parameters.GetKeySizeInBytes());
 
@@ -236,7 +234,7 @@ absl::StatusOr<AesEaxKey> ParseKey(const ProtoKeySerialization& serialization,
                         "SecretKeyAccess is required");
   }
 
-  ProtoAesEaxKey key;
+  AesEaxKeyTP key;
   if (!key.ParseFromString(
           serialization.SerializedKeyProto().GetSecret(*token))) {
     return absl::InvalidArgumentError("Failed to parse AesEaxKey proto");
@@ -268,8 +266,7 @@ absl::StatusOr<AesEaxKey> ParseKey(const ProtoKeySerialization& serialization,
 
 absl::StatusOr<ProtoKeySerialization> SerializeKey(
     const AesEaxKey& key, absl::optional<SecretKeyAccessToken> token) {
-  absl::StatusOr<ProtoAesEaxParams> params =
-      GetProtoParams(key.GetParameters());
+  absl::StatusOr<AesEaxParamsTP> params = GetProtoParams(key.GetParameters());
   if (!params.ok()) {
     return params.status();
   }
@@ -282,7 +279,7 @@ absl::StatusOr<ProtoKeySerialization> SerializeKey(
                         "SecretKeyAccess is required");
   }
 
-  ProtoAesEaxKey proto_key;
+  AesEaxKeyTP proto_key;
   proto_key.set_version(0);
   proto_key.mutable_params()->set_iv_size(params->iv_size());
   proto_key.set_key_value(restricted_input->GetSecret(*token));

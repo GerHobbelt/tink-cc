@@ -14,30 +14,29 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef TINK_DAEAD_INTERNAL_AES_SIV_PROTO_STRUCTS_H_
-#define TINK_DAEAD_INTERNAL_AES_SIV_PROTO_STRUCTS_H_
+#ifndef TINK_DAEAD_INTERNAL_AES_SIV_PROTO_FORMAT_H_
+#define TINK_DAEAD_INTERNAL_AES_SIV_PROTO_FORMAT_H_
 
 #include <array>
 #include <cstdint>
 
+#include "tink/internal/proto_parser_fields.h"
 #include "tink/internal/proto_parser_message.h"
-#include "tink/internal/proto_parser_owning_fields.h"
-#include "tink/internal/proto_parser_secret_data_owning_field.h"
-#include "tink/util/secret_data.h"
+#include "tink/internal/proto_parser_secret_data_field.h"
 
 namespace crypto {
 namespace tink {
 namespace internal {
 
+using ::crypto::tink::internal::proto_parsing::Field;
 using ::crypto::tink::internal::proto_parsing::Message;
-using ::crypto::tink::internal::proto_parsing::OwningField;
-using ::crypto::tink::internal::proto_parsing::SecretDataOwningField;
-using ::crypto::tink::internal::proto_parsing::Uint32OwningField;
+using ::crypto::tink::internal::proto_parsing::SecretDataField;
+using ::crypto::tink::internal::proto_parsing::Uint32Field;
 
 // Proto message com.google.crypto.tink.AesSivKeyFormat.
-class ProtoAesSivKeyFormat : public Message<ProtoAesSivKeyFormat> {
+class AesSivKeyFormatTP : public Message<AesSivKeyFormatTP> {
  public:
-  ProtoAesSivKeyFormat() = default;
+  AesSivKeyFormatTP() = default;
   using Message::SerializeAsString;
 
   uint32_t key_size() const { return key_size_.value(); }
@@ -46,17 +45,17 @@ class ProtoAesSivKeyFormat : public Message<ProtoAesSivKeyFormat> {
   uint32_t version() const { return version_.value(); }
   void set_version(uint32_t version) { version_.set_value(version); }
 
-  std::array<const OwningField*, 2> GetFields() const {
+  std::array<const Field*, 2> GetFields() const {
     return {&key_size_, &version_};
   }
 
  private:
-  Uint32OwningField key_size_{1};
-  Uint32OwningField version_{2};
+  Uint32Field key_size_{1};
+  Uint32Field version_{2};
 };
 
 }  // namespace internal
 }  // namespace tink
 }  // namespace crypto
 
-#endif  // TINK_DAEAD_INTERNAL_AES_SIV_PROTO_STRUCTS_H_
+#endif  // TINK_DAEAD_INTERNAL_AES_SIV_PROTO_FORMAT_H_

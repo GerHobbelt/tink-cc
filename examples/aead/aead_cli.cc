@@ -21,7 +21,7 @@
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
@@ -47,14 +47,14 @@ constexpr absl::string_view kDecrypt = "decrypt";
 
 void ValidateParams() {
   // [START_EXCLUDE]
-  CHECK(absl::GetFlag(FLAGS_mode) == kEncrypt ||
+  ABSL_CHECK(absl::GetFlag(FLAGS_mode) == kEncrypt ||
         absl::GetFlag(FLAGS_mode) == kDecrypt)
       << "Invalid mode; must be `encrypt` or `decrypt`";
-  CHECK(!absl::GetFlag(FLAGS_keyset_filename).empty())
+  ABSL_CHECK(!absl::GetFlag(FLAGS_keyset_filename).empty())
       << "Keyset file must be specified";
-  CHECK(!absl::GetFlag(FLAGS_input_filename).empty())
+  ABSL_CHECK(!absl::GetFlag(FLAGS_input_filename).empty())
       << "Input file must be specified";
-  CHECK(!absl::GetFlag(FLAGS_output_filename).empty())
+  ABSL_CHECK(!absl::GetFlag(FLAGS_output_filename).empty())
       << "Output file must be specified";
   // [END_EXCLUDE]
 }
@@ -120,8 +120,8 @@ int main(int argc, char** argv) {
   std::clog << "The resulting output will be written to " << output_filename
             << '\n';
 
-  CHECK_OK(tink_cc_examples::AeadCli(mode, keyset_filename, input_filename,
-                                     output_filename, associated_data));
+  ABSL_CHECK_OK(tink_cc_examples::AeadCli(mode, keyset_filename, input_filename,
+                                          output_filename, associated_data));
   return 0;
 }
 // [END aead-example]

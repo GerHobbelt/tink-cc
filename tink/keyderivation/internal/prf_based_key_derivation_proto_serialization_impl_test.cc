@@ -22,7 +22,7 @@
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
@@ -91,7 +91,7 @@ KeyTemplate GetAesCmacPrfKeyTemplate() {
 AesCmacPrfParameters GetAesCmacPrfParameters() {
   absl::StatusOr<AesCmacPrfParameters> parameters =
       AesCmacPrfParameters::Create(kPrfKeyValue.size());
-  CHECK_OK(parameters);
+  ABSL_CHECK_OK(parameters);
   return *parameters;
 }
 
@@ -109,7 +109,7 @@ XChaCha20Poly1305Parameters GetXChaCha20Poly1305Parameters() {
   absl::StatusOr<XChaCha20Poly1305Parameters> parameters =
       XChaCha20Poly1305Parameters::Create(
           XChaCha20Poly1305Parameters::Variant::kTink);
-  CHECK_OK(parameters);
+  ABSL_CHECK_OK(parameters);
   return *parameters;
 }
 
@@ -117,7 +117,7 @@ AesCmacPrfKey GetAesCmacPrfKey() {
   absl::StatusOr<AesCmacPrfKey> key = AesCmacPrfKey::Create(
       RestrictedData(kPrfKeyValue, GetInsecureSecretKeyAccessInternal()),
       GetPartialKeyAccess());
-  CHECK_OK(key);
+  ABSL_CHECK_OK(key);
   return *key;
 }
 
@@ -380,8 +380,8 @@ TEST(PrfBasedKeyDerivationProtoSerializationTest,
       dynamic_cast<const internal::ProtoParametersSerialization*>(
           serialization->get());
   ASSERT_THAT(proto_serialization, NotNull());
-  const internal::ProtoKeyTemplate& key_template =
-      proto_serialization->GetProtoKeyTemplate();
+  const internal::KeyTemplateTP& key_template =
+      proto_serialization->GetKeyTemplate();
   EXPECT_THAT(key_template.type_url(), Eq(kTypeUrl));
   EXPECT_THAT(key_template.output_prefix_type(),
               Eq(OutputPrefixTypeEnum::kTink));
@@ -419,8 +419,8 @@ TEST(PrfBasedKeyDerivationProtoSerializationTest,
           serialization->get());
   ASSERT_THAT(proto_serialization, NotNull());
 
-  const internal::ProtoKeyTemplate& key_template =
-      proto_serialization->GetProtoKeyTemplate();
+  const internal::KeyTemplateTP& key_template =
+      proto_serialization->GetKeyTemplate();
   EXPECT_THAT(key_template.type_url(), Eq(kTypeUrl));
   EXPECT_THAT(key_template.output_prefix_type(),
               Eq(OutputPrefixTypeEnum::kTink));

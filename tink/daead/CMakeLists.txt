@@ -37,6 +37,7 @@ tink_cc_library(
   DEPS
     absl::memory
     absl::status
+    absl::statusor
     absl::strings
     tink::core::crypto_format
     tink::core::deterministic_aead
@@ -46,7 +47,6 @@ tink_cc_library(
     tink::internal::monitoring_util
     tink::internal::registry_impl
     tink::internal::util
-    tink::util::status
     tink::util::statusor
     tink::proto::tink_cc_proto
 )
@@ -177,7 +177,7 @@ tink_cc_library(
     config_v0.cc
     config_v0.h
   DEPS
-    absl::check
+    absl::absl_check
     tink::core::configuration
     tink::daead::internal::config_v0
 )
@@ -188,7 +188,7 @@ tink_cc_library(
     key_gen_config_v0.cc
     key_gen_config_v0.h
   DEPS
-    absl::check
+    absl::absl_check
     tink::core::key_gen_configuration
     tink::daead::internal::key_gen_config_v0
 )

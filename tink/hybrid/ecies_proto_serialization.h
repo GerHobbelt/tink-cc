@@ -18,12 +18,18 @@
 #define TINK_HYBRID_ECIES_PROTO_SERIALIZATION_H_
 
 #include "absl/status/status.h"
+#include "tink/hybrid/internal/ecies_proto_serialization_impl.h"
+#include "tink/internal/mutable_serialization_registry.h"
 
 namespace crypto {
 namespace tink {
 
-// Registers proto parsers and serializers for ECIES parameters and keys.
-absl::Status RegisterEciesProtoSerialization();
+// Registers proto parsers and serializers for ECIES parameters and keys into
+// global serialization registry.
+inline absl::Status RegisterEciesProtoSerialization() {
+  return internal::RegisterEciesProtoSerializationWithMutableRegistry(
+      internal::MutableSerializationRegistry::GlobalInstance());
+}
 
 }  // namespace tink
 }  // namespace crypto

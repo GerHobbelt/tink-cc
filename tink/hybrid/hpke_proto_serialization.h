@@ -18,12 +18,18 @@
 #define TINK_HYBRID_HPKE_PROTO_SERIALIZATION_H_
 
 #include "absl/status/status.h"
+#include "tink/hybrid/internal/hpke_proto_serialization_impl.h"
+#include "tink/internal/mutable_serialization_registry.h"
 
 namespace crypto {
 namespace tink {
 
-// Registers proto parsers and serializers for HPKE parameters and keys.
-absl::Status RegisterHpkeProtoSerialization();
+// Registers proto parsers and serializers for HPKE parameters and keys into
+// global serialization registry.
+inline absl::Status RegisterHpkeProtoSerialization() {
+  return internal::RegisterHpkeProtoSerializationWithMutableRegistry(
+      internal::MutableSerializationRegistry::GlobalInstance());
+}
 
 }  // namespace tink
 }  // namespace crypto

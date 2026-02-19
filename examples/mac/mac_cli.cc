@@ -27,8 +27,9 @@
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "tink/config/global_registry.h"
 #include "util/util.h"
@@ -52,14 +53,14 @@ constexpr absl::string_view kVerify = "verify";
 
 void ValidateParams() {
   // [START_EXCLUDE]
-  CHECK(absl::GetFlag(FLAGS_mode) == kCompute ||
-        absl::GetFlag(FLAGS_mode) == kVerify)
+  ABSL_CHECK(absl::GetFlag(FLAGS_mode) == kCompute ||
+             absl::GetFlag(FLAGS_mode) == kVerify)
       << "Invalid mode; must be `" << kCompute << "` or `" << kVerify << "`";
-  CHECK(!absl::GetFlag(FLAGS_keyset_filename).empty())
+  ABSL_CHECK(!absl::GetFlag(FLAGS_keyset_filename).empty())
       << "Keyset file must be specified";
-  CHECK(!absl::GetFlag(FLAGS_data_filename).empty())
+  ABSL_CHECK(!absl::GetFlag(FLAGS_data_filename).empty())
       << "Data file must be specified";
-  CHECK(!absl::GetFlag(FLAGS_tag_filename).empty())
+  ABSL_CHECK(!absl::GetFlag(FLAGS_tag_filename).empty())
       << "Tag file must be specified";
   // [END_EXCLUDE]
 }
@@ -133,8 +134,8 @@ int main(int argc, char** argv) {
             << ((mode == kCompute) ? "written to" : "read from") << " file '"
             << tag_filename << "'." << '\n';
 
-  CHECK_OK(tink_cc_examples::MacCli(mode, keyset_filename, data_filename,
-                                    tag_filename));
+  ABSL_CHECK_OK(tink_cc_examples::MacCli(mode, keyset_filename, data_filename,
+                                         tag_filename));
   return 0;
 }
 // [END mac-example]

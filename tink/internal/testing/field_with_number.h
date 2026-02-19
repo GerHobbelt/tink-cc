@@ -21,7 +21,7 @@
 #include <string>
 #include <vector>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "tink/internal/proto_key_serialization.h"
@@ -52,8 +52,8 @@ class FieldWithNumber {
   FieldWithNumber& operator=(const FieldWithNumber&) = delete;
 
   explicit FieldWithNumber(int field_number) : field_number_(field_number) {
-    CHECK_GT(field_number_, 0);
-    CHECK_LE(field_number_, 536870912);
+    ABSL_CHECK_GT(field_number_, 0);
+    ABSL_CHECK_LE(field_number_, 536870912);
   }
 
   std::string IsVarint(uint64_t v);

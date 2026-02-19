@@ -127,7 +127,7 @@ tink_cc_library(
   DEPS
     absl::flat_hash_map
     absl::any_invocable
-    absl::check
+    absl::absl_check
     absl::memory
     absl::status
     absl::statusor
@@ -185,7 +185,6 @@ tink_cc_library(
     tink::streamingaead::aes_gcm_hkdf_streaming_proto_serialization
     tink::subtle::common_enums
     tink::util::input_stream_util
-    tink::util::secret_data
     tink::proto::aes_gcm_cc_proto
     tink::proto::tink_cc_proto
 )
@@ -285,7 +284,7 @@ tink_cc_library(
   SRCS
     config_prf_for_deriver.h
   DEPS
-    absl::check
+    absl::absl_check
     absl::memory
     tink::core::configuration
     tink::internal::configuration_impl
@@ -316,7 +315,6 @@ tink_cc_library(
     prf_based_key_derivation_proto_serialization_impl.cc
     prf_based_key_derivation_proto_serialization_impl.h
   DEPS
-    absl::check
     absl::memory
     absl::status
     absl::statusor
@@ -336,8 +334,8 @@ tink_cc_library(
     tink::internal::parameters_serializer
     tink::internal::proto_key_serialization
     tink::internal::proto_parameters_serialization
+    tink::internal::proto_parser_fields
     tink::internal::proto_parser_message
-    tink::internal::proto_parser_owning_fields
     tink::internal::serialization
     tink::internal::serialization_registry
     tink::internal::tink_proto_structs
@@ -357,7 +355,7 @@ tink_cc_test(
   DEPS
     tink::keyderivation::internal::prf_based_key_derivation_proto_serialization_impl
     gmock
-    absl::check
+    absl::absl_check
     absl::status
     absl::string_view
     absl::optional

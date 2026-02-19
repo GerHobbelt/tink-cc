@@ -451,6 +451,7 @@ tink_cc_library(
     tink::core::secret_key_access_token
     absl::core_headers
     absl::flat_hash_map
+    absl::absl_check
     absl::check
     absl::memory
     absl::status
@@ -733,7 +734,7 @@ tink_cc_library(
     restricted_data.h
   DEPS
     tink::core::secret_key_access_token
-    absl::check
+    absl::absl_check
     absl::string_view
     tink::subtle::random
     tink::util::secret_data
@@ -930,7 +931,7 @@ tink_cc_test(
     tink::core::restricted_data
     gmock
     absl::flat_hash_map
-    absl::check
+    absl::absl_check
     absl::memory
     absl::status
     absl::strings

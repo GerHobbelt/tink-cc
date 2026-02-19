@@ -22,11 +22,10 @@
 #include <string_view>
 
 #include "absl/strings/string_view.h"
-#include "tink/internal/proto_parser.h"
 #include "tink/internal/proto_parser_enum_field.h"
+#include "tink/internal/proto_parser_fields.h"
 #include "tink/internal/proto_parser_message.h"
-#include "tink/internal/proto_parser_owning_fields.h"
-#include "tink/internal/proto_parser_secret_data_owning_field.h"
+#include "tink/internal/proto_parser_secret_data_field.h"
 #include "tink/secret_data.h"
 #include "tink/util/secret_data.h"
 
@@ -63,15 +62,15 @@ std::string_view KeyMaterialTypeEnumName(KeyMaterialTypeEnum type);
 
 inline bool KeyMaterialTypeValid(int c) { return c >= 0 && c <= 4; }
 
-class ProtoKeyTemplate : public proto_parsing::Message<ProtoKeyTemplate> {
+class KeyTemplateTP : public proto_parsing::Message<KeyTemplateTP> {
  public:
-  ProtoKeyTemplate() = default;
+  KeyTemplateTP() = default;
 
   // Copyable and movable.
-  ProtoKeyTemplate(const ProtoKeyTemplate&) = default;
-  ProtoKeyTemplate& operator=(const ProtoKeyTemplate&) = default;
-  ProtoKeyTemplate(ProtoKeyTemplate&&) noexcept = default;
-  ProtoKeyTemplate& operator=(ProtoKeyTemplate&&) noexcept = default;
+  KeyTemplateTP(const KeyTemplateTP&) = default;
+  KeyTemplateTP& operator=(const KeyTemplateTP&) = default;
+  KeyTemplateTP(KeyTemplateTP&&) noexcept = default;
+  KeyTemplateTP& operator=(KeyTemplateTP&&) noexcept = default;
 
   // This is OK because it doesn't contain any secret data.
   using Message::SerializeAsString;
@@ -91,26 +90,26 @@ class ProtoKeyTemplate : public proto_parsing::Message<ProtoKeyTemplate> {
     output_prefix_type_.set_value(output_prefix_type);
   }
 
-  std::array<const proto_parsing::OwningField*, 3> GetFields() const {
+  std::array<const proto_parsing::Field*, 3> GetFields() const {
     return {&type_url_, &value_, &output_prefix_type_};
   }
 
  private:
-  proto_parsing::OwningBytesField<std::string> type_url_{1};
-  proto_parsing::OwningBytesField<std::string> value_{2};
-  proto_parsing::EnumOwningField<OutputPrefixTypeEnum> output_prefix_type_{
+  proto_parsing::BytesField<std::string> type_url_{1};
+  proto_parsing::BytesField<std::string> value_{2};
+  proto_parsing::EnumField<OutputPrefixTypeEnum> output_prefix_type_{
       3, &OutputPrefixTypeValid};
 };
 
-class ProtoKeyData : public proto_parsing::Message<ProtoKeyData> {
+class KeyDataTP : public proto_parsing::Message<KeyDataTP> {
  public:
-  ProtoKeyData() = default;
+  KeyDataTP() = default;
 
   // Copyable and movable.
-  ProtoKeyData(const ProtoKeyData&) = default;
-  ProtoKeyData& operator=(const ProtoKeyData&) = default;
-  ProtoKeyData(ProtoKeyData&&) noexcept = default;
-  ProtoKeyData& operator=(ProtoKeyData&&) noexcept = default;
+  KeyDataTP(const KeyDataTP&) = default;
+  KeyDataTP& operator=(const KeyDataTP&) = default;
+  KeyDataTP(KeyDataTP&&) noexcept = default;
+  KeyDataTP& operator=(KeyDataTP&&) noexcept = default;
 
   // Note: Serialization is not public, as this contains secret key material.
 
@@ -131,33 +130,15 @@ class ProtoKeyData : public proto_parsing::Message<ProtoKeyData> {
     key_material_type_.set_value(key_material_type);
   }
 
-  std::array<const proto_parsing::OwningField*, 3> GetFields() const {
+  std::array<const proto_parsing::Field*, 3> GetFields() const {
     return {&type_url_, &value_, &key_material_type_};
   }
 
  private:
-  proto_parsing::OwningBytesField<std::string> type_url_{1};
-  proto_parsing::SecretDataOwningField value_{2};
-  proto_parsing::EnumOwningField<KeyMaterialTypeEnum> key_material_type_{
+  proto_parsing::BytesField<std::string> type_url_{1};
+  proto_parsing::SecretDataField value_{2};
+  proto_parsing::EnumField<KeyMaterialTypeEnum> key_material_type_{
       3, &KeyMaterialTypeValid};
-};
-
-struct KeyTemplateStruct {
-  std::string type_url;
-  std::string value;
-  OutputPrefixTypeEnum output_prefix_type;
-
-  static ProtoParser<KeyTemplateStruct> CreateParser();
-  static const ProtoParser<KeyTemplateStruct>& GetParser();
-};
-
-struct KeyDataStruct {
-  std::string type_url;
-  SecretData value;
-  KeyMaterialTypeEnum key_material_type;
-
-  static ProtoParser<KeyDataStruct> CreateParser();
-  static const ProtoParser<KeyDataStruct>& GetParser();
 };
 
 }  // namespace internal

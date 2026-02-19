@@ -10,12 +10,15 @@ tink_cc_library(
   DEPS
     absl::memory
     absl::status
+    absl::statusor
     absl::strings
     tink::core::crypto_format
     tink::core::primitive_set
     tink::core::primitive_wrapper
     tink::core::public_key_verify
     tink::internal::monitoring
+    tink::internal::monitoring_context
+    tink::internal::monitoring_key_set_info
     tink::internal::monitoring_util
     tink::internal::registry_impl
     tink::internal::util
@@ -648,38 +651,11 @@ tink_cc_library(
 tink_cc_library(
   NAME rsa_ssa_pkcs1_proto_serialization
   SRCS
-    rsa_ssa_pkcs1_proto_serialization.cc
     rsa_ssa_pkcs1_proto_serialization.h
   DEPS
-    tink::signature::rsa_ssa_pkcs1_parameters
-    tink::signature::rsa_ssa_pkcs1_private_key
-    tink::signature::rsa_ssa_pkcs1_public_key
-    absl::nullability
     absl::status
-    absl::statusor
-    absl::string_view
-    absl::optional
-    tink::core::big_integer
-    tink::core::insecure_secret_key_access
-    tink::core::partial_key_access
-    tink::core::restricted_big_integer
-    tink::core::restricted_data
-    tink::core::secret_data
-    tink::core::secret_key_access_token
-    tink::internal::common_proto_enums
-    tink::internal::key_parser
-    tink::internal::key_serializer
     tink::internal::mutable_serialization_registry
-    tink::internal::parameters_parser
-    tink::internal::parameters_serializer
-    tink::internal::proto_key_serialization
-    tink::internal::proto_parameters_serialization
-    tink::internal::proto_parser_enum_field
-    tink::internal::proto_parser_message
-    tink::internal::proto_parser_owning_fields
-    tink::internal::proto_parser_secret_data_owning_field
-    tink::internal::tink_proto_structs
-    tink::util::secret_data
+    tink::signature::internal::rsa_ssa_pkcs1_proto_serialization_impl
 )
 
 tink_cc_library(
@@ -752,36 +728,11 @@ tink_cc_library(
 tink_cc_library(
   NAME rsa_ssa_pss_proto_serialization
   SRCS
-    rsa_ssa_pss_proto_serialization.cc
     rsa_ssa_pss_proto_serialization.h
   DEPS
-    tink::signature::rsa_ssa_pss_parameters
-    tink::signature::rsa_ssa_pss_private_key
-    tink::signature::rsa_ssa_pss_public_key
     absl::status
-    absl::statusor
-    absl::string_view
-    absl::optional
-    tink::core::big_integer
-    tink::core::insecure_secret_key_access
-    tink::core::partial_key_access
-    tink::core::restricted_big_integer
-    tink::core::restricted_data
-    tink::core::secret_data
-    tink::core::secret_key_access_token
-    tink::internal::common_proto_enums
-    tink::internal::key_parser
-    tink::internal::key_serializer
     tink::internal::mutable_serialization_registry
-    tink::internal::parameters_parser
-    tink::internal::parameters_serializer
-    tink::internal::proto_key_serialization
-    tink::internal::proto_parameters_serialization
-    tink::internal::proto_parser_enum_field
-    tink::internal::proto_parser_message
-    tink::internal::proto_parser_owning_fields
-    tink::internal::proto_parser_secret_data_owning_field
-    tink::internal::tink_proto_structs
+    tink::signature::internal::rsa_ssa_pss_proto_serialization_impl
 )
 
 tink_cc_library(
@@ -1214,6 +1165,7 @@ tink_cc_test(
     absl::absl_check
     absl::memory
     absl::status
+    absl::statusor
     absl::strings
     crypto
     tink::core::big_integer
@@ -1469,6 +1421,7 @@ tink_cc_test(
     gmock
     absl::absl_check
     absl::status
+    absl::statusor
     absl::strings
     absl::optional
     crypto
@@ -1479,7 +1432,6 @@ tink_cc_test(
     tink::core::restricted_big_integer
     tink::internal::bn_util
     tink::internal::ssl_unique_ptr
-    tink::util::statusor
     tink::util::test_matchers
 )
 
@@ -1771,9 +1723,8 @@ tink_cc_library(
   DEPS
     tink::signature::signature_parameters
     absl::status
+    absl::statusor
     tink::core::parameters
-    tink::util::status
-    tink::util::statusor
 )
 
 tink_cc_test(
@@ -1784,8 +1735,8 @@ tink_cc_test(
     tink::signature::ml_dsa_parameters
     gmock
     absl::status
+    absl::statusor
     tink::core::parameters
-    tink::util::statusor
     tink::util::test_matchers
 )
 
@@ -1811,7 +1762,6 @@ tink_cc_library(
     tink::internal::call_with_core_dump_protection
     tink::internal::dfsan_forwarders
     tink::util::secret_data
-    tink::util::statusor
   TAGS
     exclude_if_openssl
 )
@@ -1825,7 +1775,7 @@ tink_cc_test(
     tink::signature::ml_dsa_private_key
     tink::signature::ml_dsa_public_key
     gmock
-    absl::check
+    absl::absl_check
     absl::status
     absl::strings
     absl::optional
@@ -1836,7 +1786,6 @@ tink_cc_test(
     tink::core::restricted_data
     tink::internal::secret_buffer
     tink::util::secret_data
-    tink::util::statusor
     tink::util::test_matchers
   TAGS
     exclude_if_openssl
@@ -1852,6 +1801,7 @@ tink_cc_library(
     tink::signature::signature_public_key
     absl::core_headers
     absl::status
+    absl::statusor
     absl::strings
     absl::string_view
     absl::optional
@@ -1859,8 +1809,6 @@ tink_cc_library(
     tink::core::key
     tink::core::partial_key_access_token
     tink::internal::output_prefix_util
-    tink::util::status
-    tink::util::statusor
   TAGS
     exclude_if_openssl
 )
@@ -1873,7 +1821,8 @@ tink_cc_test(
     tink::signature::ml_dsa_parameters
     tink::signature::ml_dsa_public_key
     gmock
-    absl::check
+    absl::absl_check
+    absl::absl_log
     absl::status
     absl::strings
     absl::optional
@@ -1882,7 +1831,6 @@ tink_cc_test(
     tink::core::partial_key_access
     tink::internal::secret_buffer
     tink::util::secret_data
-    tink::util::statusor
     tink::util::test_matchers
   TAGS
     exclude_if_openssl

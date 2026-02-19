@@ -34,9 +34,9 @@
 #include "tink/internal/proto_key_serialization.h"
 #include "tink/internal/proto_parameters_serialization.h"
 #include "tink/internal/proto_parser_enum_field.h"
+#include "tink/internal/proto_parser_fields.h"
 #include "tink/internal/proto_parser_message.h"
-#include "tink/internal/proto_parser_owning_fields.h"
-#include "tink/internal/proto_parser_secret_data_owning_field.h"
+#include "tink/internal/proto_parser_secret_data_field.h"
 #include "tink/internal/tink_proto_structs.h"
 #include "tink/partial_key_access.h"
 #include "tink/restricted_data.h"
@@ -53,13 +53,13 @@ namespace crypto {
 namespace tink {
 namespace {
 
-using ::crypto::tink::internal::proto_parsing::EnumOwningField;
+using ::crypto::tink::internal::proto_parsing::BytesField;
+using ::crypto::tink::internal::proto_parsing::EnumField;
+using ::crypto::tink::internal::proto_parsing::Field;
 using ::crypto::tink::internal::proto_parsing::Message;
-using ::crypto::tink::internal::proto_parsing::MessageOwningField;
-using ::crypto::tink::internal::proto_parsing::OwningBytesField;
-using ::crypto::tink::internal::proto_parsing::OwningField;
-using ::crypto::tink::internal::proto_parsing::SecretDataOwningField;
-using ::crypto::tink::internal::proto_parsing::Uint32OwningField;
+using ::crypto::tink::internal::proto_parsing::MessageField;
+using ::crypto::tink::internal::proto_parsing::SecretDataField;
+using ::crypto::tink::internal::proto_parsing::Uint32Field;
 
 bool IsSlhDsaHashTypeValid(uint32_t c) { return 0 <= c && c <= 2; }
 
@@ -79,9 +79,9 @@ enum class SlhDsaSignatureTypeEnum : uint32_t {
   kSmallSignature,
 };
 
-class ProtoSlhDsaParams final : public Message<ProtoSlhDsaParams> {
+class SlhDsaParamsTP final : public Message<SlhDsaParamsTP> {
  public:
-  ProtoSlhDsaParams() = default;
+  SlhDsaParamsTP() = default;
 
   uint32_t key_size() const { return key_size_.value(); }
   void set_key_size(uint32_t value) { key_size_.set_value(value); }
@@ -94,43 +94,41 @@ class ProtoSlhDsaParams final : public Message<ProtoSlhDsaParams> {
     sig_type_.set_value(value);
   }
 
-  std::array<const OwningField*, 3> GetFields() const {
-    return std::array<const OwningField*, 3>{&key_size_, &hash_type_,
-                                             &sig_type_};
+  std::array<const Field*, 3> GetFields() const {
+    return std::array<const Field*, 3>{&key_size_, &hash_type_, &sig_type_};
   }
 
  private:
-  Uint32OwningField key_size_{1};
-  EnumOwningField<SlhDsaHashTypeEnum> hash_type_{2, &IsSlhDsaHashTypeValid};
-  EnumOwningField<SlhDsaSignatureTypeEnum> sig_type_{
-      3, &IsSlhDsaSignatureTypeValid};
+  Uint32Field key_size_{1};
+  EnumField<SlhDsaHashTypeEnum> hash_type_{2, &IsSlhDsaHashTypeValid};
+  EnumField<SlhDsaSignatureTypeEnum> sig_type_{3, &IsSlhDsaSignatureTypeValid};
 };
 
-class ProtoSlhDsaKeyFormat final : public Message<ProtoSlhDsaKeyFormat> {
+class SlhDsaKeyFormatTP final : public Message<SlhDsaKeyFormatTP> {
  public:
-  ProtoSlhDsaKeyFormat() = default;
+  SlhDsaKeyFormatTP() = default;
 
   uint32_t version() const { return version_.value(); }
   void set_version(uint32_t value) { version_.set_value(value); }
 
-  const ProtoSlhDsaParams& params() const { return params_.value(); }
-  ProtoSlhDsaParams* mutable_params() { return params_.mutable_value(); }
+  const SlhDsaParamsTP& params() const { return params_.value(); }
+  SlhDsaParamsTP* mutable_params() { return params_.mutable_value(); }
 
   // This is OK because this class doesn't contain secret data.
   using Message::SerializeAsString;
 
-  std::array<const OwningField*, 2> GetFields() const {
-    return std::array<const OwningField*, 2>{&version_, &params_};
+  std::array<const Field*, 2> GetFields() const {
+    return std::array<const Field*, 2>{&version_, &params_};
   }
 
  private:
-  Uint32OwningField version_{1};
-  MessageOwningField<ProtoSlhDsaParams> params_{2};
+  Uint32Field version_{1};
+  MessageField<SlhDsaParamsTP> params_{2};
 };
 
-class ProtoSlhDsaPublicKey final : public Message<ProtoSlhDsaPublicKey> {
+class SlhDsaPublicKeyTP final : public Message<SlhDsaPublicKeyTP> {
  public:
-  ProtoSlhDsaPublicKey() = default;
+  SlhDsaPublicKeyTP() = default;
 
   uint32_t version() const { return version_.value(); }
   void set_version(uint32_t value) { version_.set_value(value); }
@@ -138,22 +136,22 @@ class ProtoSlhDsaPublicKey final : public Message<ProtoSlhDsaPublicKey> {
   const std::string& key_value() const { return key_value_.value(); }
   void set_key_value(absl::string_view value) { key_value_.set_value(value); }
 
-  const ProtoSlhDsaParams& params() const { return params_.value(); }
-  ProtoSlhDsaParams* mutable_params() { return params_.mutable_value(); }
+  const SlhDsaParamsTP& params() const { return params_.value(); }
+  SlhDsaParamsTP* mutable_params() { return params_.mutable_value(); }
 
-  std::array<const OwningField*, 3> GetFields() const {
-    return std::array<const OwningField*, 3>{&version_, &key_value_, &params_};
+  std::array<const Field*, 3> GetFields() const {
+    return std::array<const Field*, 3>{&version_, &key_value_, &params_};
   }
 
  private:
-  Uint32OwningField version_{1};
-  OwningBytesField<std::string> key_value_{2};
-  MessageOwningField<ProtoSlhDsaParams> params_{3};
+  Uint32Field version_{1};
+  BytesField<std::string> key_value_{2};
+  MessageField<SlhDsaParamsTP> params_{3};
 };
 
-class ProtoSlhDsaPrivateKey final : public Message<ProtoSlhDsaPrivateKey> {
+class SlhDsaPrivateKeyTP final : public Message<SlhDsaPrivateKeyTP> {
  public:
-  ProtoSlhDsaPrivateKey() = default;
+  SlhDsaPrivateKeyTP() = default;
 
   uint32_t version() const { return version_.value(); }
   void set_version(uint32_t value) { version_.set_value(value); }
@@ -163,20 +161,19 @@ class ProtoSlhDsaPrivateKey final : public Message<ProtoSlhDsaPrivateKey> {
     *key_value_.mutable_value() = util::SecretDataFromStringView(value);
   }
 
-  const ProtoSlhDsaPublicKey& public_key() const { return public_key_.value(); }
-  ProtoSlhDsaPublicKey* mutable_public_key() {
+  const SlhDsaPublicKeyTP& public_key() const { return public_key_.value(); }
+  SlhDsaPublicKeyTP* mutable_public_key() {
     return public_key_.mutable_value();
   }
 
-  std::array<const OwningField*, 3> GetFields() const {
-    return std::array<const OwningField*, 3>{&version_, &key_value_,
-                                             &public_key_};
+  std::array<const Field*, 3> GetFields() const {
+    return std::array<const Field*, 3>{&version_, &key_value_, &public_key_};
   }
 
  private:
-  Uint32OwningField version_{1};
-  SecretDataOwningField key_value_{2};
-  MessageOwningField<ProtoSlhDsaPublicKey> public_key_{3};
+  Uint32Field version_{1};
+  SecretDataField key_value_{2};
+  MessageField<SlhDsaPublicKeyTP> public_key_{3};
 };
 
 using SlhDsaProtoParametersParserImpl =
@@ -280,7 +277,7 @@ absl::StatusOr<SlhDsaSignatureTypeEnum> ToProtoSignatureType(
 
 absl::StatusOr<SlhDsaParameters> ToParameters(
     internal::OutputPrefixTypeEnum output_prefix_type,
-    const ProtoSlhDsaParams& params) {
+    const SlhDsaParamsTP& params) {
   absl::StatusOr<SlhDsaParameters::Variant> variant =
       ToVariant(output_prefix_type);
   if (!variant.ok()) {
@@ -303,7 +300,7 @@ absl::StatusOr<SlhDsaParameters> ToParameters(
                                   *signature_type, *variant);
 }
 
-absl::StatusOr<ProtoSlhDsaParams> FromParameters(
+absl::StatusOr<SlhDsaParamsTP> FromParameters(
     const SlhDsaParameters& parameters) {
   /* Only SLH-DSA-SHA2-128s  is currently supported*/
   absl::StatusOr<SlhDsaHashTypeEnum> hash_type =
@@ -318,7 +315,7 @@ absl::StatusOr<ProtoSlhDsaParams> FromParameters(
     return signature_type.status();
   }
 
-  ProtoSlhDsaParams params;
+  SlhDsaParamsTP params;
   params.set_key_size(parameters.GetPrivateKeySizeInBytes());
   params.set_hash_type(*hash_type);
   params.set_sig_type(*signature_type);
@@ -328,14 +325,13 @@ absl::StatusOr<ProtoSlhDsaParams> FromParameters(
 
 absl::StatusOr<SlhDsaParameters> ParseParameters(
     const internal::ProtoParametersSerialization& serialization) {
-  const internal::ProtoKeyTemplate key_template =
-      serialization.GetProtoKeyTemplate();
+  const internal::KeyTemplateTP key_template = serialization.GetKeyTemplate();
   if (key_template.type_url() != kPrivateTypeUrl) {
     return absl::InvalidArgumentError(
         "Wrong type URL when parsing SlhDsaParameters.");
   }
 
-  ProtoSlhDsaKeyFormat proto_key_format;
+  SlhDsaKeyFormatTP proto_key_format;
   if (!proto_key_format.ParseFromString(key_template.value())) {
     return absl::InvalidArgumentError("Failed to parse SlhDsaKeyFormat proto");
   }
@@ -355,7 +351,7 @@ absl::StatusOr<SlhDsaPublicKey> ParsePublicKey(
         "Wrong type URL when parsing SlhDsaPublicKey.");
   }
 
-  ProtoSlhDsaPublicKey proto_key;
+  SlhDsaPublicKeyTP proto_key;
   if (!proto_key.ParseFromString(serialization.SerializedKeyProto().GetSecret(
           InsecureSecretKeyAccess::Get()))) {
     return absl::InvalidArgumentError("Failed to parse SlhDsaPublicKey proto");
@@ -386,7 +382,7 @@ absl::StatusOr<SlhDsaPrivateKey> ParsePrivateKey(
     return absl::PermissionDeniedError("SecretKeyAccess is required");
   }
 
-  ProtoSlhDsaPrivateKey proto_key;
+  SlhDsaPrivateKeyTP proto_key;
   if (!proto_key.ParseFromString(
           serialization.SerializedKeyProto().GetSecret(*token))) {
     return absl::InvalidArgumentError("Failed to parse SlhDsaPrivateKey proto");
@@ -421,11 +417,11 @@ absl::StatusOr<internal::ProtoParametersSerialization> SerializeParameters(
     return output_prefix_type.status();
   }
 
-  absl::StatusOr<ProtoSlhDsaParams> params = FromParameters(parameters);
+  absl::StatusOr<SlhDsaParamsTP> params = FromParameters(parameters);
   if (!params.ok()) {
     return params.status();
   }
-  ProtoSlhDsaKeyFormat proto_key_format;
+  SlhDsaKeyFormatTP proto_key_format;
   *proto_key_format.mutable_params() = *params;
   proto_key_format.set_version(0);
 
@@ -441,13 +437,12 @@ absl::StatusOr<internal::ProtoParametersSerialization> SerializeParameters(
 
 absl::StatusOr<internal::ProtoKeySerialization> SerializePublicKey(
     const SlhDsaPublicKey& key, absl::optional<SecretKeyAccessToken> token) {
-  absl::StatusOr<ProtoSlhDsaParams> params =
-      FromParameters(key.GetParameters());
+  absl::StatusOr<SlhDsaParamsTP> params = FromParameters(key.GetParameters());
   if (!params.ok()) {
     return params.status();
   }
 
-  ProtoSlhDsaPublicKey proto_key;
+  SlhDsaPublicKeyTP proto_key;
   proto_key.set_version(0);
   *proto_key.mutable_params() = *params;
   proto_key.set_key_value(key.GetPublicKeyBytes(GetPartialKeyAccess()));
@@ -477,13 +472,13 @@ absl::StatusOr<internal::ProtoKeySerialization> SerializePrivateKey(
     return restricted_input.status();
   }
 
-  absl::StatusOr<ProtoSlhDsaParams> params =
+  absl::StatusOr<SlhDsaParamsTP> params =
       FromParameters(key.GetPublicKey().GetParameters());
   if (!params.ok()) {
     return params.status();
   }
 
-  ProtoSlhDsaPrivateKey proto_private_key;
+  SlhDsaPrivateKeyTP proto_private_key;
   proto_private_key.set_version(0);
   proto_private_key.mutable_public_key()->set_version(0);
   *proto_private_key.mutable_public_key()->mutable_params() = *params;

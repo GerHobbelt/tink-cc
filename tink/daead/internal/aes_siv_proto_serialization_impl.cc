@@ -35,9 +35,9 @@
 #include "tink/internal/parameters_serializer.h"
 #include "tink/internal/proto_key_serialization.h"
 #include "tink/internal/proto_parameters_serialization.h"
+#include "tink/internal/proto_parser_fields.h"
 #include "tink/internal/proto_parser_message.h"
-#include "tink/internal/proto_parser_owning_fields.h"
-#include "tink/internal/proto_parser_secret_data_owning_field.h"
+#include "tink/internal/proto_parser_secret_data_field.h"
 #include "tink/internal/serialization_registry.h"
 #include "tink/internal/tink_proto_structs.h"
 #include "tink/partial_key_access.h"
@@ -50,15 +50,15 @@ namespace tink {
 namespace internal {
 namespace {
 
+using ::crypto::tink::internal::proto_parsing::Field;
 using ::crypto::tink::internal::proto_parsing::Message;
-using ::crypto::tink::internal::proto_parsing::OwningField;
-using ::crypto::tink::internal::proto_parsing::SecretDataOwningField;
-using ::crypto::tink::internal::proto_parsing::Uint32OwningField;
+using ::crypto::tink::internal::proto_parsing::SecretDataField;
+using ::crypto::tink::internal::proto_parsing::Uint32Field;
 
 // Proto message com.google.crypto.tink.AesSivKey.
-class ProtoAesSivKey : public Message<ProtoAesSivKey> {
+class AesSivKeyTP : public Message<AesSivKeyTP> {
  public:
-  ProtoAesSivKey() = default;
+  AesSivKeyTP() = default;
   using Message::SerializeAsString;
 
   uint32_t version() const { return version_.value(); }
@@ -69,13 +69,13 @@ class ProtoAesSivKey : public Message<ProtoAesSivKey> {
     *key_value_.mutable_value() = std::move(key_value);
   }
 
-  std::array<const OwningField*, 2> GetFields() const {
+  std::array<const Field*, 2> GetFields() const {
     return {&version_, &key_value_};
   }
 
  private:
-  Uint32OwningField version_{1};
-  SecretDataOwningField key_value_{2};
+  Uint32Field version_{1};
+  SecretDataField key_value_{2};
 };
 
 using AesSivProtoParametersParserImpl =
@@ -124,14 +124,14 @@ absl::StatusOr<OutputPrefixTypeEnum> ToOutputPrefixType(
 
 absl::StatusOr<AesSivParameters> ParseParameters(
     const ProtoParametersSerialization& serialization) {
-  if (serialization.GetProtoKeyTemplate().type_url() != kTypeUrl) {
+  if (serialization.GetKeyTemplate().type_url() != kTypeUrl) {
     return absl::Status(absl::StatusCode::kInvalidArgument,
                         "Wrong type URL when parsing AesSivParameters.");
   }
 
-  ProtoAesSivKeyFormat proto_key_format;
+  AesSivKeyFormatTP proto_key_format;
   if (!proto_key_format.ParseFromString(
-          serialization.GetProtoKeyTemplate().value())) {
+          serialization.GetKeyTemplate().value())) {
     return absl::InvalidArgumentError("Failed to parse AesSivKeyFormat proto");
   }
   if (proto_key_format.version() != 0) {
@@ -140,7 +140,7 @@ absl::StatusOr<AesSivParameters> ParseParameters(
   }
 
   absl::StatusOr<AesSivParameters::Variant> variant =
-      ToVariant(serialization.GetProtoKeyTemplate().output_prefix_type());
+      ToVariant(serialization.GetKeyTemplate().output_prefix_type());
   if (!variant.ok()) return variant.status();
 
   return AesSivParameters::Create(proto_key_format.key_size(), *variant);
@@ -152,7 +152,7 @@ absl::StatusOr<ProtoParametersSerialization> SerializeParameters(
       ToOutputPrefixType(parameters.GetVariant());
   if (!output_prefix_type.ok()) return output_prefix_type.status();
 
-  ProtoAesSivKeyFormat proto_key_format;
+  AesSivKeyFormatTP proto_key_format;
   proto_key_format.set_key_size(parameters.KeySizeInBytes());
   proto_key_format.set_version(0);
 
@@ -170,7 +170,7 @@ absl::StatusOr<AesSivKey> ParseKey(const ProtoKeySerialization& serialization,
     return absl::Status(absl::StatusCode::kInvalidArgument,
                         "SecretKeyAccess is required");
   }
-  ProtoAesSivKey proto_key;
+  AesSivKeyTP proto_key;
   if (!proto_key.ParseFromString(
           serialization.SerializedKeyProto().GetSecret(*token))) {
     return absl::InvalidArgumentError("Failed to parse AesSivKey proto");
@@ -203,7 +203,7 @@ absl::StatusOr<ProtoKeySerialization> SerializeKey(
                         "SecretKeyAccess is required");
   }
 
-  ProtoAesSivKey proto_key;
+  AesSivKeyTP proto_key;
   proto_key.set_version(0);
   proto_key.set_key_value(restricted_input->Get(*token));
 

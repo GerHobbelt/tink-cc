@@ -20,7 +20,7 @@ tink_cc_library(
     wycheproof_aead.cc
     wycheproof_aead.h
   DEPS
-    absl::check
+    absl::absl_check
     absl::strings
     tink::internal::testing::wycheproof_util
     tink::util::statusor
@@ -60,9 +60,10 @@ tink_cc_library(
   DEPS
     tink::aead::internal::aead_util
     tink::aead::internal::cord_utils
-    absl::check
+    absl::absl_check
     absl::memory
     absl::status
+    absl::statusor
     absl::cord
     absl::string_view
     absl::span
@@ -71,7 +72,6 @@ tink_cc_library(
     tink::internal::ssl_unique_ptr
     tink::subtle::random
     tink::util::secret_data
-    tink::util::status
     tink::util::statusor
 )
 
@@ -226,8 +226,8 @@ tink_cc_library(
     tink::internal::parameters_serializer
     tink::internal::proto_key_serialization
     tink::internal::proto_parameters_serialization
+    tink::internal::proto_parser_fields
     tink::internal::proto_parser_message
-    tink::internal::proto_parser_owning_fields
     tink::internal::serialization
     tink::internal::serialization_registry
     tink::internal::tink_proto_structs
@@ -320,7 +320,6 @@ tink_cc_test(
     tink::aead::internal::zero_copy_aes_gcm_boringssl
     gmock
     absl::algorithm_container
-    absl::check
     absl::status
     absl::strings
     absl::span
@@ -412,7 +411,7 @@ tink_cc_library(
     cord_utils.h
   DEPS
     absl::nullability
-    absl::check
+    absl::absl_check
     absl::cord
     absl::string_view
     absl::span
@@ -598,9 +597,9 @@ tink_cc_library(
     tink::internal::parameters_serializer
     tink::internal::proto_key_serialization
     tink::internal::proto_parameters_serialization
+    tink::internal::proto_parser_fields
     tink::internal::proto_parser_message
-    tink::internal::proto_parser_owning_fields
-    tink::internal::proto_parser_secret_data_owning_field
+    tink::internal::proto_parser_secret_data_field
     tink::internal::serialization_registry
     tink::internal::tink_proto_structs
     tink::util::secret_data
@@ -659,9 +658,9 @@ tink_cc_library(
     tink::internal::parameters_serializer
     tink::internal::proto_key_serialization
     tink::internal::proto_parameters_serialization
+    tink::internal::proto_parser_fields
     tink::internal::proto_parser_message
-    tink::internal::proto_parser_owning_fields
-    tink::internal::proto_parser_secret_data_owning_field
+    tink::internal::proto_parser_secret_data_field
     tink::internal::serialization_registry
     tink::internal::tink_proto_structs
 )
@@ -718,9 +717,9 @@ tink_cc_library(
     tink::internal::parameters_serializer
     tink::internal::proto_key_serialization
     tink::internal::proto_parameters_serialization
+    tink::internal::proto_parser_fields
     tink::internal::proto_parser_message
-    tink::internal::proto_parser_owning_fields
-    tink::internal::proto_parser_secret_data_owning_field
+    tink::internal::proto_parser_secret_data_field
     tink::internal::serialization_registry
     tink::internal::tink_proto_structs
 )
@@ -777,8 +776,8 @@ tink_cc_library(
     tink::internal::parameters_serializer
     tink::internal::proto_key_serialization
     tink::internal::proto_parameters_serialization
+    tink::internal::proto_parser_fields
     tink::internal::proto_parser_message
-    tink::internal::proto_parser_owning_fields
     tink::internal::serialization_registry
     tink::internal::tink_proto_structs
 )
@@ -835,9 +834,9 @@ tink_cc_library(
     tink::internal::parameters_serializer
     tink::internal::proto_key_serialization
     tink::internal::proto_parameters_serialization
+    tink::internal::proto_parser_fields
     tink::internal::proto_parser_message
-    tink::internal::proto_parser_owning_fields
-    tink::internal::proto_parser_secret_data_owning_field
+    tink::internal::proto_parser_secret_data_field
     tink::internal::serialization_registry
     tink::internal::tink_proto_structs
     tink::util::secret_data
@@ -896,9 +895,9 @@ tink_cc_library(
     tink::internal::parameters_serializer
     tink::internal::proto_key_serialization
     tink::internal::proto_parameters_serialization
+    tink::internal::proto_parser_fields
     tink::internal::proto_parser_message
-    tink::internal::proto_parser_owning_fields
-    tink::internal::proto_parser_secret_data_owning_field
+    tink::internal::proto_parser_secret_data_field
     tink::internal::serialization_registry
     tink::internal::tink_proto_structs
     tink::util::secret_data
@@ -1023,9 +1022,9 @@ tink_cc_library(
     tink::internal::parameters_serializer
     tink::internal::proto_key_serialization
     tink::internal::proto_parameters_serialization
+    tink::internal::proto_parser_fields
     tink::internal::proto_parser_message
-    tink::internal::proto_parser_owning_fields
-    tink::internal::proto_parser_secret_data_owning_field
+    tink::internal::proto_parser_secret_data_field
     tink::internal::serialization_registry
     tink::internal::tink_proto_structs
     tink::util::status
@@ -1079,7 +1078,7 @@ tink_cc_test(
   DEPS
     tink::aead::internal::legacy_kms_envelope_aead_proto_serialization_impl
     gmock
-    absl::check
+    absl::absl_check
     absl::memory
     absl::status
     absl::string_view
@@ -1122,8 +1121,8 @@ tink_cc_library(
   SRCS
     aes_gcm_proto_format.h
   DEPS
+    tink::internal::proto_parser_fields
     tink::internal::proto_parser_message
-    tink::internal::proto_parser_owning_fields
 )
 
 tink_cc_test(
@@ -1143,8 +1142,8 @@ tink_cc_library(
   SRCS
     xchacha20_poly1305_proto_format.h
   DEPS
+    tink::internal::proto_parser_fields
     tink::internal::proto_parser_message
-    tink::internal::proto_parser_owning_fields
 )
 
 tink_cc_test(
@@ -1165,8 +1164,8 @@ tink_cc_library(
   DEPS
     absl::string_view
     tink::core::secret_data
+    tink::internal::proto_parser_fields
     tink::internal::proto_parser_message
-    tink::internal::proto_parser_owning_fields
     tink::mac::internal::hmac_proto_structs
     tink::util::secret_data
 )
@@ -1178,12 +1177,9 @@ tink_cc_test(
   DEPS
     tink::aead::internal::aes_ctr_hmac_proto_structs
     gmock
-    absl::statusor
     absl::strings
     tink::internal::common_proto_enums
     tink::internal::testing::field_with_number
     tink::mac::internal::hmac_proto_structs
     tink::util::secret_data
-    tink::util::test_matchers
-    tink::util::test_util
 )

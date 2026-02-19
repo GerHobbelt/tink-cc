@@ -38,9 +38,9 @@
 #include "tink/internal/proto_key_serialization.h"
 #include "tink/internal/proto_parameters_serialization.h"
 #include "tink/internal/proto_parser_enum_field.h"
+#include "tink/internal/proto_parser_fields.h"
 #include "tink/internal/proto_parser_message.h"
-#include "tink/internal/proto_parser_owning_fields.h"
-#include "tink/internal/proto_parser_secret_data_owning_field.h"
+#include "tink/internal/proto_parser_secret_data_field.h"
 #include "tink/internal/serialization_registry.h"
 #include "tink/internal/tink_proto_structs.h"
 #include "tink/partial_key_access.h"
@@ -58,13 +58,13 @@ namespace tink {
 namespace internal {
 namespace {
 
-using ::crypto::tink::internal::proto_parsing::EnumOwningField;
+using ::crypto::tink::internal::proto_parsing::BytesField;
+using ::crypto::tink::internal::proto_parsing::EnumField;
+using ::crypto::tink::internal::proto_parsing::Field;
 using ::crypto::tink::internal::proto_parsing::Message;
-using ::crypto::tink::internal::proto_parsing::MessageOwningField;
-using ::crypto::tink::internal::proto_parsing::OwningBytesField;
-using ::crypto::tink::internal::proto_parsing::OwningField;
-using ::crypto::tink::internal::proto_parsing::SecretDataOwningField;
-using ::crypto::tink::internal::proto_parsing::Uint32OwningField;
+using ::crypto::tink::internal::proto_parsing::MessageField;
+using ::crypto::tink::internal::proto_parsing::SecretDataField;
+using ::crypto::tink::internal::proto_parsing::Uint32Field;
 using ::crypto::tink::util::SecretDataAsStringView;
 
 bool EcdsaSignatureEncodingValid(uint32_t c) { return 0 <= c && c <= 2; }
@@ -76,9 +76,9 @@ enum class EcdsaSignatureEncodingEnum : uint32_t {
   kDer,
 };
 
-class ProtoEcdsaParams final : public Message<ProtoEcdsaParams> {
+class EcdsaParamsTP final : public Message<EcdsaParamsTP> {
  public:
-  ProtoEcdsaParams() = default;
+  EcdsaParamsTP() = default;
 
   HashTypeEnum hash_type() const { return hash_type_.value(); }
   void set_hash_type(HashTypeEnum value) { hash_type_.set_value(value); }
@@ -91,33 +91,32 @@ class ProtoEcdsaParams final : public Message<ProtoEcdsaParams> {
     encoding_.set_value(value);
   }
 
-  bool operator==(const ProtoEcdsaParams& other) const {
+  bool operator==(const EcdsaParamsTP& other) const {
     return hash_type_.value() == other.hash_type_.value() &&
            curve_.value() == other.curve_.value() &&
            encoding_.value() == other.encoding_.value();
   }
 
-  std::array<const OwningField*, 3> GetFields() const {
+  std::array<const Field*, 3> GetFields() const {
     return {&hash_type_, &curve_, &encoding_};
   }
 
  private:
-  EnumOwningField<HashTypeEnum> hash_type_{1, &HashTypeEnumIsValid};
-  EnumOwningField<EllipticCurveTypeEnum> curve_{2,
-                                                &EllipticCurveTypeEnumIsValid};
-  EnumOwningField<EcdsaSignatureEncodingEnum> encoding_{
-      3, &EcdsaSignatureEncodingValid};
+  EnumField<HashTypeEnum> hash_type_{1, &HashTypeEnumIsValid};
+  EnumField<EllipticCurveTypeEnum> curve_{2, &EllipticCurveTypeEnumIsValid};
+  EnumField<EcdsaSignatureEncodingEnum> encoding_{3,
+                                                  &EcdsaSignatureEncodingValid};
 };
 
-class ProtoEcdsaPublicKey final : public Message<ProtoEcdsaPublicKey> {
+class EcdsaPublicKeyTP final : public Message<EcdsaPublicKeyTP> {
  public:
-  ProtoEcdsaPublicKey() = default;
+  EcdsaPublicKeyTP() = default;
 
   uint32_t version() const { return version_.value(); }
   void set_version(uint32_t value) { version_.set_value(value); }
 
-  const ProtoEcdsaParams& params() const { return params_.value(); }
-  ProtoEcdsaParams* mutable_params() { return params_.mutable_value(); }
+  const EcdsaParamsTP& params() const { return params_.value(); }
+  EcdsaParamsTP* mutable_params() { return params_.mutable_value(); }
 
   const std::string& x() const { return x_.value(); }
   void set_x(absl::string_view value) { x_.set_value(value); }
@@ -125,50 +124,48 @@ class ProtoEcdsaPublicKey final : public Message<ProtoEcdsaPublicKey> {
   const std::string& y() const { return y_.value(); }
   void set_y(absl::string_view value) { y_.set_value(value); }
 
-  std::array<const OwningField*, 4> GetFields() const {
+  std::array<const Field*, 4> GetFields() const {
     return {&version_, &params_, &x_, &y_};
   }
 
  private:
-  Uint32OwningField version_{1};
-  MessageOwningField<ProtoEcdsaParams> params_{2};
-  OwningBytesField<std::string> x_{3};
-  OwningBytesField<std::string> y_{4};
+  Uint32Field version_{1};
+  MessageField<EcdsaParamsTP> params_{2};
+  BytesField<std::string> x_{3};
+  BytesField<std::string> y_{4};
 };
 
-class ProtoEcdsaPrivateKey final : public Message<ProtoEcdsaPrivateKey> {
+class EcdsaPrivateKeyTP final : public Message<EcdsaPrivateKeyTP> {
  public:
-  ProtoEcdsaPrivateKey() = default;
+  EcdsaPrivateKeyTP() = default;
 
   uint32_t version() const { return version_.value(); }
   void set_version(uint32_t value) { version_.set_value(value); }
 
-  const ProtoEcdsaPublicKey& public_key() const { return public_key_.value(); }
-  ProtoEcdsaPublicKey* mutable_public_key() {
-    return public_key_.mutable_value();
-  }
+  const EcdsaPublicKeyTP& public_key() const { return public_key_.value(); }
+  EcdsaPublicKeyTP* mutable_public_key() { return public_key_.mutable_value(); }
 
   const SecretData& key_value() const { return key_value_.value(); }
   void set_key_value(absl::string_view value) {
     *key_value_.mutable_value() = util::SecretDataFromStringView(value);
   }
 
-  std::array<const OwningField*, 3> GetFields() const {
+  std::array<const Field*, 3> GetFields() const {
     return {&version_, &public_key_, &key_value_};
   }
 
  private:
-  Uint32OwningField version_{1};
-  MessageOwningField<ProtoEcdsaPublicKey> public_key_{2};
-  SecretDataOwningField key_value_{3};
+  Uint32Field version_{1};
+  MessageField<EcdsaPublicKeyTP> public_key_{2};
+  SecretDataField key_value_{3};
 };
 
-class ProtoEcdsaKeyFormat final : public Message<ProtoEcdsaKeyFormat> {
+class EcdsaKeyFormatTP final : public Message<EcdsaKeyFormatTP> {
  public:
-  ProtoEcdsaKeyFormat() = default;
+  EcdsaKeyFormatTP() = default;
 
-  const ProtoEcdsaParams& params() const { return params_.value(); }
-  ProtoEcdsaParams* mutable_params() { return params_.mutable_value(); }
+  const EcdsaParamsTP& params() const { return params_.value(); }
+  EcdsaParamsTP* mutable_params() { return params_.mutable_value(); }
 
   uint32_t version() const { return version_.value(); }
   void set_version(uint32_t value) { version_.set_value(value); }
@@ -176,13 +173,13 @@ class ProtoEcdsaKeyFormat final : public Message<ProtoEcdsaKeyFormat> {
   // This is OK because this class doesn't contain secret data.
   using Message::SerializeAsString;
 
-  std::array<const OwningField*, 2> GetFields() const {
+  std::array<const Field*, 2> GetFields() const {
     return {&params_, &version_};
   }
 
  private:
-  MessageOwningField<ProtoEcdsaParams> params_{2};
-  Uint32OwningField version_{3};
+  MessageField<EcdsaParamsTP> params_{2};
+  Uint32Field version_{3};
 };
 
 using EcdsaProtoParametersParserImpl =
@@ -341,7 +338,7 @@ absl::StatusOr<int> getEncodingLength(EcdsaParameters::CurveType curveType) {
 }
 
 absl::StatusOr<EcdsaParameters> ToParameters(
-    OutputPrefixTypeEnum output_prefix_type, const ProtoEcdsaParams& params) {
+    OutputPrefixTypeEnum output_prefix_type, const EcdsaParamsTP& params) {
   absl::StatusOr<EcdsaParameters::Variant> variant =
       ToVariant(output_prefix_type);
   if (!variant.ok()) {
@@ -374,7 +371,7 @@ absl::StatusOr<EcdsaParameters> ToParameters(
       .Build();
 }
 
-absl::StatusOr<ProtoEcdsaParams> FromParameters(
+absl::StatusOr<EcdsaParamsTP> FromParameters(
     const EcdsaParameters& parameters) {
   absl::StatusOr<EllipticCurveTypeEnum> curve =
       ToProtoCurveType(parameters.GetCurveType());
@@ -394,7 +391,7 @@ absl::StatusOr<ProtoEcdsaParams> FromParameters(
     return encoding.status();
   }
 
-  ProtoEcdsaParams params;
+  EcdsaParamsTP params;
   params.set_curve(*curve);
   params.set_hash_type(*hash_type);
   params.set_encoding(*encoding);
@@ -404,14 +401,13 @@ absl::StatusOr<ProtoEcdsaParams> FromParameters(
 
 absl::StatusOr<EcdsaParameters> ParseParameters(
     const ProtoParametersSerialization& serialization) {
-  const internal::ProtoKeyTemplate& key_template =
-      serialization.GetProtoKeyTemplate();
+  const internal::KeyTemplateTP& key_template = serialization.GetKeyTemplate();
   if (key_template.type_url() != kPrivateTypeUrl) {
     return absl::InvalidArgumentError(
         "Wrong type URL when parsing EcdsaParameters.");
   }
 
-  ProtoEcdsaKeyFormat proto_key_format;
+  EcdsaKeyFormatTP proto_key_format;
   if (!proto_key_format.ParseFromString(key_template.value())) {
     return absl::InvalidArgumentError("Failed to parse EcdsaKeyFormat proto");
   }
@@ -431,7 +427,7 @@ absl::StatusOr<EcdsaPublicKey> ParsePublicKey(
         "Wrong type URL when parsing EcdsaPublicKey.");
   }
 
-  ProtoEcdsaPublicKey proto_key;
+  EcdsaPublicKeyTP proto_key;
   if (!proto_key.ParseFromString(serialization.SerializedKeyProto().GetSecret(
           InsecureSecretKeyAccess::Get()))) {
     return absl::InvalidArgumentError("Failed to parse EcdsaPublicKey proto");
@@ -462,7 +458,7 @@ absl::StatusOr<EcdsaPrivateKey> ParsePrivateKey(
   if (!token.has_value()) {
     return absl::PermissionDeniedError("SecretKeyAccess is required");
   }
-  ProtoEcdsaPrivateKey proto_key;
+  EcdsaPrivateKeyTP proto_key;
   if (!proto_key.ParseFromString(
           serialization.SerializedKeyProto().GetSecret(*token))) {
     return absl::InvalidArgumentError("Failed to parse EcdsaPrivateKey proto");
@@ -510,12 +506,12 @@ absl::StatusOr<ProtoParametersSerialization> SerializeParameters(
     return output_prefix_type.status();
   }
 
-  absl::StatusOr<ProtoEcdsaParams> params = FromParameters(parameters);
+  absl::StatusOr<EcdsaParamsTP> params = FromParameters(parameters);
   if (!params.ok()) {
     return params.status();
   }
 
-  ProtoEcdsaKeyFormat proto_key_format;
+  EcdsaKeyFormatTP proto_key_format;
   *proto_key_format.mutable_params() = *params;
   proto_key_format.set_version(0);
 
@@ -526,7 +522,7 @@ absl::StatusOr<ProtoParametersSerialization> SerializeParameters(
 
 absl::StatusOr<ProtoKeySerialization> SerializePublicKey(
     const EcdsaPublicKey& key, absl::optional<SecretKeyAccessToken> token) {
-  absl::StatusOr<ProtoEcdsaParams> params = FromParameters(key.GetParameters());
+  absl::StatusOr<EcdsaParamsTP> params = FromParameters(key.GetParameters());
   if (!params.ok()) {
     return params.status();
   }
@@ -551,7 +547,7 @@ absl::StatusOr<ProtoKeySerialization> SerializePublicKey(
     return y.status();
   }
 
-  ProtoEcdsaPublicKey proto_key;
+  EcdsaPublicKeyTP proto_key;
   proto_key.set_version(0);
   *proto_key.mutable_params() = *params;
   proto_key.set_x(*x);
@@ -583,7 +579,7 @@ absl::StatusOr<ProtoKeySerialization> SerializePrivateKey(
     return absl::PermissionDeniedError("SecretKeyAccess is required");
   }
 
-  absl::StatusOr<ProtoEcdsaParams> params =
+  absl::StatusOr<EcdsaParamsTP> params =
       FromParameters(key.GetPublicKey().GetParameters());
   if (!params.ok()) {
     return params.status();
@@ -615,7 +611,7 @@ absl::StatusOr<ProtoKeySerialization> SerializePrivateKey(
     return y.status();
   }
 
-  ProtoEcdsaPrivateKey proto_private_key;
+  EcdsaPrivateKeyTP proto_private_key;
   proto_private_key.set_version(0);
   proto_private_key.mutable_public_key()->set_version(0);
   *proto_private_key.mutable_public_key()->mutable_params() = *params;
