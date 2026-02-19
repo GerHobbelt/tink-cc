@@ -29,12 +29,13 @@ tink_cc_library(
   DEPS
     tink::internal::safe_stringops
     tink::internal::secret_buffer
-    absl::algorithm_container
     absl::core_headers
+    absl::absl_check
     absl::absl_log
     absl::status
     absl::statusor
     absl::strings
+    tink::core::key
     tink::core::secret_data
     tink::util::secret_data
 )
@@ -209,12 +210,14 @@ tink_cc_library(
     tink::internal::fips_utils
     tink::internal::ssl_unique_ptr
     tink::internal::ssl_util
+    tink::internal::util
     absl::status
     absl::statusor
     absl::strings
     crypto
     tink::core::secret_data
     tink::subtle::common_enums
+    tink::util::secret_data
 )
 
 tink_cc_test(
@@ -224,7 +227,11 @@ tink_cc_test(
   DEPS
     tink::internal::util
     gmock
+    absl::statusor
     absl::strings
+    absl::optional
+    tink::core::key
+    tink::core::parameters
     tink::core::secret_data
     tink::util::secret_data
     tink::util::test_matchers

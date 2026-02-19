@@ -16,14 +16,47 @@
 #ifndef TINK_INTERNAL_UTIL_H_
 #define TINK_INTERNAL_UTIL_H_
 
+#include <memory>
+
 #include "absl/base/attributes.h"
+#include "absl/log/absl_check.h"
+#include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
+#include "tink/key.h"
 #include "tink/secret_data.h"
 
 namespace crypto {
 namespace tink {
 namespace internal {
+
+// Performs a DynamicCast on the input to an "S" and returns the unique pointer.
+// If the input is null or not of dynamic type S, returns an error.
+// This exists because when calling dynamic_cast on a unique pointer one needs
+// to be careful to not leak memory in case the dynamic cast fails.
+// TODO(b/480880036): Add source location to the error message.
+template <typename S, typename T>
+absl::StatusOr<std::unique_ptr<S>> DynamicCast(std::unique_ptr<T> in) {
+  S* out = dynamic_cast<S*>(in.get());
+  if (out == nullptr) {
+    return absl::InternalError(
+        absl::StrCat("Unable to perform CastOrError, passed in value is ",
+                     (in == nullptr ? "null" : typeid(*in).name())));
+  }
+  in.release();
+  return absl::WrapUnique(out);
+}
+
+// Clone a key of type T. May die if T::Clone doesn't return a T -- guaranteed
+// to never happen for Tink implementations.
+template <typename T>
+std::unique_ptr<T> CloneKeyOrDie(const T& key) {
+  static_assert(std::is_convertible_v<T*, Key*>);
+  absl::StatusOr<std::unique_ptr<T>> result = DynamicCast<T>(key.Clone());
+  ABSL_CHECK_OK(result);
+  return std::move(*result);
+}
 
 // Return an empty string if str.data() is nullptr; otherwise return str.
 absl::string_view EnsureStringNonNull(absl::string_view str);

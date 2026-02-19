@@ -15,11 +15,18 @@
 ///////////////////////////////////////////////////////////////////////////////
 #include "tink/internal/util.h"
 
+#include <cstdint>
+#include <memory>
 #include <string>
+#include <utility>
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
+#include "tink/key.h"
+#include "tink/parameters.h"
 #include "tink/secret_data.h"
 #include "tink/util/secret_data.h"
 #include "tink/util/test_matchers.h"
@@ -35,12 +42,98 @@ using ::crypto::tink::test::HexDecodeOrDie;
 using ::crypto::tink::test::IsOk;
 using ::crypto::tink::test::IsOkAndHolds;
 using ::crypto::tink::util::SecretDataFromStringView;
+using ::testing::Eq;
 using ::testing::IsFalse;
+using ::testing::IsNull;
 using ::testing::IsTrue;
 using ::testing::Not;
 
 constexpr absl::string_view kLongString =
     "a long buffer with \n several \n newlines";
+
+class Base {
+ public:
+  virtual ~Base() = default;
+};
+
+class Derived : public Base {};
+
+class OtherDerived : public Base {};
+
+TEST(DynamicCastOrError, Works) {
+  std::unique_ptr<Base> base = std::make_unique<Derived>();
+  absl::StatusOr<std::unique_ptr<Derived>> derived =
+      DynamicCast<Derived>(std::move(base));
+  EXPECT_THAT(derived, IsOkAndHolds(Not(IsNull())));
+}
+
+TEST(DynamicCastOrError, NullptrMakesError) {
+  std::unique_ptr<Base> base = nullptr;
+  absl::StatusOr<std::unique_ptr<Derived>> derived =
+      DynamicCast<Derived>(std::move(base));
+  EXPECT_THAT(derived, Not(IsOk()));
+}
+
+TEST(DynamicCastOrError, OtherDerivedMakesError) {
+  std::unique_ptr<Base> base = std::make_unique<OtherDerived>();
+  absl::StatusOr<std::unique_ptr<Derived>> derived =
+      DynamicCast<Derived>(std::move(base));
+  EXPECT_THAT(derived.status(), Not(IsOk()));
+}
+
+class TestParameters : public Parameters {
+ public:
+  TestParameters(const TestParameters& other) = default;
+  bool HasIdRequirement() const override { return false; }
+  bool operator==(const Parameters& other) const override {
+    const TestParameters* other_test_parameters =
+        dynamic_cast<const TestParameters*>(&other);
+    if (other_test_parameters == nullptr) return false;
+    return has_id_requirement_ == other_test_parameters->has_id_requirement_;
+  }
+  std::unique_ptr<Parameters> Clone() const override {
+    return std::make_unique<TestParameters>(*this);
+  }
+  static TestParameters Create(bool has_id_requirement) {
+    return TestParameters(has_id_requirement);
+  }
+
+ private:
+  explicit TestParameters(bool has_id_requirement)
+      : has_id_requirement_(has_id_requirement) {}
+
+  bool has_id_requirement_;
+};
+
+class TestKey : public Key {
+ public:
+  explicit TestKey(const TestParameters& parameters)
+      : parameters_(parameters) {}
+  const Parameters& GetParameters() const override { return parameters_; }
+  absl::optional<int32_t> GetIdRequirement() const override {
+    return absl::nullopt;
+  }
+  bool operator==(const Key& other) const override {
+    const TestKey* other_test_key = dynamic_cast<const TestKey*>(&other);
+    if (other_test_key == nullptr) return false;
+    return parameters_ == other_test_key->parameters_;
+  }
+  std::unique_ptr<Key> Clone() const override {
+    return std::make_unique<TestKey>(parameters_);
+  }
+
+ private:
+  TestParameters parameters_;
+};
+
+TEST(CloneKeyOrDie, WorksAndClones) {
+  TestKey key(TestParameters::Create(/*has_id_requirement=*/false));
+  std::unique_ptr<TestKey> cloned_key = CloneKeyOrDie(key);
+  EXPECT_THAT(cloned_key, Not(IsNull()));
+  EXPECT_THAT(*cloned_key, Eq(key));
+  TestKey key2(TestParameters::Create(/*has_id_requirement=*/true));
+  EXPECT_THAT(*cloned_key, Not(Eq(key2)));
+}
 
 TEST(UtilTest, EnsureStringNonNull) {
   // Purposely create a string_view from nullptr.

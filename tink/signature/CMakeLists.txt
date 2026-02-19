@@ -582,8 +582,12 @@ tink_cc_library(
     tink::signature::rsa_ssa_pkcs1_parameters
     tink::signature::rsa_ssa_pkcs1_public_key
     tink::signature::signature_private_key
+    absl::core_headers
     absl::status
     absl::statusor
+    absl::strings
+    absl::string_view
+    absl::synchronization
     absl::optional
     crypto
     tink::core::big_integer
@@ -591,11 +595,10 @@ tink_cc_library(
     tink::core::key
     tink::core::partial_key_access_token
     tink::core::restricted_big_integer
-    tink::internal::bn_util
-    tink::internal::call_with_core_dump_protection
+    tink::core::restricted_data
+    tink::core::secret_data
+    tink::internal::rsa_util
     tink::internal::ssl_unique_ptr
-    tink::util::status
-    tink::util::statusor
 )
 
 tink_cc_library(
@@ -728,8 +731,9 @@ tink_cc_library(
     tink::core::restricted_big_integer
     tink::core::restricted_data
     tink::core::secret_data
-    tink::internal::bn_util
+    tink::internal::rsa_util
     tink::internal::ssl_unique_ptr
+    tink::util::secret_data
 )
 
 tink_cc_library(
@@ -804,11 +808,13 @@ tink_cc_library(
     tink::core::partial_key_access_token
     tink::core::restricted_big_integer
     tink::core::restricted_data
+    tink::core::secret_data
     tink::internal::bn_util
     tink::internal::call_with_core_dump_protection
     tink::internal::ec_util
     tink::internal::err_util
     tink::internal::ssl_unique_ptr
+    tink::internal::util
     tink::subtle::common_enums
 )
 
@@ -1189,7 +1195,6 @@ tink_cc_test(
     tink::core::public_key_sign
     tink::core::public_key_verify
     tink::core::registry
-    tink::core::restricted_big_integer
     tink::core::restricted_data
     tink::config::global_registry
     tink::internal::bn_util
@@ -1436,9 +1441,11 @@ tink_cc_test(
     tink::core::key
     tink::core::partial_key_access
     tink::core::restricted_big_integer
+    tink::core::restricted_data
     tink::internal::bn_util
     tink::internal::ssl_unique_ptr
     tink::util::test_matchers
+    tink::util::test_util
 )
 
 tink_cc_test(
@@ -1504,7 +1511,6 @@ tink_cc_test(
     tink::core::key
     tink::core::parameters
     tink::core::partial_key_access
-    tink::core::restricted_big_integer
     tink::core::restricted_data
     tink::core::secret_key_access_token
     tink::internal::bn_util
@@ -1769,8 +1775,6 @@ tink_cc_library(
     tink::internal::call_with_core_dump_protection
     tink::internal::dfsan_forwarders
     tink::util::secret_data
-  TAGS
-    exclude_if_openssl
 )
 
 tink_cc_test(
@@ -1817,8 +1821,6 @@ tink_cc_library(
     tink::core::key
     tink::core::partial_key_access_token
     tink::internal::output_prefix_util
-  TAGS
-    exclude_if_openssl
 )
 
 tink_cc_test(
@@ -1880,6 +1882,7 @@ tink_cc_library(
     tink::signature::signature_private_key
     tink::signature::slh_dsa_public_key
     absl::status
+    absl::statusor
     absl::string_view
     crypto
     tink::core::insecure_secret_key_access
@@ -1888,10 +1891,6 @@ tink_cc_library(
     tink::core::restricted_data
     tink::internal::call_with_core_dump_protection
     tink::internal::dfsan_forwarders
-    tink::util::status
-    tink::util::statusor
-  TAGS
-    exclude_if_openssl
 )
 
 tink_cc_test(
@@ -1927,16 +1926,14 @@ tink_cc_library(
     tink::signature::slh_dsa_parameters
     absl::core_headers
     absl::status
+    absl::statusor
     absl::strings
     absl::string_view
     absl::optional
     tink::core::key
     tink::core::partial_key_access_token
     tink::internal::output_prefix_util
-    tink::util::status
     tink::util::statusor
-  TAGS
-    exclude_if_openssl
 )
 
 tink_cc_test(
@@ -1953,6 +1950,134 @@ tink_cc_test(
     tink::core::key
     tink::core::partial_key_access
     tink::subtle::random
+    tink::util::test_matchers
+  TAGS
+    exclude_if_openssl
+)
+
+tink_cc_library(
+  NAME composite_ml_dsa_parameters
+  SRCS
+    composite_ml_dsa_parameters.cc
+    composite_ml_dsa_parameters.h
+  DEPS
+    tink::signature::signature_parameters
+    absl::status
+    absl::statusor
+    tink::core::parameters
+)
+
+tink_cc_test(
+  NAME composite_ml_dsa_parameters_test
+  SRCS
+    composite_ml_dsa_parameters_test.cc
+  DEPS
+    tink::signature::composite_ml_dsa_parameters
+    gmock
+    absl::status
+    absl::statusor
+    tink::core::parameters
+    tink::util::test_matchers
+)
+
+tink_cc_library(
+  NAME composite_ml_dsa_private_key
+  SRCS
+    composite_ml_dsa_private_key.cc
+    composite_ml_dsa_private_key.h
+  DEPS
+    tink::signature::composite_ml_dsa_parameters
+    tink::signature::composite_ml_dsa_public_key
+    tink::signature::ml_dsa_private_key
+    tink::signature::signature_private_key
+    tink::signature::signature_public_key
+    absl::core_headers
+    absl::check
+    absl::memory
+    absl::statusor
+    absl::optional
+    tink::core::key
+    tink::core::partial_key_access_token
+    tink::internal::util
+  TAGS
+    exclude_if_openssl
+)
+
+tink_cc_test(
+  NAME composite_ml_dsa_private_key_test
+  SRCS
+    composite_ml_dsa_private_key_test.cc
+  DEPS
+    tink::signature::composite_ml_dsa_parameters
+    tink::signature::composite_ml_dsa_private_key
+    tink::signature::ml_dsa_private_key
+    tink::signature::signature_private_key
+    gmock
+    absl::statusor
+    absl::optional
+    crypto
+    tink::core::key
+    tink::core::partial_key_access
+    tink::internal::util
+    tink::signature::internal::testing::composite_ml_dsa_test_util
+    tink::util::test_matchers
+  TAGS
+    exclude_if_openssl
+)
+
+tink_cc_library(
+  NAME composite_ml_dsa_public_key
+  SRCS
+    composite_ml_dsa_public_key.cc
+    composite_ml_dsa_public_key.h
+  DEPS
+    tink::signature::composite_ml_dsa_parameters
+    tink::signature::ecdsa_parameters
+    tink::signature::ed25519_parameters
+    tink::signature::ml_dsa_parameters
+    tink::signature::ml_dsa_public_key
+    tink::signature::rsa_ssa_pkcs1_parameters
+    tink::signature::rsa_ssa_pss_parameters
+    tink::signature::signature_parameters
+    tink::signature::signature_public_key
+    absl::core_headers
+    absl::no_destructor
+    absl::flat_hash_map
+    absl::absl_check
+    absl::memory
+    absl::status
+    absl::statusor
+    absl::strings
+    absl::string_view
+    absl::optional
+    tink::core::key
+    tink::core::partial_key_access_token
+    tink::internal::output_prefix_util
+    tink::internal::util
+  TAGS
+    exclude_if_openssl
+)
+
+tink_cc_test(
+  NAME composite_ml_dsa_public_key_test
+  SRCS
+    composite_ml_dsa_public_key_test.cc
+  DEPS
+    tink::signature::composite_ml_dsa_parameters
+    tink::signature::composite_ml_dsa_public_key
+    tink::signature::ml_dsa_private_key
+    tink::signature::ml_dsa_public_key
+    tink::signature::signature_private_key
+    tink::signature::signature_public_key
+    gmock
+    absl::status
+    absl::statusor
+    absl::optional
+    crypto
+    tink::core::key
+    tink::core::partial_key_access
+    tink::internal::util
+    tink::signature::internal::testing::composite_ml_dsa_test_util
     tink::util::test_matchers
   TAGS
     exclude_if_openssl

@@ -33,6 +33,7 @@ namespace {
 using ::crypto::tink::subtle::EllipticCurveType;
 using ::crypto::tink::subtle::HashType;
 using ::crypto::tink::test::IsOk;
+using ::crypto::tink::test::StatusIs;
 using ::testing::Eq;
 
 TEST(WycheproofUtilTest, GetBytesFromHexValue) {
@@ -78,22 +79,6 @@ TEST(WycheproofUtilTest, GetEllipticCurveTypeFromValue) {
   EXPECT_EQ(GetEllipticCurveTypeFromValue(val), EllipticCurveType::NIST_P256);
 }
 
-TEST(WycheproofUtilTest, ReadTestVectors) {
-  absl::StatusOr<google::protobuf::Struct> parsed_input =
-      ReadTestVectors(/*filename=*/"rsa_pss_2048_sha256_mgf1_0_test.json");
-  ASSERT_THAT(parsed_input.status(), IsOk());
-  const google::protobuf::Value& algorithm =
-      parsed_input->fields().at("algorithm");
-  const google::protobuf::Value& test_groups =
-      parsed_input->fields().at("testGroups");
-  const google::protobuf::Value& tests =
-      test_groups.list_value().values(0).struct_value().fields().at("tests");
-
-  EXPECT_THAT(algorithm.string_value(), Eq("RSASSA-PSS"));
-  EXPECT_THAT(test_groups.list_value().values_size(), Eq(1));
-  EXPECT_THAT(tests.list_value().values_size(), Eq(100));
-}
-
 TEST(WycheproofUtilTest, ReadTestVectorsV1) {
   absl::StatusOr<google::protobuf::Struct> parsed_input =
       ReadTestVectorsV1(/*filename=*/"ecdsa_secp256r1_sha256_test.json");
@@ -108,6 +93,12 @@ TEST(WycheproofUtilTest, ReadTestVectorsV1) {
   EXPECT_THAT(algorithm.string_value(), Eq("ECDSA"));
   EXPECT_THAT(test_groups.list_value().values_size(), Eq(104));
   EXPECT_THAT(tests.list_value().values_size(), Eq(4));
+}
+
+TEST(WycheproofUtilTest, ReadTestVectorsV1_invalidFileFails) {
+  absl::StatusOr<google::protobuf::Struct> parsed_input =
+      ReadTestVectorsV1(/*filename=*/"non_existent_file.json");
+  ASSERT_THAT(parsed_input.status(), StatusIs(absl::StatusCode::kNotFound));
 }
 
 }  // namespace

@@ -56,7 +56,7 @@
 #include "tink/partial_key_access_token.h"
 #include "tink/public_key_sign.h"
 #include "tink/public_key_verify.h"
-#include "tink/restricted_big_integer.h"
+#include "tink/restricted_data.h"
 #include "tink/signature/ecdsa_parameters.h"
 #include "tink/signature/ecdsa_private_key.h"
 #include "tink/signature/ecdsa_public_key.h"
@@ -124,7 +124,7 @@ absl::StatusOr<std::string> AlgorithmName(
 
 absl::StatusOr<std::unique_ptr<PublicKeySign>> NewEcdsaSigner(
     const EcdsaParameters& params, const EcPoint& public_point,
-    const RestrictedBigInteger& private_key_value) {
+    const RestrictedData& private_key_value) {
   absl::StatusOr<EcdsaPublicKey> ecdsa_public_key = EcdsaPublicKey::Create(
       params, public_point,
       /*id_requirement=*/absl::nullopt, GetPartialKeyAccess());
@@ -162,7 +162,7 @@ NewJwtEcdsaSignInternal(const JwtEcdsaPrivateKey& jwt_ecdsa_private_key) {
           raw_ecdsa_parameters.value(),
           jwt_ecdsa_private_key.GetPublicKey().GetPublicPoint(
               GetPartialKeyAccess()),
-          jwt_ecdsa_private_key.GetPrivateKeyValue(GetPartialKeyAccess()));
+          jwt_ecdsa_private_key.GetPrivateKey(GetPartialKeyAccess()));
   if (!ecdsa_sign_boringssl.ok()) {
     return ecdsa_sign_boringssl.status();
   }
@@ -283,15 +283,18 @@ absl::StatusOr<std::unique_ptr<PublicKeySign>> NewRsaSsaPkcs1Signer(
   absl::StatusOr<RsaSsaPkcs1PrivateKey> raw_rsa_ssa_pkcs1_private_key =
       RsaSsaPkcs1PrivateKey::Builder()
           .SetPublicKey(*rsa_ssa_pkcs1_public_key)
-          .SetPrimeP(
-              jwt_rsa_ssa_pkcs1_private_key.GetPrimeP(GetPartialKeyAccess()))
-          .SetPrimeQ(
-              jwt_rsa_ssa_pkcs1_private_key.GetPrimeQ(GetPartialKeyAccess()))
+          .SetPrimeP(jwt_rsa_ssa_pkcs1_private_key.GetPrimePData(
+              GetPartialKeyAccess()))
+          .SetPrimeQ(jwt_rsa_ssa_pkcs1_private_key.GetPrimeQData(
+              GetPartialKeyAccess()))
           .SetPrivateExponent(
-              jwt_rsa_ssa_pkcs1_private_key.GetPrivateExponent())
-          .SetPrimeExponentP(jwt_rsa_ssa_pkcs1_private_key.GetPrimeExponentP())
-          .SetPrimeExponentQ(jwt_rsa_ssa_pkcs1_private_key.GetPrimeExponentQ())
-          .SetCrtCoefficient(jwt_rsa_ssa_pkcs1_private_key.GetCrtCoefficient())
+              jwt_rsa_ssa_pkcs1_private_key.GetPrivateExponentData())
+          .SetPrimeExponentP(
+              jwt_rsa_ssa_pkcs1_private_key.GetPrimeExponentPData())
+          .SetPrimeExponentQ(
+              jwt_rsa_ssa_pkcs1_private_key.GetPrimeExponentQData())
+          .SetCrtCoefficient(
+              jwt_rsa_ssa_pkcs1_private_key.GetCrtCoefficientData())
           .Build(GetPartialKeyAccess());
   if (!rsa_ssa_pkcs1_public_key.ok()) {
     return rsa_ssa_pkcs1_public_key.status();
@@ -455,13 +458,18 @@ absl::StatusOr<std::unique_ptr<PublicKeySign>> NewRsaSsaPssSigner(
       RsaSsaPssPrivateKey::Builder()
           .SetPublicKey(*rsa_ssa_pss_public_key)
           .SetPrimeP(
-              jwt_rsa_ssa_pss_private_key.GetPrimeP(GetPartialKeyAccess()))
+              jwt_rsa_ssa_pss_private_key.GetPrimePData(GetPartialKeyAccess()))
           .SetPrimeQ(
-              jwt_rsa_ssa_pss_private_key.GetPrimeQ(GetPartialKeyAccess()))
-          .SetPrivateExponent(jwt_rsa_ssa_pss_private_key.GetPrivateExponent())
-          .SetPrimeExponentP(jwt_rsa_ssa_pss_private_key.GetPrimeExponentP())
-          .SetPrimeExponentQ(jwt_rsa_ssa_pss_private_key.GetPrimeExponentQ())
-          .SetCrtCoefficient(jwt_rsa_ssa_pss_private_key.GetCrtCoefficient())
+              jwt_rsa_ssa_pss_private_key.GetPrimeQData(GetPartialKeyAccess()))
+          .SetPrivateExponent(
+              jwt_rsa_ssa_pss_private_key.GetPrivateExponentData(
+                  GetPartialKeyAccess()))
+          .SetPrimeExponentP(jwt_rsa_ssa_pss_private_key.GetPrimeExponentPData(
+              GetPartialKeyAccess()))
+          .SetPrimeExponentQ(jwt_rsa_ssa_pss_private_key.GetPrimeExponentQData(
+              GetPartialKeyAccess()))
+          .SetCrtCoefficient(jwt_rsa_ssa_pss_private_key.GetCrtCoefficientData(
+              GetPartialKeyAccess()))
           .Build(GetPartialKeyAccess());
   if (!rsa_ssa_pss_public_key.ok()) {
     return rsa_ssa_pss_public_key.status();

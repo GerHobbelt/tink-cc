@@ -1076,7 +1076,7 @@ tink_cc_library(
     tink::core::partial_key_access_token
     tink::core::public_key_sign
     tink::core::public_key_verify
-    tink::core::restricted_big_integer
+    tink::core::restricted_data
     tink::internal::configuration_impl
     tink::jwt::jwt_ecdsa_parameters
     tink::jwt::jwt_ecdsa_private_key
@@ -1137,12 +1137,15 @@ tink_cc_test(
     tink::core::keyset_handle
     tink::core::partial_key_access
     tink::core::restricted_big_integer
+    tink::core::restricted_data
+    tink::core::secret_data
     tink::internal::bn_util
     tink::internal::configuration_impl
     tink::internal::key_gen_configuration_impl
     tink::internal::key_type_info_store
     tink::internal::keyset_wrapper_store
     tink::internal::ssl_unique_ptr
+    tink::internal::util
     tink::jwt::jwt_ecdsa_parameters
     tink::jwt::jwt_ecdsa_private_key
     tink::jwt::jwt_ecdsa_proto_serialization
@@ -1187,15 +1190,16 @@ tink_cc_library(
   DEPS
     absl::status
     absl::statusor
+    absl::strings
     absl::string_view
     absl::optional
     tink::core::big_integer
     tink::core::insecure_secret_key_access
     tink::core::partial_key_access
-    tink::core::restricted_big_integer
     tink::core::restricted_data
     tink::core::secret_data
     tink::core::secret_key_access_token
+    tink::internal::call_with_core_dump_protection
     tink::internal::key_parser
     tink::internal::key_serializer
     tink::internal::mutable_serialization_registry
@@ -1206,12 +1210,15 @@ tink_cc_library(
     tink::internal::proto_parser_enum_field
     tink::internal::proto_parser_fields
     tink::internal::proto_parser_message
+    tink::internal::proto_parser_options
     tink::internal::proto_parser_secret_data_field
     tink::internal::serialization_registry
     tink::internal::tink_proto_structs
+    tink::internal::util
     tink::jwt::jwt_rsa_ssa_pkcs1_parameters
     tink::jwt::jwt_rsa_ssa_pkcs1_private_key
     tink::jwt::jwt_rsa_ssa_pkcs1_public_key
+    tink::util::secret_data
 )
 
 tink_cc_test(
@@ -1299,6 +1306,7 @@ tink_cc_test(
     absl::absl_check
     absl::status
     absl::statusor
+    absl::strings
     absl::string_view
     absl::optional
     crypto
@@ -1308,6 +1316,7 @@ tink_cc_test(
     tink::core::parameters
     tink::core::partial_key_access
     tink::core::restricted_data
+    tink::core::secret_key_access_token
     tink::internal::bn_util
     tink::internal::mutable_serialization_registry
     tink::internal::proto_key_serialization
@@ -1316,6 +1325,7 @@ tink_cc_test(
     tink::internal::serialization_registry
     tink::internal::ssl_unique_ptr
     tink::internal::tink_proto_structs
+    tink::internal::testing::field_with_number
     tink::jwt::jwt_rsa_ssa_pss_parameters
     tink::jwt::jwt_rsa_ssa_pss_private_key
     tink::jwt::jwt_rsa_ssa_pss_public_key
@@ -1338,7 +1348,6 @@ tink_cc_library(
     tink::core::ec_point
     tink::core::insecure_secret_key_access
     tink::core::partial_key_access
-    tink::core::restricted_big_integer
     tink::core::restricted_data
     tink::core::secret_data
     tink::core::secret_key_access_token
@@ -1353,12 +1362,15 @@ tink_cc_library(
     tink::internal::proto_parser_enum_field
     tink::internal::proto_parser_fields
     tink::internal::proto_parser_message
+    tink::internal::proto_parser_options
     tink::internal::proto_parser_secret_data_field
     tink::internal::serialization_registry
     tink::internal::tink_proto_structs
+    tink::internal::util
     tink::jwt::jwt_ecdsa_parameters
     tink::jwt::jwt_ecdsa_private_key
     tink::jwt::jwt_ecdsa_public_key
+    tink::util::secret_data
 )
 
 tink_cc_test(
@@ -1379,7 +1391,6 @@ tink_cc_test(
     tink::core::key
     tink::core::parameters
     tink::core::partial_key_access
-    tink::core::restricted_big_integer
     tink::core::restricted_data
     tink::internal::ec_util
     tink::internal::mutable_serialization_registry
@@ -1394,6 +1405,7 @@ tink_cc_test(
     tink::subtle::common_enums
     tink::util::secret_data
     tink::util::test_matchers
+    tink::util::test_util
     tink::proto::common_cc_proto
     tink::proto::jwt_ecdsa_cc_proto
 )
