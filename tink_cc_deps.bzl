@@ -64,10 +64,10 @@ def tink_cc_deps():
     maybe(
         http_archive,
         name = "com_google_absl",
-        sha256 = "b396401fd29e2e679cace77867481d388c807671dc2acc602a0259eeb79b7811",
-        strip_prefix = "abseil-cpp-20250127.1",
+        sha256 = "1692f77d1739bacf3f94337188b78583cf09bab7e420d2dc6c5605a4f86785a1",
+        strip_prefix = "abseil-cpp-20250814.1",
         urls = [
-            "https://github.com/abseil/abseil-cpp/releases/download/20250127.1/abseil-cpp-20250127.1.tar.gz",
+            "https://github.com/abseil/abseil-cpp/releases/download/20250814.1/abseil-cpp-20250814.1.tar.gz",
         ],
     )
 
@@ -114,7 +114,7 @@ def tink_cc_testonly_deps():
     # Release from 2024-07-31.
     maybe(
         http_archive,
-        name = "com_google_googletest",
+        name = "googletest",
         sha256 = "65fab701d9829d38cb77c14acdc431d2108bfdbf8979e40eb8ae567edf10b27c",
         strip_prefix = "googletest-1.17.0",
         url = "https://github.com/google/googletest/releases/download/v1.17.0/googletest-1.17.0.tar.gz",

@@ -20,7 +20,7 @@
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
@@ -74,11 +74,11 @@ class MlKemProtoSerializationTest : public ::testing::Test {
 MlKemPrivateKey GenerateMlKem768PrivateKey(int id_requirement) {
   absl::StatusOr<MlKemParameters> parameters = MlKemParameters::Create(
       /*key_size=*/768, MlKemParameters::Variant::kTink);
-  CHECK_OK(parameters);
+  ABSL_CHECK_OK(parameters);
 
   absl::StatusOr<MlKemPrivateKey> private_key =
       internal::GenerateMlKemPrivateKey(*parameters, id_requirement);
-  CHECK_OK(private_key);
+  ABSL_CHECK_OK(private_key);
 
   return *private_key;
 }
@@ -237,13 +237,14 @@ TEST_F(MlKemProtoSerializationTest, SerializeMlKem768ParametersWorks) {
           serialization->get());
   ASSERT_THAT(proto_serialization, NotNull());
 
-  const internal::KeyTemplateStruct& key_template =
-      proto_serialization->GetKeyTemplateStruct();
-  EXPECT_THAT(key_template.type_url, Eq(kPrivateTypeUrl));
-  EXPECT_THAT(key_template.output_prefix_type, Eq(OutputPrefixTypeEnum::kTink));
+  const internal::ProtoKeyTemplate& key_template =
+      proto_serialization->GetProtoKeyTemplate();
+  EXPECT_THAT(key_template.type_url(), Eq(kPrivateTypeUrl));
+  EXPECT_THAT(key_template.output_prefix_type(),
+              Eq(OutputPrefixTypeEnum::kTink));
 
   MlKemKeyFormat key_format;
-  ASSERT_THAT(key_format.ParseFromString(key_template.value), IsTrue());
+  ASSERT_THAT(key_format.ParseFromString(key_template.value()), IsTrue());
   ASSERT_TRUE(key_format.has_params());
   EXPECT_THAT(key_format.params().ml_kem_key_size(),
               Eq(MlKemKeySize::ML_KEM_768));

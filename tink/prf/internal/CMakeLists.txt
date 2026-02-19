@@ -37,7 +37,6 @@ tink_cc_library(
     aes_cmac_prf_proto_serialization_impl.cc
     aes_cmac_prf_proto_serialization_impl.h
   DEPS
-    absl::no_destructor
     absl::status
     absl::statusor
     absl::string_view
@@ -53,7 +52,9 @@ tink_cc_library(
     tink::internal::parameters_serializer
     tink::internal::proto_key_serialization
     tink::internal::proto_parameters_serialization
-    tink::internal::proto_parser
+    tink::internal::proto_parser_message
+    tink::internal::proto_parser_owning_fields
+    tink::internal::proto_parser_secret_data_owning_field
     tink::internal::serialization_registry
     tink::internal::tink_proto_structs
     tink::prf::aes_cmac_prf_key
@@ -66,7 +67,6 @@ tink_cc_library(
     hkdf_prf_proto_serialization_impl.cc
     hkdf_prf_proto_serialization_impl.h
   DEPS
-    absl::no_destructor
     absl::status
     absl::statusor
     absl::string_view
@@ -83,7 +83,10 @@ tink_cc_library(
     tink::internal::parameters_serializer
     tink::internal::proto_key_serialization
     tink::internal::proto_parameters_serialization
-    tink::internal::proto_parser
+    tink::internal::proto_parser_enum_field
+    tink::internal::proto_parser_message
+    tink::internal::proto_parser_owning_fields
+    tink::internal::proto_parser_secret_data_owning_field
     tink::internal::serialization_registry
     tink::internal::tink_proto_structs
     tink::prf::hkdf_prf_key
@@ -96,7 +99,6 @@ tink_cc_library(
     hmac_prf_proto_serialization_impl.cc
     hmac_prf_proto_serialization_impl.h
   DEPS
-    absl::no_destructor
     absl::status
     absl::statusor
     absl::string_view
@@ -113,12 +115,14 @@ tink_cc_library(
     tink::internal::parameters_serializer
     tink::internal::proto_key_serialization
     tink::internal::proto_parameters_serialization
-    tink::internal::proto_parser
+    tink::internal::proto_parser_enum_field
+    tink::internal::proto_parser_message
+    tink::internal::proto_parser_owning_fields
+    tink::internal::proto_parser_secret_data_owning_field
     tink::internal::serialization_registry
     tink::internal::tink_proto_structs
     tink::prf::hmac_prf_key
     tink::prf::hmac_prf_parameters
-    tink::util::secret_data
 )
 
 # tests

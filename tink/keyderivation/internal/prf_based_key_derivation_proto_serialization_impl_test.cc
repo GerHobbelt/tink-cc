@@ -255,9 +255,10 @@ TEST(PrfBasedKeyDerivationProtoSerializationTest,
 
   absl::StatusOr<std::unique_ptr<Parameters>> params =
       registry.ParseParameters(*serialization);
-  EXPECT_THAT(params.status(),
-              StatusIs(absl::StatusCode::kInvalidArgument,
-                       HasSubstr("Parsing input failed")));
+  EXPECT_THAT(
+      params.status(),
+      StatusIs(absl::StatusCode::kInvalidArgument,
+               HasSubstr("Failed to parse PrfBasedDeriverKeyFormatTP")));
 }
 
 TEST(PrfBasedKeyDerivationProtoSerializationTest,
@@ -379,13 +380,14 @@ TEST(PrfBasedKeyDerivationProtoSerializationTest,
       dynamic_cast<const internal::ProtoParametersSerialization*>(
           serialization->get());
   ASSERT_THAT(proto_serialization, NotNull());
-  const internal::KeyTemplateStruct& key_template =
-      proto_serialization->GetKeyTemplateStruct();
-  EXPECT_THAT(key_template.type_url, Eq(kTypeUrl));
-  EXPECT_THAT(key_template.output_prefix_type, Eq(OutputPrefixTypeEnum::kTink));
+  const internal::ProtoKeyTemplate& key_template =
+      proto_serialization->GetProtoKeyTemplate();
+  EXPECT_THAT(key_template.type_url(), Eq(kTypeUrl));
+  EXPECT_THAT(key_template.output_prefix_type(),
+              Eq(OutputPrefixTypeEnum::kTink));
 
   PrfBasedDeriverKeyFormat key_format;
-  ASSERT_THAT(key_format.ParseFromString(key_template.value), IsTrue());
+  ASSERT_THAT(key_format.ParseFromString(key_template.value()), IsTrue());
   EXPECT_THAT(key_format.prf_key_template().type_url(), Eq(kPrfKeyTypeUrl));
   EXPECT_THAT(key_format.params().derived_key_template().type_url(),
               Eq(kDerivedKeyTypeUrl));
@@ -417,13 +419,14 @@ TEST(PrfBasedKeyDerivationProtoSerializationTest,
           serialization->get());
   ASSERT_THAT(proto_serialization, NotNull());
 
-  const internal::KeyTemplateStruct& key_template =
-      proto_serialization->GetKeyTemplateStruct();
-  EXPECT_THAT(key_template.type_url, Eq(kTypeUrl));
-  EXPECT_THAT(key_template.output_prefix_type, Eq(OutputPrefixTypeEnum::kTink));
+  const internal::ProtoKeyTemplate& key_template =
+      proto_serialization->GetProtoKeyTemplate();
+  EXPECT_THAT(key_template.type_url(), Eq(kTypeUrl));
+  EXPECT_THAT(key_template.output_prefix_type(),
+              Eq(OutputPrefixTypeEnum::kTink));
 
   PrfBasedDeriverKeyFormat key_format;
-  ASSERT_THAT(key_format.ParseFromString(key_template.value), IsTrue());
+  ASSERT_THAT(key_format.ParseFromString(key_template.value()), IsTrue());
   EXPECT_THAT(key_format.prf_key_template().type_url(), Eq(kPrfKeyTypeUrl));
   EXPECT_THAT(key_format.params().derived_key_template().type_url(),
               Eq(kDerivedKeyTypeUrl));
@@ -550,7 +553,7 @@ TEST(PrfBasedKeyDerivationProtoSerializationTest,
       registry.ParseKey(*serialization, GetInsecureSecretKeyAccessInternal());
   EXPECT_THAT(key.status(),
               StatusIs(absl::StatusCode::kInvalidArgument,
-                       HasSubstr("Parsing input failed")));
+                       HasSubstr("Failed to parse PrfBasedDeriverKeyTP")));
 }
 
 TEST(PrfBasedKeyDerivationProtoSerializationTest,

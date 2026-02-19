@@ -182,7 +182,7 @@ cc_test(
         "//tink/signature:signature_key_templates",
         "//tink/util:statusor",
         "//tink/util:test_matchers",
-        "@com_google_googletest//:gtest_main",
+        "@googletest//:gtest_main",
     ],
 )
 
@@ -266,7 +266,7 @@ cc_test(
         "//tink/util:test_matchers",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings:string_view",
-        "@com_google_googletest//:gtest_main",
+        "@googletest//:gtest_main",
     ],
 )
 
@@ -302,8 +302,8 @@ cc_test(
         "//tink/signature/internal/testing:signature_test_vector",
         "//tink/util:statusor",
         "//tink/util:test_matchers",
-        "@com_google_absl//absl/log:check",
-        "@com_google_googletest//:gtest_main",
+        "@com_google_absl//absl/log:absl_check",
+        "@googletest//:gtest_main",
     ],
 )
 
@@ -328,7 +328,7 @@ cc_test(
         "//tink/util:statusor",
         "//tink/util:test_matchers",
         "@com_google_absl//absl/types:optional",
-        "@com_google_googletest//:gtest_main",
+        "@googletest//:gtest_main",
     ],
 )
 
@@ -349,7 +349,7 @@ cc_test(
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/status:statusor",
         "@com_google_absl//absl/types:optional",
-        "@com_google_googletest//:gtest_main",
+        "@googletest//:gtest_main",
     ],
 )
 
@@ -376,7 +376,7 @@ cc_test(
         "@com_google_absl//absl/status:statusor",
         "@com_google_absl//absl/strings:string_view",
         "@com_google_absl//absl/types:optional",
-        "@com_google_googletest//:gtest_main",
+        "@googletest//:gtest_main",
     ],
 )
 
@@ -401,10 +401,12 @@ cc_library(
         "//tink/internal:proto_parser_enum_field",
         "//tink/internal:proto_parser_message",
         "//tink/internal:proto_parser_owning_fields",
+        "//tink/internal:proto_parser_secret_data_owning_field",
         "//tink/internal:tink_proto_structs",
         "//tink/signature:ml_dsa_parameters",
         "//tink/signature:ml_dsa_private_key",
         "//tink/signature:ml_dsa_public_key",
+        "//tink/util:secret_data",
         "@com_google_absl//absl/base:nullability",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/status:statusor",
@@ -435,11 +437,11 @@ cc_test(
         "//tink/signature:ml_dsa_public_key",
         "//tink/util:test_matchers",
         "//tink/util:test_util",
-        "@com_google_absl//absl/log:check",
+        "@com_google_absl//absl/log:absl_check",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings:string_view",
         "@com_google_absl//absl/types:optional",
-        "@com_google_googletest//:gtest_main",
+        "@googletest//:gtest_main",
     ],
 )
 
@@ -464,10 +466,12 @@ cc_library(
         "//tink/internal:proto_parser_enum_field",
         "//tink/internal:proto_parser_message",
         "//tink/internal:proto_parser_owning_fields",
+        "//tink/internal:proto_parser_secret_data_owning_field",
         "//tink/internal:tink_proto_structs",
         "//tink/signature:slh_dsa_parameters",
         "//tink/signature:slh_dsa_private_key",
         "//tink/signature:slh_dsa_public_key",
+        "//tink/util:secret_data",
         "@com_google_absl//absl/base:nullability",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/status:statusor",
@@ -502,7 +506,7 @@ cc_test(
         "@com_google_absl//absl/status:statusor",
         "@com_google_absl//absl/strings:string_view",
         "@com_google_absl//absl/types:optional",
-        "@com_google_googletest//:gtest_main",
+        "@googletest//:gtest_main",
     ],
 )
 
@@ -545,7 +549,7 @@ cc_test(
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/status:statusor",
         "@com_google_absl//absl/types:optional",
-        "@com_google_googletest//:gtest_main",
+        "@googletest//:gtest_main",
     ],
 )
 
@@ -593,7 +597,7 @@ cc_test(
         "@com_google_absl//absl/status:statusor",
         "@com_google_absl//absl/strings:string_view",
         "@com_google_absl//absl/types:optional",
-        "@com_google_googletest//:gtest_main",
+        "@googletest//:gtest_main",
     ],
 )
 
@@ -615,14 +619,14 @@ cc_library(
         "//tink/internal:parameters_serializer",
         "//tink/internal:proto_key_serialization",
         "//tink/internal:proto_parameters_serialization",
-        "//tink/internal:proto_parser",
+        "//tink/internal:proto_parser_message",
+        "//tink/internal:proto_parser_owning_fields",
+        "//tink/internal:proto_parser_secret_data_owning_field",
         "//tink/internal:serialization_registry",
         "//tink/internal:tink_proto_structs",
         "//tink/signature:ed25519_parameters",
         "//tink/signature:ed25519_private_key",
         "//tink/signature:ed25519_public_key",
-        "//tink/util:secret_data",
-        "@com_google_absl//absl/base:no_destructor",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/status:statusor",
         "@com_google_absl//absl/strings:string_view",
@@ -658,7 +662,7 @@ cc_test(
         "@com_google_absl//absl/status:statusor",
         "@com_google_absl//absl/strings:string_view",
         "@com_google_absl//absl/types:optional",
-        "@com_google_googletest//:gtest_main",
+        "@googletest//:gtest_main",
     ],
 )
 
@@ -675,7 +679,7 @@ cc_test(
         "//tink/signature:slh_dsa_parameters",
         "//tink/util:statusor",
         "//tink/util:test_matchers",
-        "@com_google_googletest//:gtest_main",
+        "@googletest//:gtest_main",
     ],
 )
 
@@ -702,14 +706,16 @@ cc_library(
         "//tink/internal:parameters_serializer",
         "//tink/internal:proto_key_serialization",
         "//tink/internal:proto_parameters_serialization",
-        "//tink/internal:proto_parser",
+        "//tink/internal:proto_parser_enum_field",
+        "//tink/internal:proto_parser_message",
+        "//tink/internal:proto_parser_owning_fields",
+        "//tink/internal:proto_parser_secret_data_owning_field",
         "//tink/internal:serialization_registry",
         "//tink/internal:tink_proto_structs",
         "//tink/signature:ecdsa_parameters",
         "//tink/signature:ecdsa_private_key",
         "//tink/signature:ecdsa_public_key",
         "//tink/util:secret_data",
-        "@com_google_absl//absl/base:no_destructor",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/status:statusor",
         "@com_google_absl//absl/strings:string_view",
@@ -750,6 +756,6 @@ cc_test(
         "@com_google_absl//absl/status:statusor",
         "@com_google_absl//absl/strings:string_view",
         "@com_google_absl//absl/types:optional",
-        "@com_google_googletest//:gtest_main",
+        "@googletest//:gtest_main",
     ],
 )

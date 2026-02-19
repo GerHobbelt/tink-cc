@@ -352,6 +352,7 @@ cc_library(
         "//tink/internal:call_with_core_dump_protection",
         "//tink/internal:ec_util",
         "//tink/internal:err_util",
+        "//tink/internal:mlkem_util",
         "//tink/internal:ssl_unique_ptr",
         "//tink/internal:xwing_util",
         "//tink/subtle:common_enums",
@@ -386,7 +387,9 @@ cc_library(
         "//tink/internal:parameters_serializer",
         "//tink/internal:proto_key_serialization",
         "//tink/internal:proto_parameters_serialization",
-        "//tink/internal:proto_parser",
+        "//tink/internal:proto_parser_message",
+        "//tink/internal:proto_parser_owning_fields",
+        "//tink/internal:proto_parser_secret_data_owning_field",
         "//tink/internal:tink_proto_structs",
         "//tink/util:secret_data",
         "@com_google_absl//absl/base:core_headers",
@@ -407,7 +410,7 @@ cc_library(
     deps = [
         "//tink:configuration",
         "//tink/hybrid/internal:config_v0",
-        "@com_google_absl//absl/log:check",
+        "@com_google_absl//absl/log:absl_check",
     ],
 )
 
@@ -421,7 +424,7 @@ cc_library(
     deps = [
         "//tink:key_gen_configuration",
         "//tink/hybrid/internal:key_gen_config_v0",
-        "@com_google_absl//absl/log:check",
+        "@com_google_absl//absl/log:absl_check",
     ],
 )
 
@@ -524,9 +527,9 @@ cc_library(
         "//tink:secret_data",
         "//tink:secret_key_access_token",
         "//tink/aead/internal:aes_ctr_hmac_proto_structs",
-        "//tink/aead/internal:aes_gcm_proto_structs",
-        "//tink/aead/internal:xchacha20_poly1305_proto_structs",
-        "//tink/daead/internal:aes_siv_proto_structs",
+        "//tink/aead/internal:aes_gcm_proto_format",
+        "//tink/aead/internal:xchacha20_poly1305_proto_format",
+        "//tink/daead/internal:aes_siv_proto_format",
         "//tink/internal:bn_encoding_util",
         "//tink/internal:common_proto_enums",
         "//tink/internal:key_parser",
@@ -536,13 +539,14 @@ cc_library(
         "//tink/internal:parameters_serializer",
         "//tink/internal:proto_key_serialization",
         "//tink/internal:proto_parameters_serialization",
-        "//tink/internal:proto_parser",
+        "//tink/internal:proto_parser_message",
+        "//tink/internal:proto_parser_owning_fields",
+        "//tink/internal:proto_parser_secret_data_owning_field",
         "//tink/internal:tink_proto_structs",
         "//tink/mac/internal:hmac_proto_structs",
         "//tink/util:secret_data",
         "@boringssl//:crypto",
         "@com_google_absl//absl/base:core_headers",
-        "@com_google_absl//absl/base:no_destructor",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/status:statusor",
         "@com_google_absl//absl/strings",
@@ -599,7 +603,7 @@ cc_test(
         "@com_google_absl//absl/status:statusor",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/types:optional",
-        "@com_google_googletest//:gtest_main",
+        "@googletest//:gtest_main",
     ],
 )
 
@@ -640,7 +644,7 @@ cc_test(
         "//tink/util:test_matchers",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/status:statusor",
-        "@com_google_googletest//:gtest_main",
+        "@googletest//:gtest_main",
     ],
 )
 
@@ -666,7 +670,7 @@ cc_test(
         "@com_google_absl//absl/memory",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings",
-        "@com_google_googletest//:gtest_main",
+        "@googletest//:gtest_main",
     ],
 )
 
@@ -692,7 +696,7 @@ cc_test(
         "@com_google_absl//absl/memory",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings:string_view",
-        "@com_google_googletest//:gtest_main",
+        "@googletest//:gtest_main",
     ],
 )
 
@@ -714,7 +718,7 @@ cc_test(
         "//tink/util:test_keyset_handle",
         "//tink/util:test_util",
         "@com_google_absl//absl/memory",
-        "@com_google_googletest//:gtest_main",
+        "@googletest//:gtest_main",
     ],
 )
 
@@ -733,7 +737,7 @@ cc_test(
         "//tink/util:status",
         "//tink/util:test_keyset_handle",
         "//tink/util:test_util",
-        "@com_google_googletest//:gtest_main",
+        "@googletest//:gtest_main",
     ],
 )
 
@@ -753,7 +757,7 @@ cc_test(
         "//tink/daead:deterministic_aead_key_templates",
         "//tink/hybrid/internal:hpke_private_key_manager",
         "//tink/util:test_matchers",
-        "@com_google_googletest//:gtest_main",
+        "@googletest//:gtest_main",
     ],
 )
 
@@ -784,7 +788,7 @@ cc_test(
         "@com_google_absl//absl/memory",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings:string_view",
-        "@com_google_googletest//:gtest_main",
+        "@googletest//:gtest_main",
     ],
 )
 
@@ -804,7 +808,7 @@ cc_test(
         "//tink/util:test_util",
         "@com_google_absl//absl/memory",
         "@com_google_absl//absl/status",
-        "@com_google_googletest//:gtest_main",
+        "@googletest//:gtest_main",
     ],
 )
 
@@ -841,7 +845,7 @@ cc_test(
         "@com_google_absl//absl/memory",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings",
-        "@com_google_googletest//:gtest_main",
+        "@googletest//:gtest_main",
     ],
 )
 
@@ -865,7 +869,7 @@ cc_test(
         "//tink/util:test_matchers",
         "//tink/util:test_util",
         "@com_google_absl//absl/status",
-        "@com_google_googletest//:gtest_main",
+        "@googletest//:gtest_main",
     ],
 )
 
@@ -878,7 +882,7 @@ cc_test(
         "//tink:hybrid_encrypt",
         "//tink/util:test_matchers",
         "@com_google_absl//absl/status",
-        "@com_google_googletest//:gtest_main",
+        "@googletest//:gtest_main",
     ],
 )
 
@@ -891,7 +895,7 @@ cc_test(
         "//tink/util:test_matchers",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/status:statusor",
-        "@com_google_googletest//:gtest_main",
+        "@googletest//:gtest_main",
     ],
 )
 
@@ -913,7 +917,7 @@ cc_test(
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/status:statusor",
         "@com_google_absl//absl/types:optional",
-        "@com_google_googletest//:gtest_main",
+        "@googletest//:gtest_main",
     ],
 )
 
@@ -930,6 +934,7 @@ cc_test(
         "//tink:partial_key_access",
         "//tink:restricted_data",
         "//tink/internal:ec_util",
+        "//tink/internal:mlkem_util",
         "//tink/internal:secret_buffer",
         "//tink/internal:ssl_unique_ptr",
         "//tink/internal:xwing_util",
@@ -944,7 +949,7 @@ cc_test(
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/strings:string_view",
         "@com_google_absl//absl/types:optional",
-        "@com_google_googletest//:gtest_main",
+        "@googletest//:gtest_main",
     ],
 )
 
@@ -978,12 +983,12 @@ cc_test(
         "//tink/util:test_matchers",
         "//tink/util:test_util",
         "@boringssl//:crypto",
-        "@com_google_absl//absl/log:check",
+        "@com_google_absl//absl/log:absl_check",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/strings:string_view",
         "@com_google_absl//absl/types:optional",
-        "@com_google_googletest//:gtest_main",
+        "@googletest//:gtest_main",
     ],
 )
 
@@ -1001,7 +1006,7 @@ cc_test(
         "//tink:keyset_handle",
         "//tink/util:statusor",
         "//tink/util:test_matchers",
-        "@com_google_googletest//:gtest_main",
+        "@googletest//:gtest_main",
     ],
 )
 
@@ -1021,7 +1026,7 @@ cc_test(
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings:string_view",
         "@com_google_absl//absl/types:optional",
-        "@com_google_googletest//:gtest_main",
+        "@googletest//:gtest_main",
     ],
 )
 
@@ -1044,7 +1049,7 @@ cc_test(
         "@boringssl//:crypto",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/types:optional",
-        "@com_google_googletest//:gtest_main",
+        "@googletest//:gtest_main",
     ],
 )
 
@@ -1074,7 +1079,7 @@ cc_test(
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/strings:string_view",
         "@com_google_absl//absl/types:optional",
-        "@com_google_googletest//:gtest_main",
+        "@googletest//:gtest_main",
     ],
 )
 
@@ -1122,6 +1127,6 @@ cc_test(
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/strings:string_view",
         "@com_google_absl//absl/types:optional",
-        "@com_google_googletest//:gtest_main",
+        "@googletest//:gtest_main",
     ],
 )

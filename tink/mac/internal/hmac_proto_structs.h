@@ -20,14 +20,14 @@
 #include <array>
 #include <cstdint>
 
-#include "absl/base/no_destructor.h"
 #include "absl/strings/string_view.h"
 #include "tink/internal/common_proto_enums.h"
-#include "tink/internal/proto_parser.h"
 #include "tink/internal/proto_parser_enum_field.h"
 #include "tink/internal/proto_parser_message.h"
 #include "tink/internal/proto_parser_owning_fields.h"
+#include "tink/internal/proto_parser_secret_data_owning_field.h"
 #include "tink/secret_data.h"
+#include "tink/util/secret_data.h"
 
 namespace crypto {
 namespace tink {
@@ -89,7 +89,9 @@ class ProtoHmacKey : public proto_parsing::Message<ProtoHmacKey> {
   ProtoHmacParams* mutable_params() { return params_.mutable_value(); }
 
   const SecretData& key_value() const { return key_value_.value(); }
-  void set_key_value(absl::string_view value) { key_value_.set_value(value); }
+  void set_key_value(absl::string_view value) {
+    *key_value_.mutable_value() = util::SecretDataFromStringView(value);
+  }
 
   std::array<const proto_parsing::OwningField*, 3> GetFields() const {
     return {&version_, &params_, &key_value_};
@@ -98,53 +100,7 @@ class ProtoHmacKey : public proto_parsing::Message<ProtoHmacKey> {
  private:
   proto_parsing::Uint32OwningField version_{1};
   proto_parsing::MessageOwningField<ProtoHmacParams> params_{2};
-  proto_parsing::OwningBytesField<SecretData> key_value_{3};
-};
-
-// TODO: b/451894777 - Remove these structs once the migration to the classes
-// above is complete.
-struct HmacParamsStruct {
-  HashTypeEnum hash = HashTypeEnum::kUnknownHash;
-  uint32_t tag_size = 0;
-
-  static crypto::tink::internal::ProtoParser<HmacParamsStruct> CreateParser() {
-    return crypto::tink::internal::ProtoParserBuilder<HmacParamsStruct>()
-        .AddEnumField(1, &HmacParamsStruct::hash, &HashTypeEnumIsValid)
-        .AddUint32Field(2, &HmacParamsStruct::tag_size)
-        .BuildOrDie();
-  }
-
-  static const crypto::tink::internal::ProtoParser<HmacParamsStruct>&
-  GetParser() {
-    static const absl::NoDestructor<
-        crypto::tink::internal::ProtoParser<HmacParamsStruct>>
-        parser{CreateParser()};
-    return *parser;
-  }
-};
-
-struct HmacKeyFormatStruct {
-  HmacParamsStruct params = {};
-  uint32_t key_size = 0;
-  uint32_t version = 0;
-
-  static crypto::tink::internal::ProtoParser<HmacKeyFormatStruct>
-  CreateParser() {
-    return crypto::tink::internal::ProtoParserBuilder<HmacKeyFormatStruct>()
-        .AddMessageField(1, &HmacKeyFormatStruct::params,
-                         HmacParamsStruct::CreateParser())
-        .AddUint32Field(2, &HmacKeyFormatStruct::key_size)
-        .AddUint32Field(3, &HmacKeyFormatStruct::version)
-        .BuildOrDie();
-  }
-
-  static const crypto::tink::internal::ProtoParser<HmacKeyFormatStruct>&
-  GetParser() {
-    static const absl::NoDestructor<
-        crypto::tink::internal::ProtoParser<HmacKeyFormatStruct>>
-        parser{CreateParser()};
-    return *parser;
-  }
+  proto_parsing::SecretDataOwningField key_value_{3};
 };
 
 }  // namespace internal

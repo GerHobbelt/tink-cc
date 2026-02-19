@@ -24,6 +24,7 @@ tink_cc_library(
     jwt_validator.h
   DEPS
     tink::jwt::raw_jwt
+    absl::algorithm_container
     absl::status
     absl::statusor
     absl::strings
@@ -218,13 +219,13 @@ tink_cc_library(
   DEPS
     tink::jwt::jwt_hmac_key
     tink::jwt::jwt_hmac_parameters
-    absl::no_destructor
     absl::status
     absl::statusor
     absl::string_view
     absl::optional
     tink::core::partial_key_access
     tink::core::restricted_data
+    tink::core::secret_data
     tink::core::secret_key_access_token
     tink::internal::key_parser
     tink::internal::key_serializer
@@ -233,9 +234,11 @@ tink_cc_library(
     tink::internal::parameters_serializer
     tink::internal::proto_key_serialization
     tink::internal::proto_parameters_serialization
-    tink::internal::proto_parser
+    tink::internal::proto_parser_enum_field
+    tink::internal::proto_parser_message
+    tink::internal::proto_parser_owning_fields
+    tink::internal::proto_parser_secret_data_owning_field
     tink::internal::tink_proto_structs
-    tink::util::secret_data
 )
 
 tink_cc_library(
@@ -338,7 +341,6 @@ tink_cc_library(
     tink::jwt::jwt_ecdsa_parameters
     tink::jwt::jwt_ecdsa_private_key
     tink::jwt::jwt_ecdsa_public_key
-    absl::no_destructor
     absl::status
     absl::statusor
     absl::string_view
@@ -349,6 +351,7 @@ tink_cc_library(
     tink::core::partial_key_access
     tink::core::restricted_big_integer
     tink::core::restricted_data
+    tink::core::secret_data
     tink::core::secret_key_access_token
     tink::internal::bn_encoding_util
     tink::internal::key_parser
@@ -358,9 +361,11 @@ tink_cc_library(
     tink::internal::parameters_serializer
     tink::internal::proto_key_serialization
     tink::internal::proto_parameters_serialization
-    tink::internal::proto_parser
+    tink::internal::proto_parser_enum_field
+    tink::internal::proto_parser_message
+    tink::internal::proto_parser_owning_fields
+    tink::internal::proto_parser_secret_data_owning_field
     tink::internal::tink_proto_structs
-    tink::util::secret_data
 )
 
 tink_cc_library(
@@ -434,7 +439,6 @@ tink_cc_library(
     tink::jwt::jwt_rsa_ssa_pkcs1_parameters
     tink::jwt::jwt_rsa_ssa_pkcs1_private_key
     tink::jwt::jwt_rsa_ssa_pkcs1_public_key
-    absl::no_destructor
     absl::status
     absl::statusor
     absl::string_view
@@ -453,9 +457,11 @@ tink_cc_library(
     tink::internal::parameters_serializer
     tink::internal::proto_key_serialization
     tink::internal::proto_parameters_serialization
-    tink::internal::proto_parser
+    tink::internal::proto_parser_enum_field
+    tink::internal::proto_parser_message
+    tink::internal::proto_parser_owning_fields
+    tink::internal::proto_parser_secret_data_owning_field
     tink::internal::tink_proto_structs
-    tink::util::secret_data
 )
 
 tink_cc_library(
@@ -558,7 +564,7 @@ tink_cc_library(
     jwt_mac_config_v0.cc
     jwt_mac_config_v0.h
   DEPS
-    absl::check
+    absl::absl_check
     tink::core::configuration
     tink::jwt::internal::jwt_mac_config_v0
 )
@@ -569,7 +575,7 @@ tink_cc_library(
     jwt_mac_key_gen_config_v0.cc
     jwt_mac_key_gen_config_v0.h
   DEPS
-    absl::check
+    absl::absl_check
     tink::core::key_gen_configuration
     tink::jwt::internal::jwt_mac_key_gen_config_v0
 )
@@ -580,7 +586,7 @@ tink_cc_library(
     jwt_signature_config_v0.cc
     jwt_signature_config_v0.h
   DEPS
-    absl::check
+    absl::absl_check
     tink::core::configuration
     tink::jwt::internal::jwt_signature_config_v0
 )
@@ -591,7 +597,7 @@ tink_cc_library(
     jwt_signature_key_gen_config_v0.cc
     jwt_signature_key_gen_config_v0.h
   DEPS
-    absl::check
+    absl::absl_check
     tink::core::key_gen_configuration
     tink::jwt::internal::jwt_signature_key_gen_config_v0
 )
@@ -979,7 +985,7 @@ tink_cc_test(
     tink::jwt::jwt_rsa_ssa_pkcs1_private_key
     tink::jwt::jwt_rsa_ssa_pkcs1_public_key
     gmock
-    absl::check
+    absl::absl_check
     absl::status
     absl::strings
     absl::string_view
@@ -1005,7 +1011,7 @@ tink_cc_test(
     tink::jwt::jwt_rsa_ssa_pkcs1_proto_serialization
     tink::jwt::jwt_rsa_ssa_pkcs1_public_key
     gmock
-    absl::check
+    absl::absl_check
     absl::status
     absl::string_view
     absl::optional
@@ -1075,6 +1081,7 @@ tink_cc_test(
     tink::jwt::jwt_rsa_ssa_pss_private_key
     tink::jwt::jwt_rsa_ssa_pss_public_key
     gmock
+    absl::absl_check
     absl::check
     absl::status
     absl::strings
@@ -1101,6 +1108,7 @@ tink_cc_test(
     tink::jwt::jwt_rsa_ssa_pss_proto_serialization
     tink::jwt::jwt_rsa_ssa_pss_public_key
     gmock
+    absl::absl_check
     absl::check
     absl::status
     absl::string_view

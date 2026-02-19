@@ -176,7 +176,7 @@ TEST_F(XAesGcmProtoSerializationTest, ParseParametersWithInvalidSerialization) {
       registry.ParseParameters(*serialization);
   EXPECT_THAT(params.status(),
               StatusIs(absl::StatusCode::kInvalidArgument,
-                       HasSubstr("Parsing input failed")));
+                       HasSubstr("Failed to parse XAesGcmKeyFormat proto")));
 }
 
 TEST_F(XAesGcmProtoSerializationTest, ParseParametersWithUnkownOutputPrefix) {
@@ -235,14 +235,14 @@ TEST_P(XAesGcmProtoSerializationTest, SerializeParametersWithMutableRegistry) {
       dynamic_cast<const ProtoParametersSerialization*>(serialization->get());
   ASSERT_THAT(proto_serialization, NotNull());
 
-  const internal::KeyTemplateStruct& key_template =
-      proto_serialization->GetKeyTemplateStruct();
-  EXPECT_THAT(key_template.type_url, Eq(kTypeUrl));
-  EXPECT_THAT(key_template.output_prefix_type,
+  const internal::ProtoKeyTemplate& key_template =
+      proto_serialization->GetProtoKeyTemplate();
+  EXPECT_THAT(key_template.type_url(), Eq(kTypeUrl));
+  EXPECT_THAT(key_template.output_prefix_type(),
               Eq(test_case.output_prefix_type));
 
   XAesGcmKeyFormat key_format;
-  ASSERT_THAT(key_format.ParseFromString(key_template.value), IsTrue());
+  ASSERT_THAT(key_format.ParseFromString(key_template.value()), IsTrue());
   EXPECT_THAT(key_format.version(), Eq(0));
   EXPECT_THAT(key_format.params().salt_size(), Eq(test_case.salt_size));
 }
@@ -266,14 +266,14 @@ TEST_P(XAesGcmProtoSerializationTest, SerializeParametersWithRegistryBuilder) {
   const ProtoParametersSerialization* proto_serialization =
       dynamic_cast<const ProtoParametersSerialization*>(serialization->get());
   ASSERT_THAT(proto_serialization, NotNull());
-  const internal::KeyTemplateStruct& key_template =
-      proto_serialization->GetKeyTemplateStruct();
-  EXPECT_THAT(key_template.type_url, Eq(kTypeUrl));
-  EXPECT_THAT(key_template.output_prefix_type,
+  const internal::ProtoKeyTemplate& key_template =
+      proto_serialization->GetProtoKeyTemplate();
+  EXPECT_THAT(key_template.type_url(), Eq(kTypeUrl));
+  EXPECT_THAT(key_template.output_prefix_type(),
               Eq(test_case.output_prefix_type));
 
   XAesGcmKeyFormat key_format;
-  ASSERT_THAT(key_format.ParseFromString(key_template.value), IsTrue());
+  ASSERT_THAT(key_format.ParseFromString(key_template.value()), IsTrue());
   EXPECT_THAT(key_format.version(), Eq(0));
   EXPECT_THAT(key_format.params().salt_size(), Eq(test_case.salt_size));
 }
@@ -376,7 +376,7 @@ TEST_F(XAesGcmProtoSerializationTest, ParseKeyWithInvalidSerialization) {
       registry.ParseKey(*serialization, InsecureSecretKeyAccess::Get());
   EXPECT_THAT(key.status(),
               StatusIs(absl::StatusCode::kInvalidArgument,
-                       HasSubstr("Parsing input failed")));
+                       HasSubstr("Failed to parse XAesGcmKey proto")));
 }
 
 TEST_F(XAesGcmProtoSerializationTest, ParseKeyNoSecretKeyAccess) {

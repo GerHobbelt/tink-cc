@@ -17,7 +17,7 @@
 #ifndef TINK_INTERNAL_PROTO_PARAMETERS_SERIALIZATION_H_
 #define TINK_INTERNAL_PROTO_PARAMETERS_SERIALIZATION_H_
 
-#include <string>
+#include <utility>
 
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
@@ -51,16 +51,17 @@ class ProtoParametersSerialization : public Serialization {
   static absl::StatusOr<ProtoParametersSerialization> Create(
       google::crypto::tink::KeyTemplate key_template);
 
-  // Creates a `ProtoParametersSerialization` object from a key template struct.
+  // Creates a `ProtoParametersSerialization` object from a key template
+  // proto message.
   static absl::StatusOr<ProtoParametersSerialization> Create(
-      const KeyTemplateStruct& key_template);
+      const ProtoKeyTemplate& key_template);
 
-  const KeyTemplateStruct& GetKeyTemplateStruct() const {
-    return key_template_;
+  const ProtoKeyTemplate& GetProtoKeyTemplate() const {
+    return proto_key_template_;
   }
 
   absl::string_view ObjectIdentifier() const override {
-    return object_identifier_;
+    return proto_key_template_.type_url();
   }
 
  private:
@@ -70,9 +71,8 @@ class ProtoParametersSerialization : public Serialization {
   friend class LegacyProtoParameters;
   friend class LegacyProtoParametersTest;
 
-  explicit ProtoParametersSerialization(const KeyTemplateStruct& key_template)
-      : key_template_(key_template),
-        object_identifier_(key_template.type_url) {}
+  explicit ProtoParametersSerialization(ProtoKeyTemplate proto_key_template)
+      : proto_key_template_(std::move(proto_key_template)) {}
 
   // Returns `true` if this `ProtoParametersSerialization` object is equal to
   // `other` (with the possibility of false negatives due to lack of
@@ -81,8 +81,7 @@ class ProtoParametersSerialization : public Serialization {
   bool EqualsWithPotentialFalseNegatives(
       const ProtoParametersSerialization& other) const;
 
-  KeyTemplateStruct key_template_;
-  std::string object_identifier_;
+  ProtoKeyTemplate proto_key_template_;
 };
 
 }  // namespace internal

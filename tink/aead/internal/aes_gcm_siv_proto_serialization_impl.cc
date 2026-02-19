@@ -36,12 +36,14 @@
 #include "tink/internal/proto_parameters_serialization.h"
 #include "tink/internal/proto_parser_message.h"
 #include "tink/internal/proto_parser_owning_fields.h"
+#include "tink/internal/proto_parser_secret_data_owning_field.h"
 #include "tink/internal/serialization_registry.h"
 #include "tink/internal/tink_proto_structs.h"
 #include "tink/partial_key_access.h"
 #include "tink/restricted_data.h"
 #include "tink/secret_data.h"
 #include "tink/secret_key_access_token.h"
+#include "tink/util/secret_data.h"
 
 namespace crypto {
 namespace tink {
@@ -88,7 +90,9 @@ class ProtoAesGcmSivKey : public proto_parsing::Message<ProtoAesGcmSivKey> {
   void set_version(uint32_t value) { version_.set_value(value); }
 
   const SecretData& key_value() const { return key_value_.value(); }
-  void set_key_value(absl::string_view value) { key_value_.set_value(value); }
+  void set_key_value(absl::string_view value) {
+    *key_value_.mutable_value() = util::SecretDataFromStringView(value);
+  }
 
   std::array<const proto_parsing::OwningField*, 2> GetFields() const {
     return {&version_, &key_value_};
@@ -96,7 +100,7 @@ class ProtoAesGcmSivKey : public proto_parsing::Message<ProtoAesGcmSivKey> {
 
  private:
   proto_parsing::Uint32OwningField version_{1};
-  proto_parsing::OwningBytesField<SecretData> key_value_{3};
+  proto_parsing::SecretDataOwningField key_value_{3};
 };
 
 const absl::string_view kTypeUrl =
@@ -136,15 +140,15 @@ absl::StatusOr<OutputPrefixTypeEnum> ToOutputPrefixType(
 
 absl::StatusOr<AesGcmSivParameters> ParseParameters(
     const ProtoParametersSerialization& serialization) {
-  const internal::KeyTemplateStruct& key_template =
-      serialization.GetKeyTemplateStruct();
-  if (key_template.type_url != kTypeUrl) {
+  const internal::ProtoKeyTemplate& key_template =
+      serialization.GetProtoKeyTemplate();
+  if (key_template.type_url() != kTypeUrl) {
     return absl::InvalidArgumentError(
         "Wrong type URL when parsing AesGcmSivParameters.");
   }
 
   ProtoAesGcmSivKeyFormat key_format;
-  if (!key_format.ParseFromString(key_template.value)) {
+  if (!key_format.ParseFromString(key_template.value())) {
     return absl::InvalidArgumentError(
         "Failed to parse AesGcmSivKeyFormat proto");
   }
@@ -153,7 +157,7 @@ absl::StatusOr<AesGcmSivParameters> ParseParameters(
   }
 
   absl::StatusOr<AesGcmSivParameters::Variant> variant =
-      ToVariant(serialization.GetKeyTemplateStruct().output_prefix_type);
+      ToVariant(key_template.output_prefix_type());
   if (!variant.ok()) {
     return variant.status();
   }

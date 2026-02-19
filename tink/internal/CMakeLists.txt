@@ -398,7 +398,7 @@ tink_cc_test(
     tink::internal::ssl_unique_ptr
     tink::internal::ssl_util
     gmock
-    absl::check
+    absl::absl_check
     absl::status
     absl::strings
     absl::span
@@ -1414,7 +1414,7 @@ tink_cc_library(
     tink::internal::secret_buffer
     absl::btree
     absl::crc32c
-    absl::check
+    absl::absl_check
     absl::status
     absl::statusor
     absl::strings
@@ -1633,6 +1633,7 @@ tink_cc_library(
     proto_parser_presence_fields.h
   DEPS
     tink::internal::proto_parser_fields
+    tink::internal::proto_parser_owning_fields
     tink::internal::proto_parser_state
     tink::internal::proto_parsing_helpers
     absl::status
@@ -1742,7 +1743,7 @@ tink_cc_library(
     global_serialization_registry.h
   DEPS
     tink::internal::serialization_registry
-    absl::check
+    absl::absl_check
     tink::aead::internal::aes_ctr_hmac_aead_proto_serialization_impl
     tink::aead::internal::aes_eax_proto_serialization_impl
     tink::aead::internal::aes_gcm_proto_serialization_impl
@@ -1774,7 +1775,7 @@ tink_cc_test(
     tink::internal::proto_key_serialization
     tink::internal::serialization
     gmock
-    absl::check
+    absl::absl_check
     absl::memory
     absl::optional
     tink::core::big_integer
@@ -1918,9 +1919,11 @@ tink_cc_library(
     tink::internal::proto_parser_enum_field
     tink::internal::proto_parser_message
     tink::internal::proto_parser_owning_fields
+    tink::internal::proto_parser_secret_data_owning_field
     absl::no_destructor
     absl::string_view
     tink::core::secret_data
+    tink::util::secret_data
 )
 
 tink_cc_test(
@@ -2146,6 +2149,41 @@ tink_cc_test(
 )
 
 tink_cc_library(
+  NAME mlkem_util
+  SRCS
+    mlkem_util.cc
+    mlkem_util.h
+  DEPS
+    tink::internal::call_with_core_dump_protection
+    tink::internal::secret_buffer
+    absl::memory
+    absl::status
+    absl::statusor
+    crypto
+    tink::core::secret_data
+    tink::subtle::subtle_util
+    tink::util::secret_data
+  TAGS
+    exclude_if_openssl
+)
+
+tink_cc_test(
+  NAME mlkem_util_test
+  SRCS
+    mlkem_util_test.cc
+  DEPS
+    tink::internal::mlkem_util
+    gmock
+    absl::status
+    absl::statusor
+    tink::util::secret_data
+    tink::util::test_matchers
+    tink::util::test_util
+  TAGS
+    exclude_if_openssl
+)
+
+tink_cc_library(
   NAME proto_parser_repeated_message_field
   SRCS
     proto_parser_repeated_message_field.h
@@ -2194,6 +2232,7 @@ tink_cc_library(
     absl::core_headers
     absl::status
     absl::string_view
+    tink::core::secret_data
 )
 
 tink_cc_test(
@@ -2227,6 +2266,7 @@ tink_cc_library(
     absl::no_destructor
     absl::nullability
     absl::crc32c
+    absl::absl_check
     absl::check
     absl::status
     absl::statusor
@@ -2260,6 +2300,44 @@ tink_cc_test(
     absl::span
     tink::core::secret_data
     tink::internal::testing::field_with_number
+    tink::util::secret_data
+    tink::util::test_matchers
+    tink::util::test_util
+)
+
+tink_cc_library(
+  NAME proto_parser_secret_data_owning_field
+  SRCS
+    proto_parser_secret_data_owning_field.h
+  DEPS
+    tink::internal::call_with_core_dump_protection
+    tink::internal::proto_parser_options
+    tink::internal::proto_parser_owning_fields
+    tink::internal::proto_parser_secret_data_field
+    tink::internal::proto_parser_state
+    tink::internal::proto_parsing_helpers
+    tink::internal::safe_stringops
+    absl::crc32c
+    absl::status
+    absl::strings
+    absl::string_view
+    tink::core::secret_data
+)
+
+tink_cc_test(
+  NAME proto_parser_secret_data_owning_field_test
+  SRCS
+    proto_parser_secret_data_owning_field_test.cc
+  DEPS
+    tink::internal::proto_parser_options
+    tink::internal::proto_parser_secret_data_owning_field
+    tink::internal::proto_parser_state
+    gmock
+    absl::crc32c
+    absl::strings
+    absl::string_view
+    absl::span
+    tink::core::secret_data
     tink::util::secret_data
     tink::util::test_matchers
     tink::util::test_util

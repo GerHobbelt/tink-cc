@@ -485,10 +485,12 @@ tink_cc_library(
     tink::internal::proto_parser_enum_field
     tink::internal::proto_parser_message
     tink::internal::proto_parser_owning_fields
+    tink::internal::proto_parser_secret_data_owning_field
     tink::internal::tink_proto_structs
     tink::signature::ml_dsa_parameters
     tink::signature::ml_dsa_private_key
     tink::signature::ml_dsa_public_key
+    tink::util::secret_data
   TAGS
     exclude_if_openssl
 )
@@ -501,7 +503,7 @@ tink_cc_test(
     tink::signature::internal::key_creators
     tink::signature::internal::ml_dsa_proto_serialization
     gmock
-    absl::check
+    absl::absl_check
     absl::status
     absl::string_view
     absl::optional
@@ -551,10 +553,12 @@ tink_cc_library(
     tink::internal::proto_parser_enum_field
     tink::internal::proto_parser_message
     tink::internal::proto_parser_owning_fields
+    tink::internal::proto_parser_secret_data_owning_field
     tink::internal::tink_proto_structs
     tink::signature::slh_dsa_parameters
     tink::signature::slh_dsa_private_key
     tink::signature::slh_dsa_public_key
+    tink::util::secret_data
   TAGS
     exclude_if_openssl
 )
@@ -694,7 +698,6 @@ tink_cc_library(
     ed25519_proto_serialization_impl.cc
     ed25519_proto_serialization_impl.h
   DEPS
-    absl::no_destructor
     absl::status
     absl::statusor
     absl::string_view
@@ -711,13 +714,14 @@ tink_cc_library(
     tink::internal::parameters_serializer
     tink::internal::proto_key_serialization
     tink::internal::proto_parameters_serialization
-    tink::internal::proto_parser
+    tink::internal::proto_parser_message
+    tink::internal::proto_parser_owning_fields
+    tink::internal::proto_parser_secret_data_owning_field
     tink::internal::serialization_registry
     tink::internal::tink_proto_structs
     tink::signature::ed25519_parameters
     tink::signature::ed25519_private_key
     tink::signature::ed25519_public_key
-    tink::util::secret_data
 )
 
 tink_cc_test(
@@ -779,7 +783,7 @@ tink_cc_test(
     tink::signature::internal::config_v0
     tink::signature::internal::key_gen_config_v0
     gmock
-    absl::check
+    absl::absl_check
     tink::core::configuration
     tink::core::key_gen_configuration
     tink::core::key_status
@@ -816,7 +820,6 @@ tink_cc_library(
     ecdsa_proto_serialization_impl.cc
     ecdsa_proto_serialization_impl.h
   DEPS
-    absl::no_destructor
     absl::status
     absl::statusor
     absl::string_view
@@ -838,7 +841,10 @@ tink_cc_library(
     tink::internal::parameters_serializer
     tink::internal::proto_key_serialization
     tink::internal::proto_parameters_serialization
-    tink::internal::proto_parser
+    tink::internal::proto_parser_enum_field
+    tink::internal::proto_parser_message
+    tink::internal::proto_parser_owning_fields
+    tink::internal::proto_parser_secret_data_owning_field
     tink::internal::serialization_registry
     tink::internal::tink_proto_structs
     tink::signature::ecdsa_parameters

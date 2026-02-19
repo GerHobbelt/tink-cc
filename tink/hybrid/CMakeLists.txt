@@ -329,6 +329,7 @@ tink_cc_library(
     tink::internal::call_with_core_dump_protection
     tink::internal::ec_util
     tink::internal::err_util
+    tink::internal::mlkem_util
     tink::internal::ssl_unique_ptr
     tink::internal::xwing_util
     tink::subtle::common_enums
@@ -363,7 +364,9 @@ tink_cc_library(
     tink::internal::parameters_serializer
     tink::internal::proto_key_serialization
     tink::internal::proto_parameters_serialization
-    tink::internal::proto_parser
+    tink::internal::proto_parser_message
+    tink::internal::proto_parser_owning_fields
+    tink::internal::proto_parser_secret_data_owning_field
     tink::internal::tink_proto_structs
     tink::util::secret_data
   TAGS
@@ -376,7 +379,7 @@ tink_cc_library(
     config_v0.cc
     config_v0.h
   DEPS
-    absl::check
+    absl::absl_check
     tink::core::configuration
     tink::hybrid::internal::config_v0
   TAGS
@@ -402,7 +405,7 @@ tink_cc_library(
     key_gen_config_v0.cc
     key_gen_config_v0.h
   DEPS
-    absl::check
+    absl::absl_check
     tink::core::key_gen_configuration
     tink::hybrid::internal::key_gen_config_v0
   TAGS
@@ -507,7 +510,6 @@ tink_cc_library(
     tink::hybrid::ecies_private_key
     tink::hybrid::ecies_public_key
     absl::core_headers
-    absl::no_destructor
     absl::status
     absl::statusor
     absl::strings
@@ -523,9 +525,9 @@ tink_cc_library(
     tink::core::secret_data
     tink::core::secret_key_access_token
     tink::aead::internal::aes_ctr_hmac_proto_structs
-    tink::aead::internal::aes_gcm_proto_structs
-    tink::aead::internal::xchacha20_poly1305_proto_structs
-    tink::daead::internal::aes_siv_proto_structs
+    tink::aead::internal::aes_gcm_proto_format
+    tink::aead::internal::xchacha20_poly1305_proto_format
+    tink::daead::internal::aes_siv_proto_format
     tink::internal::bn_encoding_util
     tink::internal::common_proto_enums
     tink::internal::key_parser
@@ -535,7 +537,9 @@ tink_cc_library(
     tink::internal::parameters_serializer
     tink::internal::proto_key_serialization
     tink::internal::proto_parameters_serialization
-    tink::internal::proto_parser
+    tink::internal::proto_parser_message
+    tink::internal::proto_parser_owning_fields
+    tink::internal::proto_parser_secret_data_owning_field
     tink::internal::tink_proto_structs
     tink::mac::internal::hmac_proto_structs
     tink::util::secret_data
@@ -918,6 +922,7 @@ tink_cc_test(
     tink::core::partial_key_access
     tink::core::restricted_data
     tink::internal::ec_util
+    tink::internal::mlkem_util
     tink::internal::secret_buffer
     tink::internal::ssl_unique_ptr
     tink::internal::xwing_util
@@ -940,7 +945,7 @@ tink_cc_test(
     tink::hybrid::hpke_proto_serialization
     tink::hybrid::hpke_public_key
     gmock
-    absl::check
+    absl::absl_check
     absl::status
     absl::strings
     absl::string_view

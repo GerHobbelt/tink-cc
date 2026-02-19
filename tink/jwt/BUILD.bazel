@@ -41,6 +41,7 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         ":raw_jwt",
+        "@com_google_absl//absl/algorithm:container",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/status:statusor",
         "@com_google_absl//absl/strings",
@@ -246,6 +247,7 @@ cc_library(
         ":jwt_hmac_parameters",
         "//tink:partial_key_access",
         "//tink:restricted_data",
+        "//tink:secret_data",
         "//tink:secret_key_access_token",
         "//tink/internal:key_parser",
         "//tink/internal:key_serializer",
@@ -254,10 +256,11 @@ cc_library(
         "//tink/internal:parameters_serializer",
         "//tink/internal:proto_key_serialization",
         "//tink/internal:proto_parameters_serialization",
-        "//tink/internal:proto_parser",
+        "//tink/internal:proto_parser_enum_field",
+        "//tink/internal:proto_parser_message",
+        "//tink/internal:proto_parser_owning_fields",
+        "//tink/internal:proto_parser_secret_data_owning_field",
         "//tink/internal:tink_proto_structs",
-        "//tink/util:secret_data",
-        "@com_google_absl//absl/base:no_destructor",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/status:statusor",
         "@com_google_absl//absl/strings:string_view",
@@ -381,6 +384,7 @@ cc_library(
         "//tink:partial_key_access",
         "//tink:restricted_big_integer",
         "//tink:restricted_data",
+        "//tink:secret_data",
         "//tink:secret_key_access_token",
         "//tink/internal:bn_encoding_util",
         "//tink/internal:key_parser",
@@ -390,10 +394,11 @@ cc_library(
         "//tink/internal:parameters_serializer",
         "//tink/internal:proto_key_serialization",
         "//tink/internal:proto_parameters_serialization",
-        "//tink/internal:proto_parser",
+        "//tink/internal:proto_parser_enum_field",
+        "//tink/internal:proto_parser_message",
+        "//tink/internal:proto_parser_owning_fields",
+        "//tink/internal:proto_parser_secret_data_owning_field",
         "//tink/internal:tink_proto_structs",
-        "//tink/util:secret_data",
-        "@com_google_absl//absl/base:no_destructor",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/status:statusor",
         "@com_google_absl//absl/strings:string_view",
@@ -489,10 +494,11 @@ cc_library(
         "//tink/internal:parameters_serializer",
         "//tink/internal:proto_key_serialization",
         "//tink/internal:proto_parameters_serialization",
-        "//tink/internal:proto_parser",
+        "//tink/internal:proto_parser_enum_field",
+        "//tink/internal:proto_parser_message",
+        "//tink/internal:proto_parser_owning_fields",
+        "//tink/internal:proto_parser_secret_data_owning_field",
         "//tink/internal:tink_proto_structs",
-        "//tink/util:secret_data",
-        "@com_google_absl//absl/base:no_destructor",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/status:statusor",
         "@com_google_absl//absl/strings:string_view",
@@ -606,7 +612,7 @@ cc_library(
     deps = [
         "//tink:configuration",
         "//tink/jwt/internal:jwt_mac_config_v0",
-        "@com_google_absl//absl/log:check",
+        "@com_google_absl//absl/log:absl_check",
     ],
 )
 
@@ -618,7 +624,7 @@ cc_library(
     deps = [
         "//tink:key_gen_configuration",
         "//tink/jwt/internal:jwt_mac_key_gen_config_v0",
-        "@com_google_absl//absl/log:check",
+        "@com_google_absl//absl/log:absl_check",
     ],
 )
 
@@ -630,7 +636,7 @@ cc_library(
     deps = [
         "//tink:configuration",
         "//tink/jwt/internal:jwt_signature_config_v0",
-        "@com_google_absl//absl/log:check",
+        "@com_google_absl//absl/log:absl_check",
     ],
 )
 
@@ -642,7 +648,7 @@ cc_library(
     deps = [
         "//tink:key_gen_configuration",
         "//tink/jwt/internal:jwt_signature_key_gen_config_v0",
-        "@com_google_absl//absl/log:check",
+        "@com_google_absl//absl/log:absl_check",
     ],
 )
 
@@ -657,7 +663,7 @@ cc_test(
         "//tink/util:test_matchers",
         "@com_google_absl//absl/status:statusor",
         "@com_google_absl//absl/time",
-        "@com_google_googletest//:gtest_main",
+        "@googletest//:gtest_main",
     ],
 )
 
@@ -682,7 +688,7 @@ cc_test(
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/time",
         "@com_google_absl//absl/types:optional",
-        "@com_google_googletest//:gtest_main",
+        "@googletest//:gtest_main",
     ],
 )
 
@@ -696,7 +702,7 @@ cc_test(
         "//tink/util:test_matchers",
         "@com_google_absl//absl/status:statusor",
         "@com_google_absl//absl/time",
-        "@com_google_googletest//:gtest_main",
+        "@googletest//:gtest_main",
     ],
 )
 
@@ -718,7 +724,7 @@ cc_test(
         "//tink/config:global_registry",
         "//tink/util:test_matchers",
         "@com_google_absl//absl/status:statusor",
-        "@com_google_googletest//:gtest_main",
+        "@googletest//:gtest_main",
     ],
 )
 
@@ -748,8 +754,8 @@ cc_test(
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/status:statusor",
         "@com_google_absl//absl/strings",
-        "@com_google_googletest//:gtest_main",
         "@com_google_protobuf//:protobuf",
+        "@googletest//:gtest_main",
     ],
 )
 
@@ -783,7 +789,7 @@ cc_test(
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/status:statusor",
         "@com_google_absl//absl/types:optional",
-        "@com_google_googletest//:gtest_main",
+        "@googletest//:gtest_main",
     ],
 )
 
@@ -830,7 +836,7 @@ cc_test(
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/strings:string_view",
         "@com_google_absl//absl/types:optional",
-        "@com_google_googletest//:gtest_main",
+        "@googletest//:gtest_main",
     ],
 )
 
@@ -843,7 +849,7 @@ cc_test(
         "//tink/util:test_matchers",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/status:statusor",
-        "@com_google_googletest//:gtest_main",
+        "@googletest//:gtest_main",
     ],
 )
 
@@ -860,7 +866,7 @@ cc_test(
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/status:statusor",
         "@com_google_absl//absl/types:optional",
-        "@com_google_googletest//:gtest_main",
+        "@googletest//:gtest_main",
     ],
 )
 
@@ -889,7 +895,7 @@ cc_test(
         "@com_google_absl//absl/status:statusor",
         "@com_google_absl//absl/strings:string_view",
         "@com_google_absl//absl/types:optional",
-        "@com_google_googletest//:gtest_main",
+        "@googletest//:gtest_main",
     ],
 )
 
@@ -902,7 +908,7 @@ cc_test(
         "//tink/util:test_matchers",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/status:statusor",
-        "@com_google_googletest//:gtest_main",
+        "@googletest//:gtest_main",
     ],
 )
 
@@ -923,7 +929,7 @@ cc_test(
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/status:statusor",
         "@com_google_absl//absl/types:optional",
-        "@com_google_googletest//:gtest_main",
+        "@googletest//:gtest_main",
     ],
 )
 
@@ -948,7 +954,7 @@ cc_test(
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/status:statusor",
         "@com_google_absl//absl/types:optional",
-        "@com_google_googletest//:gtest_main",
+        "@googletest//:gtest_main",
     ],
 )
 
@@ -984,7 +990,7 @@ cc_test(
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/strings:string_view",
         "@com_google_absl//absl/types:optional",
-        "@com_google_googletest//:gtest_main",
+        "@googletest//:gtest_main",
     ],
 )
 
@@ -1001,7 +1007,7 @@ cc_test(
         "@boringssl//:crypto",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/status:statusor",
-        "@com_google_googletest//:gtest_main",
+        "@googletest//:gtest_main",
     ],
 )
 
@@ -1021,7 +1027,7 @@ cc_test(
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/strings:string_view",
         "@com_google_absl//absl/types:optional",
-        "@com_google_googletest//:gtest_main",
+        "@googletest//:gtest_main",
     ],
 )
 
@@ -1041,12 +1047,12 @@ cc_test(
         "//tink/internal:ssl_unique_ptr",
         "//tink/util:test_matchers",
         "@boringssl//:crypto",
-        "@com_google_absl//absl/log:check",
+        "@com_google_absl//absl/log:absl_check",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/strings:string_view",
         "@com_google_absl//absl/types:optional",
-        "@com_google_googletest//:gtest_main",
+        "@googletest//:gtest_main",
     ],
 )
 
@@ -1076,11 +1082,11 @@ cc_test(
         "//tink/internal:tink_proto_structs",
         "//tink/util:test_matchers",
         "@boringssl//:crypto",
-        "@com_google_absl//absl/log:check",
+        "@com_google_absl//absl/log:absl_check",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings:string_view",
         "@com_google_absl//absl/types:optional",
-        "@com_google_googletest//:gtest_main",
+        "@googletest//:gtest_main",
     ],
 )
 
@@ -1097,7 +1103,7 @@ cc_test(
         "@boringssl//:crypto",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/status:statusor",
-        "@com_google_googletest//:gtest_main",
+        "@googletest//:gtest_main",
     ],
 )
 
@@ -1117,7 +1123,7 @@ cc_test(
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/strings:string_view",
         "@com_google_absl//absl/types:optional",
-        "@com_google_googletest//:gtest_main",
+        "@googletest//:gtest_main",
     ],
 )
 
@@ -1137,12 +1143,13 @@ cc_test(
         "//tink/internal:ssl_unique_ptr",
         "//tink/util:test_matchers",
         "@boringssl//:crypto",
+        "@com_google_absl//absl/log:absl_check",
         "@com_google_absl//absl/log:check",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/strings:string_view",
         "@com_google_absl//absl/types:optional",
-        "@com_google_googletest//:gtest_main",
+        "@googletest//:gtest_main",
     ],
 )
 
@@ -1172,11 +1179,12 @@ cc_test(
         "//tink/internal:tink_proto_structs",
         "//tink/util:test_matchers",
         "@boringssl//:crypto",
+        "@com_google_absl//absl/log:absl_check",
         "@com_google_absl//absl/log:check",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings:string_view",
         "@com_google_absl//absl/types:optional",
-        "@com_google_googletest//:gtest_main",
+        "@googletest//:gtest_main",
     ],
 )
 
@@ -1194,7 +1202,7 @@ cc_test(
         "//tink/util:test_matchers",
         "@com_google_absl//absl/status:statusor",
         "@com_google_absl//absl/time",
-        "@com_google_googletest//:gtest_main",
+        "@googletest//:gtest_main",
     ],
 )
 
@@ -1212,6 +1220,6 @@ cc_test(
         "//tink:keyset_handle",
         "//tink/util:test_matchers",
         "@com_google_absl//absl/status:statusor",
-        "@com_google_googletest//:gtest_main",
+        "@googletest//:gtest_main",
     ],
 )
