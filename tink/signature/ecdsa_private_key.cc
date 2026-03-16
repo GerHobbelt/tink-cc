@@ -16,7 +16,6 @@
 
 #include "tink/signature/ecdsa_private_key.h"
 
-#include <cstddef>
 #include <memory>
 #include <utility>
 
@@ -41,7 +40,6 @@
 #include "tink/internal/ssl_unique_ptr.h"
 #include "tink/key.h"
 #include "tink/partial_key_access_token.h"
-#include "tink/restricted_big_integer.h"
 #include "tink/restricted_data.h"
 #include "tink/signature/ecdsa_parameters.h"
 #include "tink/signature/ecdsa_public_key.h"
@@ -125,9 +123,9 @@ absl::Status ValidateKeyPair(const EcdsaPublicKey& public_key,
 }  // namespace
 
 absl::StatusOr<EcdsaPrivateKey> EcdsaPrivateKey::Create(
-    const EcdsaPublicKey& public_key, const RestrictedData& private_key_value,
+    const EcdsaPublicKey& public_key, RestrictedData private_key_value,
     PartialKeyAccessToken token) {
-  size_t key_length = public_key.GetParameters().GetPrivateKeyLength();
+  int key_length = public_key.GetParameters().GetPrivateKeyLength();
   if (private_key_value.size() != key_length) {
     return absl::InvalidArgumentError(
         absl::StrCat("Private key length ", private_key_value.size(),
@@ -141,7 +139,7 @@ absl::StatusOr<EcdsaPrivateKey> EcdsaPrivateKey::Create(
     return key_pair_validation;
   }
 
-  return EcdsaPrivateKey(public_key, private_key_value);
+  return EcdsaPrivateKey(public_key, std::move(private_key_value));
 }
 
 absl::StatusOr<EcdsaPrivateKey> EcdsaPrivateKey::CreateAllowNonConstantTime(
@@ -162,6 +160,8 @@ absl::StatusOr<EcdsaPrivateKey> EcdsaPrivateKey::CreateAllowNonConstantTime(
                 token);
 }
 
+// NOLINTBEGIN(whitespace/line_length) (Formatted when commented in)
+// TINK-PENDING-REMOVAL-IN-3.0.0-START
 absl::StatusOr<EcdsaPrivateKey> EcdsaPrivateKey::Create(
     const EcdsaPublicKey& public_key,
     const RestrictedBigInteger& private_key_value,
@@ -177,9 +177,9 @@ absl::StatusOr<EcdsaPrivateKey> EcdsaPrivateKey::Create(
     return key_pair_validation;
   }
 
-  return EcdsaPrivateKey(public_key, private_key_value_restricted_data);
+  return EcdsaPrivateKey(public_key,
+  std::move(private_key_value_restricted_data));
 }
-
 const RestrictedBigInteger& EcdsaPrivateKey::GetPrivateKeyValue(
     PartialKeyAccessToken token) const {
   absl::MutexLock lock(mutex_);
@@ -190,6 +190,8 @@ const RestrictedBigInteger& EcdsaPrivateKey::GetPrivateKeyValue(
   }
   return *private_key_value_big_integer_;
 }
+// TINK-PENDING-REMOVAL-IN-3.0.0-END
+// NOLINTEND(whitespace/line_length)
 
 bool EcdsaPrivateKey::operator==(const Key& other) const {
   const EcdsaPrivateKey* that = dynamic_cast<const EcdsaPrivateKey*>(&other);

@@ -452,7 +452,6 @@ tink_cc_library(
     absl::core_headers
     absl::flat_hash_map
     absl::absl_check
-    absl::check
     absl::memory
     absl::status
     absl::statusor
@@ -481,8 +480,6 @@ tink_cc_library(
     tink::util::keyset_util
     tink::util::secret_data
     tink::util::secret_proto
-    tink::util::status
-    tink::util::statusor
     tink::util::validation
     tink::proto::tink_cc_proto
 )
@@ -499,6 +496,7 @@ tink_cc_library(
     tink::core::keyset_reader
     tink::core::keyset_writer
     absl::flat_hash_map
+    absl::absl_check
     absl::memory
     absl::status
     absl::statusor
@@ -841,6 +839,7 @@ tink_cc_library(
     tink::core::keyset_reader
     tink::core::secret_data
     tink::core::secret_key_access_token
+    absl::absl_check
     absl::memory
     absl::status
     absl::statusor

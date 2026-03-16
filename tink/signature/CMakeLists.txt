@@ -1,6 +1,7 @@
 tink_module(signature)
 
 add_subdirectory(internal)
+add_subdirectory(subtle)
 
 tink_cc_library(
   NAME public_key_verify_wrapper
@@ -378,9 +379,16 @@ tink_cc_library(
     tink::signature::rsa_ssa_pss_verify_key_manager
     absl::core_headers
     absl::memory
+    absl::status
+    crypto
     tink::core::registry
-    tink::config::config_util
     tink::config::tink_fips
+    tink::signature::internal::ml_dsa_proto_serialization
+    tink::signature::internal::ml_dsa_sign_key_manager
+    tink::signature::internal::ml_dsa_verify_key_manager
+    tink::signature::internal::slh_dsa_proto_serialization
+    tink::signature::internal::slh_dsa_sign_key_manager
+    tink::signature::internal::slh_dsa_verify_key_manager
     tink::util::status
     tink::proto::config_cc_proto
 )
@@ -2079,6 +2087,60 @@ tink_cc_test(
     tink::internal::util
     tink::signature::internal::testing::composite_ml_dsa_test_util
     tink::util::test_matchers
+  TAGS
+    exclude_if_openssl
+)
+
+tink_cc_library(
+  NAME composite_ml_dsa_proto_serialization
+  SRCS
+    composite_ml_dsa_proto_serialization.h
+  DEPS
+    absl::status
+    tink::internal::mutable_serialization_registry
+    tink::signature::internal::composite_ml_dsa_proto_serialization_impl
+  TAGS
+    exclude_if_openssl
+)
+
+tink_cc_test(
+  NAME composite_ml_dsa_proto_serialization_test
+  SRCS
+    composite_ml_dsa_proto_serialization_test.cc
+  DEPS
+    tink::signature::composite_ml_dsa_parameters
+    tink::signature::composite_ml_dsa_private_key
+    tink::signature::composite_ml_dsa_proto_serialization
+    tink::signature::composite_ml_dsa_public_key
+    tink::signature::signature_private_key
+    tink::signature::signature_public_key
+    gmock
+    absl::status
+    absl::statusor
+    absl::string_view
+    absl::optional
+    tink::core::insecure_secret_key_access_testonly
+    tink::core::key
+    tink::core::parameters
+    tink::core::partial_key_access
+    tink::core::restricted_data
+    tink::internal::mutable_serialization_registry
+    tink::internal::proto_key_serialization
+    tink::internal::proto_parameters_serialization
+    tink::internal::serialization
+    tink::internal::serialization_registry
+    tink::internal::tink_proto_structs
+    tink::internal::util
+    tink::signature::internal::ecdsa_proto_serialization_impl
+    tink::signature::internal::ed25519_proto_serialization_impl
+    tink::signature::internal::ml_dsa_proto_serialization_impl
+    tink::signature::internal::rsa_ssa_pkcs1_proto_serialization_impl
+    tink::signature::internal::rsa_ssa_pss_proto_serialization_impl
+    tink::signature::internal::testing::composite_ml_dsa_test_util
+    tink::util::test_matchers
+    tink::proto::composite_ml_dsa_cc_proto
+    tink::proto::ml_dsa_cc_proto
+    tink::proto::tink_cc_proto
   TAGS
     exclude_if_openssl
 )

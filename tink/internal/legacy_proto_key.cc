@@ -30,10 +30,10 @@ namespace tink {
 namespace internal {
 namespace {
 
-absl::Status CheckKeyAccess(KeyMaterialTypeEnum key_material_type,
+absl::Status CheckKeyAccess(KeyMaterialTypeTP key_material_type,
                             absl::optional<SecretKeyAccessToken> token) {
-  if (key_material_type == KeyMaterialTypeEnum::kSymmetric ||
-      key_material_type == KeyMaterialTypeEnum::kAsymmetricPrivate) {
+  if (key_material_type == KeyMaterialTypeTP::kSymmetric ||
+      key_material_type == KeyMaterialTypeTP::kAsymmetricPrivate) {
     if (!token.has_value()) {
       return absl::Status(
           absl::StatusCode::kPermissionDenied,
@@ -74,14 +74,14 @@ bool LegacyProtoKey::operator==(const Key& other) const {
   return serialization_.EqualsWithPotentialFalseNegatives(that->serialization_);
 }
 
-absl::StatusOr<const ProtoKeySerialization*> LegacyProtoKey::Serialization(
+absl::StatusOr<const ProtoKeySerialization&> LegacyProtoKey::Serialization(
     absl::optional<SecretKeyAccessToken> token) const {
   absl::Status access_check_status =
       CheckKeyAccess(serialization_.GetKeyMaterialTypeEnum(), token);
   if (!access_check_status.ok()) {
     return access_check_status;
   }
-  return &serialization_;
+  return serialization_;
 }
 
 }  // namespace internal

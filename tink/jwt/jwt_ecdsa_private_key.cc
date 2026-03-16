@@ -16,7 +16,6 @@
 
 #include "tink/jwt/jwt_ecdsa_private_key.h"
 
-#include <cstddef>
 #include <memory>
 #include <utility>
 
@@ -43,7 +42,6 @@
 #include "tink/jwt/jwt_ecdsa_public_key.h"
 #include "tink/key.h"
 #include "tink/partial_key_access_token.h"
-#include "tink/restricted_big_integer.h"
 #include "tink/restricted_data.h"
 #include "tink/subtle/common_enums.h"
 
@@ -127,7 +125,7 @@ absl::Status ValidateKeyPair(const JwtEcdsaPublicKey& public_key,
 absl::StatusOr<JwtEcdsaPrivateKey> JwtEcdsaPrivateKey::Create(
     const JwtEcdsaPublicKey& public_key,
     const RestrictedData& private_key_value, PartialKeyAccessToken token) {
-  size_t key_length = public_key.GetParameters().GetPrivateKeyLength();
+  int key_length = public_key.GetParameters().GetPrivateKeyLength();
   if (private_key_value.size() != key_length) {
     return absl::InvalidArgumentError(
         absl::StrCat("Private key length ", private_key_value.size(),
@@ -162,6 +160,8 @@ JwtEcdsaPrivateKey::CreateAllowNonConstantTime(
                 token);
 }
 
+// NOLINTBEGIN(whitespace/line_length) (Formatted when commented in)
+// TINK-PENDING-REMOVAL-IN-3.0.0-START
 absl::StatusOr<JwtEcdsaPrivateKey> JwtEcdsaPrivateKey::Create(
     const JwtEcdsaPublicKey& public_key,
     const RestrictedBigInteger& private_key_value,
@@ -177,7 +177,8 @@ absl::StatusOr<JwtEcdsaPrivateKey> JwtEcdsaPrivateKey::Create(
                      public_key.GetParameters().GetPrivateKeyLength()));
   }
 
-  return JwtEcdsaPrivateKey::Create(public_key, *private_key_data, token);
+  return JwtEcdsaPrivateKey::Create(public_key, *std::move(private_key_data),
+  token);
 }
 
 const RestrictedBigInteger& JwtEcdsaPrivateKey::GetPrivateKeyValue(
@@ -190,6 +191,8 @@ const RestrictedBigInteger& JwtEcdsaPrivateKey::GetPrivateKeyValue(
   }
   return *private_key_value_big_integer_;
 }
+// TINK-PENDING-REMOVAL-IN-3.0.0-END
+// NOLINTEND(whitespace/line_length)
 
 bool JwtEcdsaPrivateKey::operator==(const Key& other) const {
   const JwtEcdsaPrivateKey* that =

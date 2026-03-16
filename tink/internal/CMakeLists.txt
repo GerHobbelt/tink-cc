@@ -159,13 +159,11 @@ tink_cc_library(
     tink::internal::bn_util
     tink::internal::call_with_core_dump_protection
     tink::internal::dfsan_forwarders
-    tink::internal::err_util
     tink::internal::fips_utils
-    tink::internal::safe_stringops
     tink::internal::secret_buffer
     tink::internal::ssl_unique_ptr
-    absl::config
     absl::log
+    absl::absl_check
     absl::memory
     absl::status
     absl::statusor
@@ -285,7 +283,6 @@ tink_cc_test(
   DEPS
     tink::internal::key_info
     gmock
-    protobuf::libprotobuf-lite
     tink::proto::tink_cc_proto
 )
 
@@ -638,6 +635,7 @@ tink_cc_library(
   DEPS
     tink::internal::proto_key_serialization
     tink::internal::tink_proto_structs
+    absl::core_headers
     absl::status
     absl::statusor
     absl::strings
@@ -1370,6 +1368,7 @@ tink_cc_library(
     tink::internal::safe_stringops
     tink::internal::secret_buffer
     absl::core_headers
+    absl::absl_check
     absl::status
     absl::statusor
     absl::strings
@@ -1698,7 +1697,9 @@ tink_cc_library(
     tink::internal::proto_parser_enum_field
     tink::internal::proto_parser_fields
     tink::internal::proto_parser_message
+    tink::internal::proto_parser_options
     tink::internal::proto_parser_secret_data_field
+    absl::core_headers
     absl::no_destructor
     absl::string_view
     tink::core::secret_data
@@ -2024,4 +2025,78 @@ tink_cc_test(
     tink::util::secret_data
     tink::util::test_matchers
     tink::util::test_util
+)
+
+tink_cc_library(
+  NAME legacy_key_manager_impl
+  SRCS
+    legacy_key_manager_impl.cc
+    legacy_key_manager_impl.h
+  DEPS
+    tink::internal::internal_insecure_secret_key_access
+    tink::internal::mutable_serialization_registry
+    tink::internal::proto_key_serialization
+    tink::internal::proto_parameters_serialization
+    tink::internal::serialization
+    tink::internal::tink_proto_structs
+    absl::memory
+    absl::status
+    absl::statusor
+    absl::strings
+    absl::optional
+    tink::core::key
+    tink::core::key_manager
+    tink::core::parameters
+    tink::core::private_key
+    tink::core::restricted_data
+    tink::util::constants
+    tink::util::protobuf_helper
+)
+
+tink_cc_test(
+  NAME legacy_key_manager_impl_test
+  SRCS
+    legacy_key_manager_impl_test.cc
+  DEPS
+    tink::internal::legacy_key_manager_impl
+    gmock
+    absl::status
+    absl::statusor
+    absl::string_view
+    tink::core::key_manager
+    tink::core::public_key_sign
+    tink::core::public_key_verify
+    tink::signature::signature_config
+    tink::signature::internal::ml_dsa_sign_key_manager
+    tink::signature::internal::ml_dsa_verify_key_manager
+    tink::util::test_matchers
+    tink::util::test_util
+    tink::proto::common_cc_proto
+    tink::proto::ecdsa_cc_proto
+    tink::proto::ml_dsa_cc_proto
+  TAGS
+    exclude_if_openssl
+)
+
+tink_cc_library(
+  NAME tink_proto_struct_conversions
+  SRCS
+    tink_proto_struct_conversions.cc
+    tink_proto_struct_conversions.h
+  DEPS
+    tink::internal::tink_proto_structs
+    tink::util::secret_data
+    tink::proto::tink_cc_proto
+)
+
+tink_cc_test(
+  NAME tink_proto_struct_conversions_test
+  SRCS
+    tink_proto_struct_conversions_test.cc
+  DEPS
+    tink::internal::tink_proto_struct_conversions
+    tink::internal::tink_proto_structs
+    gmock
+    tink::util::secret_data
+    tink::proto::tink_cc_proto
 )

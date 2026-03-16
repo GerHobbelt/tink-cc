@@ -18,6 +18,7 @@
 #define TINK_SIGNATURE_ECDSA_PRIVATE_KEY_H_
 
 #include <memory>
+#include <utility>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/status/statusor.h"
@@ -42,25 +43,33 @@ class EcdsaPrivateKey final : public SignaturePrivateKey {
   EcdsaPrivateKey(const EcdsaPrivateKey& other)
       : public_key_(other.public_key_),
         private_key_value_(other.private_key_value_) {
+    // NOLINTBEGIN(whitespace/line_length) (Formatted when commented in)
+    // TINK-PENDING-REMOVAL-IN-3.0.0-START
     absl::MutexLock lock(other.mutex_);
     private_key_value_big_integer_ = other.private_key_value_big_integer_;
+    // TINK-PENDING-REMOVAL-IN-3.0.0-END
+    // NOLINTEND(whitespace/line_length)
   }
 
   EcdsaPrivateKey& operator=(const EcdsaPrivateKey& other) {
     if (this == &other) {
       return *this;
     }
-
+    // NOLINTBEGIN(whitespace/line_length) (Formatted when commented in)
+    // TINK-PENDING-REMOVAL-IN-3.0.0-START
     absl::optional<RestrictedBigInteger> tmp_private_key_value_big_integer;
     {
       absl::MutexLock lock(other.mutex_);
-      tmp_private_key_value_big_integer = other.private_key_value_big_integer_;
+      tmp_private_key_value_big_integer =
+      other.private_key_value_big_integer_;
     }
 
-    public_key_ = other.public_key_;
-    private_key_value_ = other.private_key_value_;
     absl::MutexLock lock(mutex_);
     private_key_value_big_integer_ = tmp_private_key_value_big_integer;
+    // TINK-PENDING-REMOVAL-IN-3.0.0-END
+    // NOLINTEND(whitespace/line_length)
+    public_key_ = other.public_key_;
+    private_key_value_ = other.private_key_value_;
 
     return *this;
   }
@@ -71,7 +80,7 @@ class EcdsaPrivateKey final : public SignaturePrivateKey {
   // Returns an error if the input of private_key_value is not of length
   // public_key.GetParameters().GetPrivateKeyLength().
   static absl::StatusOr<EcdsaPrivateKey> Create(
-      const EcdsaPublicKey& public_key, const RestrictedData& private_key_value,
+      const EcdsaPublicKey& public_key, RestrictedData private_key_value,
       PartialKeyAccessToken token);
 
   const RestrictedData& GetPrivateKey(PartialKeyAccessToken token) const {
@@ -85,6 +94,8 @@ class EcdsaPrivateKey final : public SignaturePrivateKey {
       PartialKeyAccessToken token);
   const RestrictedData& GetPrivateKey() const;
 
+  // NOLINTBEGIN(whitespace/line_length) (Formatted when commented in)
+  // TINK-PENDING-REMOVAL-IN-3.0.0-START
   // Deprecated. Will be removed in Tink 3.0.0. Please use the version taking
   // a `RestrictedData` object instead.
   static absl::StatusOr<EcdsaPrivateKey> Create(
@@ -94,6 +105,8 @@ class EcdsaPrivateKey final : public SignaturePrivateKey {
 
   const RestrictedBigInteger& GetPrivateKeyValue(
       PartialKeyAccessToken token) const;
+  // TINK-PENDING-REMOVAL-IN-3.0.0-END
+  // NOLINTEND(whitespace/line_length)
 
   const EcdsaPublicKey& GetPublicKey() const override { return public_key_; }
 
@@ -109,15 +122,20 @@ class EcdsaPrivateKey final : public SignaturePrivateKey {
 
  private:
   explicit EcdsaPrivateKey(const EcdsaPublicKey& public_key,
-                           const RestrictedData& private_key_value)
-      : public_key_(public_key), private_key_value_(private_key_value) {}
+                           RestrictedData private_key_value)
+      : public_key_(public_key),
+        private_key_value_(std::move(private_key_value)) {}
 
   EcdsaPublicKey public_key_;
   RestrictedData private_key_value_;
 
+  // NOLINTBEGIN(whitespace/line_length) (Formatted when commented in)
+  // TINK-PENDING-REMOVAL-IN-3.0.0-START
   mutable absl::Mutex mutex_;
   mutable absl::optional<RestrictedBigInteger> private_key_value_big_integer_
       ABSL_GUARDED_BY(mutex_);
+  // TINK-PENDING-REMOVAL-IN-3.0.0-END
+  // NOLINTEND(whitespace/line_length)
 };
 
 }  // namespace tink
