@@ -1,4 +1,4 @@
-// Copyright 2017 Google Inc.
+// Copyright 2017 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,17 +21,26 @@
 #include <memory>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 #include "tink/config/tink_fips.h"
+#include "tink/insecure_secret_key_access.h"
 #include "tink/mac.h"
-#include "tink/subtle/common_enums.h"
+#include "tink/mac/aes_cmac_key.h"
+#include "tink/mac/aes_cmac_parameters.h"
+#include "tink/mac/internal/aes_cmac_test_vectors.h"
+#include "tink/partial_key_access.h"
+#include "tink/partial_key_access_token.h"
+#include "tink/restricted_data.h"
+#include "tink/secret_data.h"
+#include "tink/secret_key_access_token.h"
 #include "tink/util/secret_data.h"
-#include "tink/util/status.h"
-#include "tink/util/statusor.h"
 #include "tink/util/test_matchers.h"
 #include "tink/util/test_util.h"
 
@@ -40,8 +49,13 @@ namespace tink {
 namespace subtle {
 namespace {
 
+using ::crypto::tink::internal::AesCmacTestVectors;
+using ::crypto::tink::internal::TinkAesCmacTestVector;
+using ::crypto::tink::test::HexDecodeOrDie;
+using ::crypto::tink::test::HexEncode;
 using ::crypto::tink::test::IsOk;
 using ::crypto::tink::test::StatusIs;
+using ::testing::Eq;
 using ::testing::Not;
 using ::testing::SizeIs;
 
@@ -290,6 +304,67 @@ TEST(AesCmacBoringSslTest, TestFipsOnly) {
   EXPECT_THAT(subtle::AesCmacBoringSsl::New(key256, kTagSize).status(),
               StatusIs(absl::StatusCode::kInternal));
 }
+
+class AesCmacTinkTestVectorsTest
+    : public ::testing::TestWithParam<TinkAesCmacTestVector> {};
+
+TEST_P(AesCmacTinkTestVectorsTest, ComputeTag) {
+  if (IsFipsModeEnabled()) {
+    GTEST_SKIP() << "Not supported in FIPS-only mode";
+  }
+  const TinkAesCmacTestVector& param = GetParam();
+  absl::StatusOr<std::unique_ptr<Mac>> mac = AesCmacBoringSsl::New(param.key);
+  ASSERT_THAT(mac.status(), IsOk());
+  absl::StatusOr<std::string> tag = (*mac)->ComputeMac(param.message);
+  ASSERT_THAT(tag.status(), IsOk());
+  EXPECT_THAT(HexEncode(*tag), Eq(HexEncode(param.tag)));
+}
+
+TEST_P(AesCmacTinkTestVectorsTest, VerifyTag) {
+  if (IsFipsModeEnabled()) {
+    GTEST_SKIP() << "Not supported in FIPS-only mode";
+  }
+  const TinkAesCmacTestVector& param = GetParam();
+  absl::StatusOr<std::unique_ptr<Mac>> mac = AesCmacBoringSsl::New(param.key);
+  ASSERT_THAT(mac.status(), IsOk());
+  EXPECT_THAT((*mac)->VerifyMac(param.tag, param.message), IsOk());
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    AesCmacTinkTestVectorsTest, AesCmacTinkTestVectorsTest,
+    testing::ValuesIn(AesCmacTestVectors()),
+    [](const testing::TestParamInfo<TinkAesCmacTestVector>& info) {
+      return info.param.test_name;
+    });
+
+TEST(AesCmacTinkTestVectorsTest, WrongPrefixVerifyFails) {
+  if (IsFipsModeEnabled()) {
+    GTEST_SKIP() << "Not supported in FIPS-only mode";
+  }
+  SecretKeyAccessToken ska = InsecureSecretKeyAccess::Get();
+  PartialKeyAccessToken pka = GetPartialKeyAccess();
+  // Key from TAG_WITH_KEY_PREFIX_TYPE_TINK
+  absl::StatusOr<AesCmacKey> key = AesCmacKey::Create(
+      AesCmacParameters::Create(/* key_size_in_bytes = */ 16,
+                                /*cryptographic_tag_size_in_bytes=*/16,
+                                AesCmacParameters::Variant::kTink)
+          .value(),
+      RestrictedData(HexDecodeOrDie("00112233445566778899aabbccddeeff"), ska),
+      /*id_requirement=*/1877, pka);
+  ASSERT_THAT(key.status(), IsOk());
+  std::string message = HexDecodeOrDie(
+      "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      "bbbbbbbbbbbbbb");
+  // Correct tag
+  std::string tag =
+      HexDecodeOrDie("0100000755611a1ededd3dfff548ed80b7fd10c0ba");
+  absl::StatusOr<std::unique_ptr<Mac>> mac = AesCmacBoringSsl::New(*key);
+  ASSERT_THAT(mac.status(), IsOk());
+  EXPECT_THAT((*mac)->VerifyMac(tag, message), IsOk());
+  tag[1] ^= 0x01;
+  EXPECT_THAT((*mac)->VerifyMac(tag, message), Not(IsOk()));
+}
+
 }  // namespace
 }  // namespace subtle
 }  // namespace tink

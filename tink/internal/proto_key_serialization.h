@@ -20,6 +20,7 @@
 #include <string>
 #include <utility>
 
+#include "absl/base/macros.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
@@ -60,11 +61,11 @@ class ProtoKeySerialization : public Serialization {
   // Returned value is only valid for the lifetime of this object.
   const RestrictedData& SerializedKeyProto() const { return serialized_key_; }
 
-  KeyMaterialTypeTP GetKeyMaterialTypeEnum() const {
+  KeyMaterialTypeTP GetKeyMaterialTypeTP() const {
     return key_material_type_;
   }
 
-  OutputPrefixTypeTP GetOutputPrefixTypeEnum() const {
+  OutputPrefixTypeTP GetOutputPrefixTypeTP() const {
     return output_prefix_type_;
   }
 

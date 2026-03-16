@@ -386,6 +386,7 @@ tink_cc_test(
     gmock
     absl::status
     absl::statusor
+    absl::strings
     absl::string_view
     absl::optional
     tink::core::insecure_secret_key_access
@@ -540,6 +541,7 @@ tink_cc_library(
     absl::status
     absl::statusor
     absl::strings
+    absl::str_format
     absl::string_view
     crypto
     tink::core::partial_key_access

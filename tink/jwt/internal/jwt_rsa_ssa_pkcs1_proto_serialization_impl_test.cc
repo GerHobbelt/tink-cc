@@ -799,9 +799,9 @@ TEST_P(JwtRsaSsaPkcs1ProtoSerializationTest,
 
   ASSERT_THAT(proto_serialization, NotNull());
   EXPECT_THAT(proto_serialization->TypeUrl(), Eq(kPublicTypeUrl));
-  EXPECT_THAT(proto_serialization->GetKeyMaterialTypeEnum(),
+  EXPECT_THAT(proto_serialization->GetKeyMaterialTypeTP(),
               Eq(KeyMaterialTypeTP::kAsymmetricPublic));
-  EXPECT_THAT(proto_serialization->GetOutputPrefixTypeEnum(),
+  EXPECT_THAT(proto_serialization->GetOutputPrefixTypeTP(),
               Eq(test_case.output_prefix_type));
   EXPECT_THAT(proto_serialization->IdRequirement(), Eq(test_case.id));
 
@@ -865,9 +865,9 @@ TEST_P(JwtRsaSsaPkcs1ProtoSerializationTest,
 
   ASSERT_THAT(proto_serialization, NotNull());
   EXPECT_THAT(proto_serialization->TypeUrl(), Eq(kPublicTypeUrl));
-  EXPECT_THAT(proto_serialization->GetKeyMaterialTypeEnum(),
+  EXPECT_THAT(proto_serialization->GetKeyMaterialTypeTP(),
               Eq(KeyMaterialTypeTP::kAsymmetricPublic));
-  EXPECT_THAT(proto_serialization->GetOutputPrefixTypeEnum(),
+  EXPECT_THAT(proto_serialization->GetOutputPrefixTypeTP(),
               Eq(test_case.output_prefix_type));
   EXPECT_THAT(proto_serialization->IdRequirement(), Eq(test_case.id));
 
@@ -958,17 +958,17 @@ TEST_P(JwtRsaSsaPkcs1ProtoSerializationTest,
   absl::StatusOr<JwtRsaSsaPkcs1PrivateKey> expected_private_key =
       JwtRsaSsaPkcs1PrivateKey::Builder()
           .SetPublicKey(*expected_public_key)
-          .SetPrimeP(RestrictedBigInteger(key_values.p,
+          .SetPrimeP(RestrictedData(key_values.p,
                                           InsecureSecretKeyAccess::Get()))
-          .SetPrimeQ(RestrictedBigInteger(key_values.q,
+          .SetPrimeQ(RestrictedData(key_values.q,
                                           InsecureSecretKeyAccess::Get()))
-          .SetPrimeExponentP(RestrictedBigInteger(
+          .SetPrimeExponentP(RestrictedData(
               key_values.dp, InsecureSecretKeyAccess::Get()))
-          .SetPrimeExponentQ(RestrictedBigInteger(
+          .SetPrimeExponentQ(RestrictedData(
               key_values.dq, InsecureSecretKeyAccess::Get()))
-          .SetPrivateExponent(RestrictedBigInteger(
+          .SetPrivateExponent(RestrictedData(
               key_values.d, InsecureSecretKeyAccess::Get()))
-          .SetCrtCoefficient(RestrictedBigInteger(
+          .SetCrtCoefficient(RestrictedData(
               key_values.q_inv, InsecureSecretKeyAccess::Get()))
           .Build(GetPartialKeyAccess());
   ASSERT_THAT(expected_private_key, IsOk());
@@ -1049,17 +1049,17 @@ TEST_P(JwtRsaSsaPkcs1ProtoSerializationTest,
   absl::StatusOr<JwtRsaSsaPkcs1PrivateKey> expected_private_key =
       JwtRsaSsaPkcs1PrivateKey::Builder()
           .SetPublicKey(*expected_public_key)
-          .SetPrimeP(RestrictedBigInteger(key_values.p,
+          .SetPrimeP(RestrictedData(key_values.p,
                                           InsecureSecretKeyAccess::Get()))
-          .SetPrimeQ(RestrictedBigInteger(key_values.q,
+          .SetPrimeQ(RestrictedData(key_values.q,
                                           InsecureSecretKeyAccess::Get()))
-          .SetPrimeExponentP(RestrictedBigInteger(
+          .SetPrimeExponentP(RestrictedData(
               key_values.dp, InsecureSecretKeyAccess::Get()))
-          .SetPrimeExponentQ(RestrictedBigInteger(
+          .SetPrimeExponentQ(RestrictedData(
               key_values.dq, InsecureSecretKeyAccess::Get()))
-          .SetPrivateExponent(RestrictedBigInteger(
+          .SetPrivateExponent(RestrictedData(
               key_values.d, InsecureSecretKeyAccess::Get()))
-          .SetCrtCoefficient(RestrictedBigInteger(
+          .SetCrtCoefficient(RestrictedData(
               key_values.q_inv, InsecureSecretKeyAccess::Get()))
           .Build(GetPartialKeyAccess());
   ASSERT_THAT(expected_private_key, IsOk());
@@ -1327,17 +1327,17 @@ TEST_P(JwtRsaSsaPkcs1ProtoSerializationTest,
   absl::StatusOr<JwtRsaSsaPkcs1PrivateKey> private_key =
       JwtRsaSsaPkcs1PrivateKey::Builder()
           .SetPublicKey(*public_key)
-          .SetPrimeP(RestrictedBigInteger(key_values.p,
+          .SetPrimeP(RestrictedData(key_values.p,
                                           InsecureSecretKeyAccess::Get()))
-          .SetPrimeQ(RestrictedBigInteger(key_values.q,
+          .SetPrimeQ(RestrictedData(key_values.q,
                                           InsecureSecretKeyAccess::Get()))
-          .SetPrimeExponentP(RestrictedBigInteger(
+          .SetPrimeExponentP(RestrictedData(
               key_values.dp, InsecureSecretKeyAccess::Get()))
-          .SetPrimeExponentQ(RestrictedBigInteger(
+          .SetPrimeExponentQ(RestrictedData(
               key_values.dq, InsecureSecretKeyAccess::Get()))
-          .SetPrivateExponent(RestrictedBigInteger(
+          .SetPrivateExponent(RestrictedData(
               key_values.d, InsecureSecretKeyAccess::Get()))
-          .SetCrtCoefficient(RestrictedBigInteger(
+          .SetCrtCoefficient(RestrictedData(
               key_values.q_inv, InsecureSecretKeyAccess::Get()))
           .Build(GetPartialKeyAccess());
   ASSERT_THAT(private_key, IsOk());
@@ -1352,9 +1352,9 @@ TEST_P(JwtRsaSsaPkcs1ProtoSerializationTest,
       dynamic_cast<const ProtoKeySerialization*>(serialization->get());
   ASSERT_THAT(proto_serialization, NotNull());
   EXPECT_THAT(proto_serialization->TypeUrl(), Eq(kPrivateTypeUrl));
-  EXPECT_THAT(proto_serialization->GetKeyMaterialTypeEnum(),
+  EXPECT_THAT(proto_serialization->GetKeyMaterialTypeTP(),
               Eq(KeyMaterialTypeTP::kAsymmetricPrivate));
-  EXPECT_THAT(proto_serialization->GetOutputPrefixTypeEnum(),
+  EXPECT_THAT(proto_serialization->GetOutputPrefixTypeTP(),
               Eq(test_case.output_prefix_type));
   EXPECT_THAT(proto_serialization->IdRequirement(), Eq(test_case.id));
 
@@ -1419,17 +1419,17 @@ TEST_P(JwtRsaSsaPkcs1ProtoSerializationTest,
   absl::StatusOr<JwtRsaSsaPkcs1PrivateKey> private_key =
       JwtRsaSsaPkcs1PrivateKey::Builder()
           .SetPublicKey(*public_key)
-          .SetPrimeP(RestrictedBigInteger(key_values.p,
+          .SetPrimeP(RestrictedData(key_values.p,
                                           InsecureSecretKeyAccess::Get()))
-          .SetPrimeQ(RestrictedBigInteger(key_values.q,
+          .SetPrimeQ(RestrictedData(key_values.q,
                                           InsecureSecretKeyAccess::Get()))
-          .SetPrimeExponentP(RestrictedBigInteger(
+          .SetPrimeExponentP(RestrictedData(
               key_values.dp, InsecureSecretKeyAccess::Get()))
-          .SetPrimeExponentQ(RestrictedBigInteger(
+          .SetPrimeExponentQ(RestrictedData(
               key_values.dq, InsecureSecretKeyAccess::Get()))
-          .SetPrivateExponent(RestrictedBigInteger(
+          .SetPrivateExponent(RestrictedData(
               key_values.d, InsecureSecretKeyAccess::Get()))
-          .SetCrtCoefficient(RestrictedBigInteger(
+          .SetCrtCoefficient(RestrictedData(
               key_values.q_inv, InsecureSecretKeyAccess::Get()))
           .Build(GetPartialKeyAccess());
   ASSERT_THAT(private_key, IsOk());
@@ -1444,9 +1444,9 @@ TEST_P(JwtRsaSsaPkcs1ProtoSerializationTest,
       dynamic_cast<const ProtoKeySerialization*>(serialization->get());
   ASSERT_THAT(proto_serialization, NotNull());
   EXPECT_THAT(proto_serialization->TypeUrl(), Eq(kPrivateTypeUrl));
-  EXPECT_THAT(proto_serialization->GetKeyMaterialTypeEnum(),
+  EXPECT_THAT(proto_serialization->GetKeyMaterialTypeTP(),
               Eq(KeyMaterialTypeTP::kAsymmetricPrivate));
-  EXPECT_THAT(proto_serialization->GetOutputPrefixTypeEnum(),
+  EXPECT_THAT(proto_serialization->GetOutputPrefixTypeTP(),
               Eq(test_case.output_prefix_type));
   EXPECT_THAT(proto_serialization->IdRequirement(), Eq(test_case.id));
 
@@ -1502,17 +1502,17 @@ TEST_F(JwtRsaSsaPkcs1ProtoSerializationTest,
   absl::StatusOr<JwtRsaSsaPkcs1PrivateKey> private_key =
       JwtRsaSsaPkcs1PrivateKey::Builder()
           .SetPublicKey(*public_key)
-          .SetPrimeP(RestrictedBigInteger(key_values.p,
+          .SetPrimeP(RestrictedData(key_values.p,
                                           InsecureSecretKeyAccess::Get()))
-          .SetPrimeQ(RestrictedBigInteger(key_values.q,
+          .SetPrimeQ(RestrictedData(key_values.q,
                                           InsecureSecretKeyAccess::Get()))
-          .SetPrimeExponentP(RestrictedBigInteger(
+          .SetPrimeExponentP(RestrictedData(
               key_values.dp, InsecureSecretKeyAccess::Get()))
-          .SetPrimeExponentQ(RestrictedBigInteger(
+          .SetPrimeExponentQ(RestrictedData(
               key_values.dq, InsecureSecretKeyAccess::Get()))
-          .SetPrivateExponent(RestrictedBigInteger(
+          .SetPrivateExponent(RestrictedData(
               key_values.d, InsecureSecretKeyAccess::Get()))
-          .SetCrtCoefficient(RestrictedBigInteger(
+          .SetCrtCoefficient(RestrictedData(
               key_values.q_inv, InsecureSecretKeyAccess::Get()))
           .Build(GetPartialKeyAccess());
   ASSERT_THAT(private_key, IsOk());
