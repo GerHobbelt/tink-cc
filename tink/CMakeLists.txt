@@ -446,12 +446,10 @@ tink_cc_library(
     tink::core::insecure_secret_key_access
     tink::core::key
     tink::core::key_gen_configuration
-    tink::core::key_manager
     tink::core::key_status
     tink::core::keyset_reader
     tink::core::keyset_writer
     tink::core::parameters
-    tink::core::primitive_set
     tink::core::private_key
     tink::core::registry
     tink::core::restricted_data
@@ -853,6 +851,7 @@ tink_cc_library(
     absl::absl_check
     absl::memory
     absl::status
+    absl::status_macros
     absl::statusor
     absl::strings
     tink::internal::call_with_core_dump_protection
@@ -1010,7 +1009,6 @@ tink_cc_test(
     tink::core::keyset_handle_builder
     tink::core::mac
     tink::core::partial_key_access
-    tink::core::primitive_set
     tink::core::primitive_wrapper
     tink::core::registry
     tink::core::restricted_data
@@ -1034,6 +1032,7 @@ tink_cc_test(
     tink::internal::key_gen_configuration_impl
     tink::internal::legacy_proto_key
     tink::internal::legacy_proto_parameters
+    tink::internal::primitive_set
     tink::internal::proto_key_serialization
     tink::internal::proto_parameters_serialization
     tink::internal::tink_proto_structs
@@ -1128,7 +1127,6 @@ tink_cc_test(
     absl::strings
     tink::util::status
     tink::util::statusor
-    tink::util::test_matchers
     tink::util::test_util
 )
 
@@ -1297,10 +1295,10 @@ tink_cc_test(
     tink::core::restricted_data
     tink::core::secret_data
     gmock
+    absl::status_matchers
     absl::statusor
     absl::string_view
     tink::util::secret_data
-    tink::util::test_matchers
     tink::util::test_util
 )
 
@@ -1356,31 +1354,4 @@ tink_cc_test(
     benchmark::benchmark_main
     tink::internal::secret_buffer
     tink::util::secret_data
-)
-
-tink_cc_library(
-  NAME low_level_crypto_access
-  SRCS
-    low_level_crypto_access.h
-  DEPS
-    tink::core::low_level_crypto_access_token
-  PUBLIC
-)
-
-tink_cc_library(
-  NAME low_level_crypto_access_token
-  SRCS
-    low_level_crypto_access_token.h
-  PUBLIC
-)
-
-tink_cc_test(
-  NAME low_level_crypto_access_token_test
-  SRCS
-    core/low_level_crypto_access_token_test.cc
-  DEPS
-    tink::core::low_level_crypto_access
-    tink::core::low_level_crypto_access_token
-    gmock
-    absl::core_headers
 )

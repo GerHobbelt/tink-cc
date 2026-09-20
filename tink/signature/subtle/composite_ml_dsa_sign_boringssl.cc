@@ -25,7 +25,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "tink/internal/fips_utils.h"
-#include "tink/low_level_crypto_access_token.h"
 #include "tink/public_key_sign.h"
 #include "tink/signature/composite_ml_dsa_parameters.h"
 #include "tink/signature/composite_ml_dsa_private_key.h"
@@ -178,8 +177,7 @@ absl::StatusOr<std::string> CompositeMlDsaSign::Sign(
 }  // namespace
 
 absl::StatusOr<std::unique_ptr<PublicKeySign>> NewCompositeMlDsaSign(
-    const CompositeMlDsaPrivateKey& private_key,
-    LowLevelCryptoAccessToken token) {
+    const CompositeMlDsaPrivateKey& private_key) {
   return CompositeMlDsaSign::New(private_key);
 }
 

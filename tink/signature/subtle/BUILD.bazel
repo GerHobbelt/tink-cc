@@ -11,7 +11,6 @@ cc_library(
     hdrs = ["composite_ml_dsa_sign_boringssl.h"],
     include_prefix = "tink/signature/subtle",
     deps = [
-        "//tink:low_level_crypto_access_token",
         "//tink:public_key_sign",
         "//tink/internal:fips_utils",
         "//tink/signature:composite_ml_dsa_parameters",
@@ -38,7 +37,6 @@ cc_test(
     srcs = ["composite_ml_dsa_sign_boringssl_test.cc"],
     deps = [
         ":composite_ml_dsa_sign_boringssl",
-        "//tink:low_level_crypto_access",
         "//tink:public_key_sign",
         "//tink/internal:fips_utils",
         "//tink/signature:composite_ml_dsa_parameters",
@@ -60,7 +58,6 @@ cc_library(
     hdrs = ["composite_ml_dsa_verify_boringssl.h"],
     include_prefix = "tink/signature/subtle",
     deps = [
-        "//tink:low_level_crypto_access_token",
         "//tink:public_key_verify",
         "//tink/internal:fips_utils",
         "//tink/signature:composite_ml_dsa_parameters",
@@ -89,7 +86,6 @@ cc_test(
     deps = [
         ":composite_ml_dsa_sign_boringssl",
         ":composite_ml_dsa_verify_boringssl",
-        "//tink:low_level_crypto_access",
         "//tink:public_key_sign",
         "//tink:public_key_verify",
         "//tink/internal:fips_utils",
@@ -104,6 +100,212 @@ cc_test(
         "@abseil-cpp//absl/status:statusor",
         "@abseil-cpp//absl/strings:string_view",
         "@abseil-cpp//absl/types:optional",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_library(
+    name = "create_ecdsa_key",
+    srcs = ["create_ecdsa_key.cc"],
+    hdrs = ["create_ecdsa_key.h"],
+    include_prefix = "tink/signature/subtle",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tink/signature:ecdsa_parameters",
+        "//tink/signature:ecdsa_private_key",
+        "//tink/signature/internal:ecdsa_key_creator",
+        "@abseil-cpp//absl/status:statusor",
+    ],
+)
+
+cc_test(
+    name = "create_ecdsa_key_test",
+    srcs = ["create_ecdsa_key_test.cc"],
+    deps = [
+        ":create_ecdsa_key",
+        "//tink/signature:ecdsa_parameters",
+        "//tink/signature:ecdsa_private_key",
+        "@abseil-cpp//absl/status",
+        "@abseil-cpp//absl/status:status_matchers",
+        "@abseil-cpp//absl/status:statusor",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_library(
+    name = "create_ed25519_key",
+    srcs = ["create_ed25519_key.cc"],
+    hdrs = ["create_ed25519_key.h"],
+    include_prefix = "tink/signature/subtle",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tink/signature:ed25519_parameters",
+        "//tink/signature:ed25519_private_key",
+        "//tink/signature/internal:ed25519_key_creator",
+        "@abseil-cpp//absl/status:status_macros",
+        "@abseil-cpp//absl/status:statusor",
+    ],
+)
+
+cc_test(
+    name = "create_ed25519_key_test",
+    srcs = ["create_ed25519_key_test.cc"],
+    deps = [
+        ":create_ed25519_key",
+        "//tink:partial_key_access",
+        "//tink/signature:ed25519_parameters",
+        "//tink/signature:ed25519_private_key",
+        "@abseil-cpp//absl/status",
+        "@abseil-cpp//absl/status:status_matchers",
+        "@abseil-cpp//absl/status:statusor",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_library(
+    name = "create_rsa_ssa_pkcs1_key",
+    srcs = ["create_rsa_ssa_pkcs1_key.cc"],
+    hdrs = ["create_rsa_ssa_pkcs1_key.h"],
+    include_prefix = "tink/signature/subtle",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tink/signature:rsa_ssa_pkcs1_parameters",
+        "//tink/signature:rsa_ssa_pkcs1_private_key",
+        "//tink/signature/internal:rsa_ssa_pkcs1_key_creator",
+        "@abseil-cpp//absl/status:status_macros",
+        "@abseil-cpp//absl/status:statusor",
+    ],
+)
+
+cc_test(
+    name = "create_rsa_ssa_pkcs1_key_test",
+    srcs = ["create_rsa_ssa_pkcs1_key_test.cc"],
+    deps = [
+        ":create_rsa_ssa_pkcs1_key",
+        "//tink:partial_key_access",
+        "//tink/signature:rsa_ssa_pkcs1_parameters",
+        "//tink/signature:rsa_ssa_pkcs1_private_key",
+        "@abseil-cpp//absl/status",
+        "@abseil-cpp//absl/status:status_matchers",
+        "@abseil-cpp//absl/status:statusor",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_library(
+    name = "create_rsa_ssa_pss_key",
+    srcs = ["create_rsa_ssa_pss_key.cc"],
+    hdrs = ["create_rsa_ssa_pss_key.h"],
+    include_prefix = "tink/signature/subtle",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tink/signature:rsa_ssa_pss_parameters",
+        "//tink/signature:rsa_ssa_pss_private_key",
+        "//tink/signature/internal:rsa_ssa_pss_key_creator",
+        "@abseil-cpp//absl/status:status_macros",
+        "@abseil-cpp//absl/status:statusor",
+    ],
+)
+
+cc_test(
+    name = "create_rsa_ssa_pss_key_test",
+    srcs = ["create_rsa_ssa_pss_key_test.cc"],
+    deps = [
+        ":create_rsa_ssa_pss_key",
+        "//tink:partial_key_access",
+        "//tink/signature:rsa_ssa_pss_parameters",
+        "//tink/signature:rsa_ssa_pss_private_key",
+        "@abseil-cpp//absl/status",
+        "@abseil-cpp//absl/status:status_matchers",
+        "@abseil-cpp//absl/status:statusor",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_library(
+    name = "create_ml_dsa_key",
+    srcs = ["create_ml_dsa_key.cc"],
+    hdrs = ["create_ml_dsa_key.h"],
+    include_prefix = "tink/signature/subtle",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tink/signature:ml_dsa_parameters",
+        "//tink/signature:ml_dsa_private_key",
+        "//tink/signature/internal:ml_dsa_key_creator",
+        "@abseil-cpp//absl/status:status_macros",
+        "@abseil-cpp//absl/status:statusor",
+    ],
+)
+
+cc_test(
+    name = "create_ml_dsa_key_test",
+    srcs = ["create_ml_dsa_key_test.cc"],
+    deps = [
+        ":create_ml_dsa_key",
+        "//tink:partial_key_access",
+        "//tink/signature:ml_dsa_parameters",
+        "//tink/signature:ml_dsa_private_key",
+        "@abseil-cpp//absl/status",
+        "@abseil-cpp//absl/status:status_matchers",
+        "@abseil-cpp//absl/status:statusor",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_library(
+    name = "create_composite_ml_dsa_key",
+    srcs = ["create_composite_ml_dsa_key.cc"],
+    hdrs = ["create_composite_ml_dsa_key.h"],
+    include_prefix = "tink/signature/subtle",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tink/signature:composite_ml_dsa_parameters",
+        "//tink/signature:composite_ml_dsa_private_key",
+        "//tink/signature/internal:composite_ml_dsa_key_creator",
+        "@abseil-cpp//absl/status:status_macros",
+        "@abseil-cpp//absl/status:statusor",
+    ],
+)
+
+cc_test(
+    name = "create_composite_ml_dsa_key_test",
+    srcs = ["create_composite_ml_dsa_key_test.cc"],
+    deps = [
+        ":create_composite_ml_dsa_key",
+        "//tink/signature:composite_ml_dsa_parameters",
+        "//tink/signature:composite_ml_dsa_private_key",
+        "@abseil-cpp//absl/status",
+        "@abseil-cpp//absl/status:status_matchers",
+        "@abseil-cpp//absl/status:statusor",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_library(
+    name = "create_slh_dsa_key",
+    srcs = ["create_slh_dsa_key.cc"],
+    hdrs = ["create_slh_dsa_key.h"],
+    include_prefix = "tink/signature/subtle",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tink/signature:slh_dsa_parameters",
+        "//tink/signature:slh_dsa_private_key",
+        "//tink/signature/internal:slh_dsa_key_creator",
+        "@abseil-cpp//absl/status:status_macros",
+        "@abseil-cpp//absl/status:statusor",
+    ],
+)
+
+cc_test(
+    name = "create_slh_dsa_key_test",
+    srcs = ["create_slh_dsa_key_test.cc"],
+    deps = [
+        ":create_slh_dsa_key",
+        "//tink/signature:slh_dsa_parameters",
+        "//tink/signature:slh_dsa_private_key",
+        "@abseil-cpp//absl/status",
+        "@abseil-cpp//absl/status:status_matchers",
+        "@abseil-cpp//absl/status:statusor",
         "@googletest//:gtest_main",
     ],
 )

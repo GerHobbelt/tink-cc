@@ -41,26 +41,18 @@
 #include "tink/annotations.h"
 #include "tink/config/global_registry.h"
 #include "tink/configuration.h"
-#include "tink/internal/configuration_impl.h"
 #include "tink/internal/key_info.h"
 #include "tink/internal/keyset_handle_builder_entry.h"
-#include "tink/internal/keyset_wrapper.h"
-#include "tink/internal/keyset_wrapper_store.h"
 #include "tink/internal/legacy_annotations.h"
-#include "tink/internal/registry_impl.h"
 #include "tink/key.h"
 #include "tink/key_gen_configuration.h"
-#include "tink/key_manager.h"
 #include "tink/key_status.h"
 #include "tink/keyset_reader.h"
 #include "tink/keyset_writer.h"
 #include "tink/legacy_get_keyset_info.h"
 #include "tink/parameters.h"
-#include "tink/primitive_set.h"
-#include "tink/registry.h"
 #include "tink/secret_key_access_token.h"
 #include "tink/util/secret_proto.h"
-#include "tink/util/validation.h"
 #include "proto/tink.pb.h"
 
 namespace crypto {
@@ -216,27 +208,6 @@ class KeysetHandle {
   GenerateNewFromParameters(const P& parameters,
                             const crypto::tink::KeyGenConfiguration& config);
 
-  // NOLINTBEGIN(whitespace/line_length) (Formatted when commented in)
-  // TINK-PENDING-REMOVAL-IN-3.0.0-START
-  // Returns a KeysetHandle containing one new key generated according to
-  // `key_template` using the global registry. When specified, the keyset is
-  //  annotated for monitoring with `monitoring_annotations`.
-  ABSL_DEPRECATE_AND_INLINE()
-  static absl::StatusOr<std::unique_ptr<KeysetHandle>> GenerateNew(
-      const google::crypto::tink::KeyTemplate& key_template,
-      absl::flat_hash_map<std::string, std::string> monitoring_annotations) {
-    return GenerateNew(key_template,
-    crypto::tink::KeyGenConfigGlobalRegistry(),
-                       std::move(monitoring_annotations));
-  }
-  ABSL_DEPRECATE_AND_INLINE()
-  static absl::StatusOr<std::unique_ptr<KeysetHandle>> GenerateNew(
-      const google::crypto::tink::KeyTemplate& key_template) {
-    return GenerateNew(key_template,
-                       crypto::tink::KeyGenConfigGlobalRegistry());
-  }
-  // TINK-PENDING-REMOVAL-IN-3.0.0-END
-  // NOLINTEND(whitespace/line_length)
 
   // Encrypts the underlying keyset with the provided `master_key_aead`
   // and writes the resulting EncryptedKeyset to the given `writer`,
@@ -272,20 +243,6 @@ class KeysetHandle {
   absl::StatusOr<std::unique_ptr<KeysetHandle>> GetPublicKeysetHandle(
       const KeyGenConfiguration& config) const;
 
-  // NOLINTBEGIN(whitespace/line_length) (Formatted when commented in)
-  // TINK-PENDING-REMOVAL-IN-3.0.0-START
-  // Returns a new KeysetHandle containing public keys corresponding to the
-  // private keys in this handle. Relies on key type managers stored in the
-  // global registry to do so. Returns an error if this handle contains keys
-  // that are not private keys.
-  ABSL_DEPRECATE_AND_INLINE()
-  absl::StatusOr<std::unique_ptr<KeysetHandle>> GetPublicKeysetHandle() const
-  {
-    return GetPublicKeysetHandle(crypto::tink::KeyGenConfigGlobalRegistry());
-  }
-  // TINK-PENDING-REMOVAL-IN-3.0.0-END
-  // NOLINTEND(whitespace/line_length)
-
   // Creates a wrapped primitive using this keyset handle and config, which
   // stores necessary primitive wrappers and key type managers.
   //
@@ -296,27 +253,6 @@ class KeysetHandle {
   absl::StatusOr<std::unique_ptr<P>> GetPrimitive(
       const Configuration& config) const;
 
-  // TINK-PENDING-REMOVAL-IN-3.0.0-START
-  // Creates a wrapped primitive using this keyset handle and the global
-  // registry, which stores necessary primitive wrappers and key
-  // type managers.
-  template <class P>
-  ABSL_DEPRECATE_AND_INLINE()
-  absl::StatusOr<std::unique_ptr<P>> GetPrimitive() const {
-    return GetPrimitive<P>(crypto::tink::ConfigGlobalRegistry());
-  }
-  // TINK-PENDING-REMOVAL-IN-3.0.0-END
-
-  // Creates a wrapped primitive corresponding to this keyset. Uses the given
-  // KeyManager, as well as the KeyManager and PrimitiveWrapper objects in the
-  // global registry to create the primitive. The given KeyManager is used for
-  // keys supported by it. For those, the registry is ignored.
-  // TINK-PENDING-REMOVAL-IN-3.0.0-START
-  template <class P>
-  ABSL_DEPRECATED("Register the keymanager and use GetPrimitive")
-  absl::StatusOr<std::unique_ptr<P>> GetPrimitive(
-      const KeyManager<P>* custom_manager) const;
-  // TINK-PENDING-REMOVAL-IN-3.0.0-END
 
   // Returns the annotations of this keyset handle or `NOT_FOUND` if no
   // annotations of type `T` are present.
@@ -342,8 +278,13 @@ class KeysetHandle {
   // KeysetHandleBuilder::Build() needs access to KeysetHandle(Keyset).
   friend class KeysetHandleBuilder;
 
+  // ParseKeysetFromProtoKeysetFormat needs access to GetEntriesFromKeyset().
   friend absl::StatusOr<KeysetHandle> ParseKeysetFromProtoKeysetFormat(
       absl::string_view serialized_keyset, SecretKeyAccessToken token);
+
+  // SerializeKeysetToProtoKeysetFormat needs access to get_keyset().
+  friend absl::StatusOr<SecretData> SerializeKeysetToProtoKeysetFormat(
+      const KeysetHandle& keyset_handle, SecretKeyAccessToken token);
 
   // Helper for `GetPrimitive<P>(config)` that performs type-erased primitive
   // resolution and wrapping. Returns an untyped pointer to the created
@@ -365,7 +306,7 @@ class KeysetHandle {
       util::SecretProto<google::crypto::tink::Keyset> keyset,
       absl::flat_hash_map<std::type_index, std::unique_ptr<Annotations>>
           annotations)
-      : keyset_(std::move(*keyset)), annotations_(std::move(annotations)) {}
+      : keyset_(std::move(keyset)), annotations_(std::move(annotations)) {}
   // Creates a handle that contains the given `keyset`, `entries`, and
   // `annotations`.
   KeysetHandle(
@@ -403,19 +344,6 @@ class KeysetHandle {
   // Returns keyset held by this handle.
   const google::crypto::tink::Keyset& get_keyset() const { return *keyset_; }
 
-  // Creates a set of primitives corresponding to the keys with
-  // (status == ENABLED) in the keyset given in 'keyset_handle',
-  // assuming all the corresponding key managers are present (keys
-  // with (status != ENABLED) are skipped).
-  //
-  // The returned set is usually later "wrapped" into a class that
-  // implements the corresponding Primitive-interface.
-  // TINK-PENDING-REMOVAL-IN-3.0.0-START
-  template <class P>
-  absl::StatusOr<std::unique_ptr<PrimitiveSet<P>>>
-  GetPrimitives(
-      const KeyManager<P>* custom_manager) const;
-  // TINK-PENDING-REMOVAL-IN-3.0.0-END
 
   // Creates KeysetHandle::Entry from `keyset_` at `index`.
   Entry CreateEntryAt(int index) const;
@@ -608,42 +536,6 @@ class KeysetHandleBuilder {
 ///////////////////////////////////////////////////////////////////////////////
 // Implementation details of templated methods.
 
-// TINK-PENDING-REMOVAL-IN-3.0.0-START
-template <class P>
-absl::StatusOr<std::unique_ptr<PrimitiveSet<P>>>
-KeysetHandle::GetPrimitives(const KeyManager<P>* custom_manager) const {
-  absl::Status status = ValidateKeyset(*keyset_);
-  if (!status.ok()) return status;
-  typename PrimitiveSet<P>::Builder primitives_builder;
-  primitives_builder.AddAnnotations(GetLegacyAnnotations());
-  for (const google::crypto::tink::Keyset::Key& key : keyset_->key()) {
-    if (key.status() == google::crypto::tink::KeyStatusType::ENABLED) {
-      std::unique_ptr<P> primitive;
-      if (custom_manager != nullptr &&
-          custom_manager->DoesSupport(key.key_data().type_url())) {
-        auto primitive_result = custom_manager->GetPrimitive(key.key_data());
-        if (!primitive_result.ok()) return primitive_result.status();
-        primitive = std::move(primitive_result.value());
-      } else {
-        auto primitive_result = Registry::GetPrimitive<P>(key.key_data());
-        if (!primitive_result.ok()) return primitive_result.status();
-        primitive = std::move(primitive_result.value());
-      }
-      if (key.key_id() == keyset_->primary_key_id()) {
-        primitives_builder.AddPrimaryPrimitive(std::move(primitive),
-                                               KeyInfoFromKey(key));
-      } else {
-        primitives_builder.AddPrimitive(std::move(primitive),
-                                        KeyInfoFromKey(key));
-      }
-    }
-  }
-  auto primitives = std::move(primitives_builder).Build();
-  if (!primitives.ok()) return primitives.status();
-  return absl::make_unique<PrimitiveSet<P>>(*std::move(primitives));
-}
-// TINK-PENDING-REMOVAL-IN-3.0.0-END
-
 template <class P>
 absl::StatusOr<std::unique_ptr<P>> KeysetHandle::GetPrimitive(
     const Configuration& config) const {
@@ -692,22 +584,6 @@ KeysetHandle::GenerateNewFromParameters(
   return GenerateNewFromParameters(parameters, config,
                                    /*monitoring_annotations=*/{});
 }
-
-// TINK-PENDING-REMOVAL-IN-3.0.0-START
-template <class P>
-absl::StatusOr<std::unique_ptr<P>> KeysetHandle::GetPrimitive(
-    const KeyManager<P>* custom_manager) const {
-  if (custom_manager == nullptr) {
-    return absl::Status(absl::StatusCode::kInvalidArgument,
-                                      "custom_manager must not be null");
-  }
-  auto primitives_result = this->GetPrimitives<P>(custom_manager);
-  if (!primitives_result.ok()) {
-    return primitives_result.status();
-  }
-  return Registry::Wrap<P>(std::move(primitives_result.value()));
-}
-// TINK-PENDING-REMOVAL-IN-3.0.0-END
 
 }  // namespace tink
 }  // namespace crypto

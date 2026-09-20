@@ -10,7 +10,6 @@ tink_cc_library(
     absl::statusor
     absl::strings
     absl::string_view
-    tink::core::low_level_crypto_access_token
     tink::core::public_key_sign
     tink::internal::fips_utils
     tink::signature::composite_ml_dsa_parameters
@@ -41,7 +40,6 @@ tink_cc_test(
     absl::statusor
     absl::string_view
     absl::optional
-    tink::core::low_level_crypto_access
     tink::core::public_key_sign
     tink::internal::fips_utils
     tink::signature::composite_ml_dsa_parameters
@@ -63,7 +61,6 @@ tink_cc_library(
     absl::strings
     absl::string_view
     crypto
-    tink::core::low_level_crypto_access_token
     tink::core::public_key_verify
     tink::internal::fips_utils
     tink::signature::composite_ml_dsa_parameters
@@ -95,7 +92,6 @@ tink_cc_test(
     absl::statusor
     absl::string_view
     absl::optional
-    tink::core::low_level_crypto_access
     tink::core::public_key_sign
     tink::core::public_key_verify
     tink::internal::fips_utils
@@ -105,6 +101,217 @@ tink_cc_test(
     tink::signature::internal::testing::composite_ml_dsa_test_vectors
     tink::signature::internal::testing::signature_test_vector
     tink::util::test_matchers
+  TAGS
+    exclude_if_openssl
+)
+
+tink_cc_library(
+  NAME create_ecdsa_key
+  SRCS
+    create_ecdsa_key.cc
+    create_ecdsa_key.h
+  DEPS
+    absl::statusor
+    tink::signature::ecdsa_parameters
+    tink::signature::ecdsa_private_key
+    tink::signature::internal::ecdsa_key_creator
+  PUBLIC
+)
+
+tink_cc_test(
+  NAME create_ecdsa_key_test
+  SRCS
+    create_ecdsa_key_test.cc
+  DEPS
+    tink::signature::subtle::create_ecdsa_key
+    gmock
+    absl::status
+    absl::status_matchers
+    absl::statusor
+    tink::signature::ecdsa_parameters
+    tink::signature::ecdsa_private_key
+)
+
+tink_cc_library(
+  NAME create_ed25519_key
+  SRCS
+    create_ed25519_key.cc
+    create_ed25519_key.h
+  DEPS
+    absl::status_macros
+    absl::statusor
+    tink::signature::ed25519_parameters
+    tink::signature::ed25519_private_key
+    tink::signature::internal::ed25519_key_creator
+  PUBLIC
+)
+
+tink_cc_test(
+  NAME create_ed25519_key_test
+  SRCS
+    create_ed25519_key_test.cc
+  DEPS
+    tink::signature::subtle::create_ed25519_key
+    gmock
+    absl::status
+    absl::status_matchers
+    absl::statusor
+    tink::core::partial_key_access
+    tink::signature::ed25519_parameters
+    tink::signature::ed25519_private_key
+)
+
+tink_cc_library(
+  NAME create_rsa_ssa_pkcs1_key
+  SRCS
+    create_rsa_ssa_pkcs1_key.cc
+    create_rsa_ssa_pkcs1_key.h
+  DEPS
+    absl::status_macros
+    absl::statusor
+    tink::signature::rsa_ssa_pkcs1_parameters
+    tink::signature::rsa_ssa_pkcs1_private_key
+    tink::signature::internal::rsa_ssa_pkcs1_key_creator
+  PUBLIC
+)
+
+tink_cc_test(
+  NAME create_rsa_ssa_pkcs1_key_test
+  SRCS
+    create_rsa_ssa_pkcs1_key_test.cc
+  DEPS
+    tink::signature::subtle::create_rsa_ssa_pkcs1_key
+    gmock
+    absl::status
+    absl::status_matchers
+    absl::statusor
+    tink::core::partial_key_access
+    tink::signature::rsa_ssa_pkcs1_parameters
+    tink::signature::rsa_ssa_pkcs1_private_key
+)
+
+tink_cc_library(
+  NAME create_rsa_ssa_pss_key
+  SRCS
+    create_rsa_ssa_pss_key.cc
+    create_rsa_ssa_pss_key.h
+  DEPS
+    absl::status_macros
+    absl::statusor
+    tink::signature::rsa_ssa_pss_parameters
+    tink::signature::rsa_ssa_pss_private_key
+    tink::signature::internal::rsa_ssa_pss_key_creator
+  PUBLIC
+)
+
+tink_cc_test(
+  NAME create_rsa_ssa_pss_key_test
+  SRCS
+    create_rsa_ssa_pss_key_test.cc
+  DEPS
+    tink::signature::subtle::create_rsa_ssa_pss_key
+    gmock
+    absl::status
+    absl::status_matchers
+    absl::statusor
+    tink::core::partial_key_access
+    tink::signature::rsa_ssa_pss_parameters
+    tink::signature::rsa_ssa_pss_private_key
+)
+
+tink_cc_library(
+  NAME create_ml_dsa_key
+  SRCS
+    create_ml_dsa_key.cc
+    create_ml_dsa_key.h
+  DEPS
+    absl::status_macros
+    absl::statusor
+    tink::signature::ml_dsa_parameters
+    tink::signature::ml_dsa_private_key
+    tink::signature::internal::ml_dsa_key_creator
+  PUBLIC
+  TAGS
+    exclude_if_openssl
+)
+
+tink_cc_test(
+  NAME create_ml_dsa_key_test
+  SRCS
+    create_ml_dsa_key_test.cc
+  DEPS
+    tink::signature::subtle::create_ml_dsa_key
+    gmock
+    absl::status
+    absl::status_matchers
+    absl::statusor
+    tink::core::partial_key_access
+    tink::signature::ml_dsa_parameters
+    tink::signature::ml_dsa_private_key
+  TAGS
+    exclude_if_openssl
+)
+
+tink_cc_library(
+  NAME create_composite_ml_dsa_key
+  SRCS
+    create_composite_ml_dsa_key.cc
+    create_composite_ml_dsa_key.h
+  DEPS
+    absl::status_macros
+    absl::statusor
+    tink::signature::composite_ml_dsa_parameters
+    tink::signature::composite_ml_dsa_private_key
+    tink::signature::internal::composite_ml_dsa_key_creator
+  PUBLIC
+  TAGS
+    exclude_if_openssl
+)
+
+tink_cc_test(
+  NAME create_composite_ml_dsa_key_test
+  SRCS
+    create_composite_ml_dsa_key_test.cc
+  DEPS
+    tink::signature::subtle::create_composite_ml_dsa_key
+    gmock
+    absl::status
+    absl::status_matchers
+    absl::statusor
+    tink::signature::composite_ml_dsa_parameters
+    tink::signature::composite_ml_dsa_private_key
+  TAGS
+    exclude_if_openssl
+)
+
+tink_cc_library(
+  NAME create_slh_dsa_key
+  SRCS
+    create_slh_dsa_key.cc
+    create_slh_dsa_key.h
+  DEPS
+    absl::status_macros
+    absl::statusor
+    tink::signature::slh_dsa_parameters
+    tink::signature::slh_dsa_private_key
+    tink::signature::internal::slh_dsa_key_creator
+  PUBLIC
+  TAGS
+    exclude_if_openssl
+)
+
+tink_cc_test(
+  NAME create_slh_dsa_key_test
+  SRCS
+    create_slh_dsa_key_test.cc
+  DEPS
+    tink::signature::subtle::create_slh_dsa_key
+    gmock
+    absl::status
+    absl::status_matchers
+    absl::statusor
+    tink::signature::slh_dsa_parameters
+    tink::signature::slh_dsa_private_key
   TAGS
     exclude_if_openssl
 )

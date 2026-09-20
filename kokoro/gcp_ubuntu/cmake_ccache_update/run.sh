@@ -62,11 +62,13 @@ mkdir -p ${config_cache_dir}
 export CCACHE_DIR="\$(pwd)/ccache"
 
 set -x
-rm -rf out
-mkdir -p out
+rm -rf out out_examples
+mkdir -p out out_examples
 cmake -S . -B out ${cmake_opts[@]@Q}
-tar -C . -czf "${config_cache_dir}/${config_cache_tar}" out
+cmake -S examples -B out_examples ${cmake_opts[@]@Q}
+tar -C . -czf "${config_cache_dir}/${config_cache_tar}" out out_examples
 cmake --build out --parallel \$(nproc)
+cmake --build out_examples --parallel \$(nproc)
 tar -C . -czf "${ccache_tar}" ccache
 EOF
 
@@ -109,6 +111,8 @@ if [[ "${IS_KOKORO}" == "true" ]]; then
   # 1. Update ccache for standard CMake image.
   CMAKE_OPTS_STANDARD=(
     -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+    -DCMAKE_C_COMPILER_LAUNCHER=ccache
+    -DCMAKE_ASM_COMPILER_LAUNCHER=ccache
     -DCMAKE_CXX_STANDARD=17
     -DCMAKE_CXX_STANDARD_REQUIRED=ON
     -DTINK_BUILD_TESTS=ON
@@ -122,6 +126,8 @@ if [[ "${IS_KOKORO}" == "true" ]]; then
   # 2. Update ccache for installed dependencies CMake image.
   CMAKE_OPTS_INSTALLED_DEPS=(
     -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+    -DCMAKE_C_COMPILER_LAUNCHER=ccache
+    -DCMAKE_ASM_COMPILER_LAUNCHER=ccache
     -DCMAKE_CXX_STANDARD=17
     -DCMAKE_CXX_STANDARD_REQUIRED=ON
     -DTINK_BUILD_TESTS=ON
@@ -139,6 +145,8 @@ else
   # Running locally.
   CMAKE_OPTS_STANDARD=(
     -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+    -DCMAKE_C_COMPILER_LAUNCHER=ccache
+    -DCMAKE_ASM_COMPILER_LAUNCHER=ccache
     -DCMAKE_CXX_STANDARD=17
     -DCMAKE_CXX_STANDARD_REQUIRED=ON
     -DTINK_BUILD_TESTS=ON

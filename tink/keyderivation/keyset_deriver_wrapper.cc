@@ -21,11 +21,13 @@
 
 #include "absl/memory/memory.h"
 #include "absl/status/status.h"
+#include "absl/status/status_macros.h"
 #include "absl/strings/string_view.h"
 #include "tink/cleartext_keyset_handle.h"
+#include "tink/insecure_secret_key_access.h"
+#include "tink/internal/primitive_set.h"
 #include "tink/keyderivation/keyset_deriver.h"
 #include "tink/keyset_handle.h"
-#include "tink/primitive_set.h"
 #include "tink/util/status.h"
 #include "tink/util/statusor.h"
 #include "proto/tink.pb.h"
@@ -38,7 +40,7 @@ namespace {
 using ::google::crypto::tink::KeyData;
 using ::google::crypto::tink::Keyset;
 
-absl::Status Validate(PrimitiveSet<KeysetDeriver>* deriver_set) {
+absl::Status Validate(internal::PrimitiveSet<KeysetDeriver>* deriver_set) {
   if (deriver_set == nullptr) {
     return absl::Status(absl::StatusCode::kInternal,
                         "deriver_set must be non-NULL");
@@ -53,7 +55,7 @@ absl::Status Validate(PrimitiveSet<KeysetDeriver>* deriver_set) {
 class KeysetDeriverSetWrapper : public KeysetDeriver {
  public:
   explicit KeysetDeriverSetWrapper(
-      std::unique_ptr<PrimitiveSet<KeysetDeriver>> deriver_set)
+      std::unique_ptr<internal::PrimitiveSet<KeysetDeriver>> deriver_set)
       : deriver_set_(std::move(deriver_set)) {}
 
   absl::StatusOr<std::unique_ptr<KeysetHandle>> DeriveKeyset(
@@ -62,15 +64,16 @@ class KeysetDeriverSetWrapper : public KeysetDeriver {
   ~KeysetDeriverSetWrapper() override = default;
 
  private:
-  std::unique_ptr<PrimitiveSet<KeysetDeriver>> deriver_set_;
+  std::unique_ptr<internal::PrimitiveSet<KeysetDeriver>> deriver_set_;
 };
 
 absl::StatusOr<KeyData> DeriveAndGetKeyData(absl::string_view salt,
                                             const KeysetDeriver& deriver) {
   auto keyset_handle_or = deriver.DeriveKeyset(salt);
   if (!keyset_handle_or.ok()) return keyset_handle_or.status();
-  const Keyset& keyset =
-      CleartextKeysetHandle::GetKeyset(*keyset_handle_or.value());
+  ABSL_ASSIGN_OR_RETURN(Keyset keyset, CleartextKeysetHandle::GetKeysetOrError(
+                                           *keyset_handle_or.value(),
+                                           InsecureSecretKeyAccess::Get()));
   if (keyset.key_size() != 1) {
     return absl::Status(
         absl::StatusCode::kInternal,
@@ -94,13 +97,16 @@ KeysetDeriverSetWrapper::DeriveKeyset(absl::string_view salt) const {
     key->set_key_id(entry->get_key_id());
   }
   keyset.set_primary_key_id(deriver_set_->get_primary()->get_key_id());
-  return CleartextKeysetHandle::GetKeysetHandle(keyset);
+  ABSL_ASSIGN_OR_RETURN(KeysetHandle handle,
+                        CleartextKeysetHandle::GetKeysetHandleOrError(
+                            keyset, InsecureSecretKeyAccess::Get()));
+  return std::make_unique<KeysetHandle>(std::move(handle));
 }
 
 }  // namespace
 
 absl::StatusOr<std::unique_ptr<KeysetDeriver>> KeysetDeriverWrapper::Wrap(
-    std::unique_ptr<PrimitiveSet<KeysetDeriver>> deriver_set) const {
+    std::unique_ptr<internal::PrimitiveSet<KeysetDeriver>> deriver_set) const {
   absl::Status status = Validate(deriver_set.get());
   if (!status.ok()) return status;
   return {std::make_unique<KeysetDeriverSetWrapper>(std::move(deriver_set))};

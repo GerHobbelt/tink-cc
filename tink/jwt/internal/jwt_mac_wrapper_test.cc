@@ -35,6 +35,7 @@
 #include "absl/strings/string_view.h"
 #include "tink/cleartext_keyset_handle.h"
 #include "tink/config/global_registry.h"
+#include "tink/insecure_secret_key_access.h"
 #include "tink/internal/monitoring.h"
 #include "tink/internal/monitoring_client_mocks.h"
 #include "tink/internal/registry_impl.h"
@@ -47,9 +48,9 @@
 #include "tink/jwt/jwt_validator.h"
 #include "tink/jwt/raw_jwt.h"
 #include "tink/jwt/verified_jwt.h"
+#include "tink/internal/primitive_set.h"
 #include "tink/keyset_manager.h"
 #include "tink/mac/failing_mac.h"
-#include "tink/primitive_set.h"
 #include "tink/registry.h"
 #include "tink/util/test_matchers.h"
 #include "tink/util/test_util.h"
@@ -69,6 +70,7 @@ namespace {
 using ::absl_testing::IsOk;
 using ::absl_testing::IsOkAndHolds;
 using ::crypto::tink::CleartextKeysetHandle;
+using ::crypto::tink::internal::PrimitiveSet;
 using ::crypto::tink::test::DummyMac;
 using ::google::crypto::tink::Keyset;
 using ::google::crypto::tink::KeysetInfo;
@@ -98,18 +100,28 @@ KeyTemplate createTemplate(OutputPrefixType output_prefix) {
 
 std::unique_ptr<KeysetHandle> KeysetHandleWithNewKeyId(
     const KeysetHandle& keyset_handle) {
-  Keyset keyset(CleartextKeysetHandle::GetKeyset(keyset_handle));
+  Keyset keyset = CleartextKeysetHandle::GetKeysetOrError(
+                      keyset_handle, InsecureSecretKeyAccess::Get())
+                      .value();
   uint32_t new_key_id = keyset.mutable_key(0)->key_id() ^ 0xdeadbeef;
   keyset.mutable_key(0)->set_key_id(new_key_id);
   keyset.set_primary_key_id(new_key_id);
-  return CleartextKeysetHandle::GetKeysetHandle(keyset);
+  return std::make_unique<KeysetHandle>(
+      CleartextKeysetHandle::GetKeysetHandleOrError(
+          keyset, InsecureSecretKeyAccess::Get())
+          .value());
 }
 
 std::unique_ptr<KeysetHandle> KeysetHandleWithTinkPrefix(
     const KeysetHandle& keyset_handle) {
-  Keyset keyset(CleartextKeysetHandle::GetKeyset(keyset_handle));
+  Keyset keyset = CleartextKeysetHandle::GetKeysetOrError(
+                      keyset_handle, InsecureSecretKeyAccess::Get())
+                      .value();
   keyset.mutable_key(0)->set_output_prefix_type(OutputPrefixType::TINK);
-  return CleartextKeysetHandle::GetKeysetHandle(keyset);
+  return std::make_unique<KeysetHandle>(
+      CleartextKeysetHandle::GetKeysetHandleOrError(
+          keyset, InsecureSecretKeyAccess::Get())
+          .value());
 }
 
 class JwtMacWrapperTest : public ::testing::Test {
@@ -230,7 +242,7 @@ TEST_F(JwtMacWrapperTest, GenerateTinkComputeVerifySuccess) {
   absl::StatusOr<VerifiedJwt> verified_jwt =
       (*jwt_mac)->VerifyMacAndDecode(*compact, *validator);
   ASSERT_THAT(verified_jwt, IsOk());
-  EXPECT_THAT(verified_jwt->GetIssuer(), test::IsOkAndHolds("issuer"));
+  EXPECT_THAT(verified_jwt->GetIssuer(), IsOkAndHolds("issuer"));
 
   // Parse header to make sure that key ID is correctly encoded.
   google::crypto::tink::KeysetInfo keyset_info =

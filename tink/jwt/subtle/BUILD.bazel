@@ -1,0 +1,151 @@
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
+
+package(default_visibility = ["//:__subpackages__"])
+
+licenses(["notice"])
+
+cc_library(
+    name = "create_jwt_ml_dsa_key",
+    srcs = ["create_jwt_ml_dsa_key.cc"],
+    hdrs = ["create_jwt_ml_dsa_key.h"],
+    include_prefix = "tink/jwt/subtle",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tink/jwt:jwt_ml_dsa_parameters",
+        "//tink/jwt:jwt_ml_dsa_private_key",
+        "//tink/jwt/internal:jwt_ml_dsa_key_creator",
+        "@abseil-cpp//absl/status:status_macros",
+        "@abseil-cpp//absl/status:statusor",
+    ],
+)
+
+cc_test(
+    name = "create_jwt_ml_dsa_key_test",
+    srcs = ["create_jwt_ml_dsa_key_test.cc"],
+    deps = [
+        ":create_jwt_ml_dsa_key",
+        "//tink/jwt:jwt_ml_dsa_parameters",
+        "//tink/jwt:jwt_ml_dsa_private_key",
+        "@abseil-cpp//absl/status",
+        "@abseil-cpp//absl/status:status_matchers",
+        "@abseil-cpp//absl/status:statusor",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_library(
+    name = "create_jwt_ecdsa_key",
+    srcs = ["create_jwt_ecdsa_key.cc"],
+    hdrs = ["create_jwt_ecdsa_key.h"],
+    include_prefix = "tink/jwt/subtle",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tink/jwt:jwt_ecdsa_parameters",
+        "//tink/jwt:jwt_ecdsa_private_key",
+        "//tink/jwt/internal:jwt_ecdsa_key_creator",
+        "@abseil-cpp//absl/status:status_macros",
+        "@abseil-cpp//absl/status:statusor",
+    ],
+)
+
+cc_test(
+    name = "create_jwt_ecdsa_key_test",
+    srcs = ["create_jwt_ecdsa_key_test.cc"],
+    deps = [
+        ":create_jwt_ecdsa_key",
+        "//tink/jwt:jwt_ecdsa_parameters",
+        "//tink/jwt:jwt_ecdsa_private_key",
+        "@abseil-cpp//absl/status",
+        "@abseil-cpp//absl/status:status_matchers",
+        "@abseil-cpp//absl/status:statusor",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_library(
+    name = "create_jwt_rsa_ssa_pss_key",
+    srcs = ["create_jwt_rsa_ssa_pss_key.cc"],
+    hdrs = ["create_jwt_rsa_ssa_pss_key.h"],
+    include_prefix = "tink/jwt/subtle",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tink/jwt:jwt_rsa_ssa_pss_parameters",
+        "//tink/jwt:jwt_rsa_ssa_pss_private_key",
+        "//tink/jwt/internal:jwt_rsa_ssa_pss_key_creator",
+        "@abseil-cpp//absl/status:status_macros",
+        "@abseil-cpp//absl/status:statusor",
+    ],
+)
+
+cc_test(
+    name = "create_jwt_rsa_ssa_pss_key_test",
+    srcs = ["create_jwt_rsa_ssa_pss_key_test.cc"],
+    deps = [
+        ":create_jwt_rsa_ssa_pss_key",
+        "//tink/jwt:jwt_rsa_ssa_pss_parameters",
+        "//tink/jwt:jwt_rsa_ssa_pss_private_key",
+        "@abseil-cpp//absl/status",
+        "@abseil-cpp//absl/status:status_matchers",
+        "@abseil-cpp//absl/status:statusor",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_library(
+    name = "create_jwt_rsa_ssa_pkcs1_key",
+    srcs = ["create_jwt_rsa_ssa_pkcs1_key.cc"],
+    hdrs = ["create_jwt_rsa_ssa_pkcs1_key.h"],
+    include_prefix = "tink/jwt/subtle",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tink/jwt:jwt_rsa_ssa_pkcs1_parameters",
+        "//tink/jwt:jwt_rsa_ssa_pkcs1_private_key",
+        "//tink/jwt/internal:jwt_rsa_ssa_pkcs1_key_creator",
+        "@abseil-cpp//absl/status:status_macros",
+        "@abseil-cpp//absl/status:statusor",
+    ],
+)
+
+cc_test(
+    name = "create_jwt_rsa_ssa_pkcs1_key_test",
+    srcs = ["create_jwt_rsa_ssa_pkcs1_key_test.cc"],
+    deps = [
+        ":create_jwt_rsa_ssa_pkcs1_key",
+        "//tink/jwt:jwt_rsa_ssa_pkcs1_parameters",
+        "//tink/jwt:jwt_rsa_ssa_pkcs1_private_key",
+        "@abseil-cpp//absl/status",
+        "@abseil-cpp//absl/status:status_matchers",
+        "@abseil-cpp//absl/status:statusor",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_library(
+    name = "create_jwt_hmac_key",
+    srcs = ["create_jwt_hmac_key.cc"],
+    hdrs = ["create_jwt_hmac_key.h"],
+    include_prefix = "tink/jwt/subtle",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tink/jwt:jwt_hmac_key",
+        "//tink/jwt:jwt_hmac_parameters",
+        "//tink/jwt/internal:jwt_mac_key_creator",
+        "@abseil-cpp//absl/status:status_macros",
+        "@abseil-cpp//absl/status:statusor",
+    ],
+)
+
+cc_test(
+    name = "create_jwt_hmac_key_test",
+    srcs = ["create_jwt_hmac_key_test.cc"],
+    deps = [
+        ":create_jwt_hmac_key",
+        "//tink/jwt:jwt_hmac_key",
+        "//tink/jwt:jwt_hmac_parameters",
+        "@abseil-cpp//absl/status",
+        "@abseil-cpp//absl/status:status_matchers",
+        "@abseil-cpp//absl/status:statusor",
+        "@googletest//:gtest_main",
+    ],
+)

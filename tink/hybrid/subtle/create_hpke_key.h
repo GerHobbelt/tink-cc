@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,25 +14,29 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef TINK_LOW_LEVEL_CRYPTO_ACCESS_H_
-#define TINK_LOW_LEVEL_CRYPTO_ACCESS_H_
+#ifndef TINK_HYBRID_SUBTLE_CREATE_HPKE_KEY_H_
+#define TINK_HYBRID_SUBTLE_CREATE_HPKE_KEY_H_
 
-#include "tink/low_level_crypto_access_token.h"
+#include <optional>
+
+#include "absl/status/statusor.h"
+#include "tink/hybrid/hpke_parameters.h"
+#include "tink/hybrid/hpke_private_key.h"
 
 namespace crypto {
 namespace tink {
+namespace subtle {
 
-// Returns a `LowLevelCryptoAccessToken`.
+// Most users should not call this API directly. Instead, most users should
+// utilize keysets to ensure key rotation.
 //
-// This function can be used to access low level cryptography primitives. Within
-// Google, access to this function is restricted by the build system. Outside of
-// Google, users can search their codebase for `GetLowLevelCryptoAccess()` to
-// find instances where it is used.
-inline LowLevelCryptoAccessToken GetLowLevelCryptoAccess() {
-  return LowLevelCryptoAccessToken();
-}
+// Generates a new standalone HpkePrivateKey from parameters.
+absl::StatusOr<HpkePrivateKey> CreateHpkePrivateKey(
+    const HpkeParameters& parameters,
+    std::optional<int> id_requirement = std::nullopt);
 
+}  // namespace subtle
 }  // namespace tink
 }  // namespace crypto
 
-#endif  // TINK_LOW_LEVEL_CRYPTO_ACCESS_H_
+#endif  // TINK_HYBRID_SUBTLE_CREATE_HPKE_KEY_H_

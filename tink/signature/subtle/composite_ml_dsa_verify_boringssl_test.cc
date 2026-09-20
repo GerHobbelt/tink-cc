@@ -27,7 +27,6 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "tink/internal/fips_utils.h"
-#include "tink/low_level_crypto_access.h"
 #include "tink/public_key_sign.h"
 #include "tink/public_key_verify.h"
 #include "tink/signature/composite_ml_dsa_parameters.h"
@@ -111,8 +110,8 @@ TEST_P(CompositeMlDsaVerifyBoringSslTest, BasicSignVerifyRawWorks) {
           *parameters, /*force_random=*/false,
           /*id_requirement=*/std::nullopt);
 
-  absl::StatusOr<std::unique_ptr<PublicKeySign>> signer = NewCompositeMlDsaSign(
-      composite_ml_dsa_private_key, GetLowLevelCryptoAccess());
+  absl::StatusOr<std::unique_ptr<PublicKeySign>> signer =
+      NewCompositeMlDsaSign(composite_ml_dsa_private_key);
   ASSERT_THAT(signer, IsOk());
 
   absl::string_view message = "message to be signed";
@@ -120,8 +119,7 @@ TEST_P(CompositeMlDsaVerifyBoringSslTest, BasicSignVerifyRawWorks) {
   ASSERT_THAT(signature, IsOk());
 
   absl::StatusOr<std::unique_ptr<PublicKeyVerify>> verifier =
-      NewCompositeMlDsaVerify(composite_ml_dsa_private_key.GetPublicKey(),
-                              GetLowLevelCryptoAccess());
+      NewCompositeMlDsaVerify(composite_ml_dsa_private_key.GetPublicKey());
   ASSERT_THAT(verifier, IsOk());
 
   EXPECT_THAT((*verifier)->Verify(*signature, message), IsOk());
@@ -145,8 +143,8 @@ TEST_P(CompositeMlDsaVerifyBoringSslTest, BasicSignVerifyTinkWorks) {
           *parameters, /*force_random=*/false,
           /*id_requirement=*/0x02030400);
 
-  absl::StatusOr<std::unique_ptr<PublicKeySign>> signer = NewCompositeMlDsaSign(
-      composite_ml_dsa_private_key, GetLowLevelCryptoAccess());
+  absl::StatusOr<std::unique_ptr<PublicKeySign>> signer =
+      NewCompositeMlDsaSign(composite_ml_dsa_private_key);
   ASSERT_THAT(signer, IsOk());
 
   absl::string_view message = "message to be signed";
@@ -154,8 +152,7 @@ TEST_P(CompositeMlDsaVerifyBoringSslTest, BasicSignVerifyTinkWorks) {
   ASSERT_THAT(signature, IsOk());
 
   absl::StatusOr<std::unique_ptr<PublicKeyVerify>> verifier =
-      NewCompositeMlDsaVerify(composite_ml_dsa_private_key.GetPublicKey(),
-                              GetLowLevelCryptoAccess());
+      NewCompositeMlDsaVerify(composite_ml_dsa_private_key.GetPublicKey());
   ASSERT_THAT(verifier, IsOk());
 
   EXPECT_THAT((*verifier)->Verify(*signature, message), IsOk());
@@ -180,8 +177,7 @@ TEST_P(CompositeMlDsaVerifyBoringSslTest, VerifyWithWrongSignatureFails) {
           /*id_requirement=*/std::nullopt);
 
   absl::StatusOr<std::unique_ptr<PublicKeyVerify>> verifier =
-      NewCompositeMlDsaVerify(composite_ml_dsa_private_key.GetPublicKey(),
-                              GetLowLevelCryptoAccess());
+      NewCompositeMlDsaVerify(composite_ml_dsa_private_key.GetPublicKey());
   ASSERT_THAT(verifier, IsOk());
 
   absl::string_view message = "message to be signed";
@@ -208,8 +204,8 @@ TEST_P(CompositeMlDsaVerifyBoringSslTest, VerifyWithModifiedSignatureFails) {
           *parameters, /*force_random=*/false,
           /*id_requirement=*/std::nullopt);
 
-  absl::StatusOr<std::unique_ptr<PublicKeySign>> signer = NewCompositeMlDsaSign(
-      composite_ml_dsa_private_key, GetLowLevelCryptoAccess());
+  absl::StatusOr<std::unique_ptr<PublicKeySign>> signer =
+      NewCompositeMlDsaSign(composite_ml_dsa_private_key);
   ASSERT_THAT(signer, IsOk());
 
   absl::string_view message = "message to be signed";
@@ -217,8 +213,7 @@ TEST_P(CompositeMlDsaVerifyBoringSslTest, VerifyWithModifiedSignatureFails) {
   ASSERT_THAT(signature, IsOk());
 
   absl::StatusOr<std::unique_ptr<PublicKeyVerify>> verifier =
-      NewCompositeMlDsaVerify(composite_ml_dsa_private_key.GetPublicKey(),
-                              GetLowLevelCryptoAccess());
+      NewCompositeMlDsaVerify(composite_ml_dsa_private_key.GetPublicKey());
   ASSERT_THAT(verifier, IsOk());
 
   // Invalidate one byte of the signature.
@@ -244,8 +239,8 @@ TEST_P(CompositeMlDsaVerifyBoringSslTest, VerifyWithModifiedOutputPrefixFails) {
           *parameters, /*force_random=*/false,
           /*id_requirement=*/0x02030400);
 
-  absl::StatusOr<std::unique_ptr<PublicKeySign>> signer = NewCompositeMlDsaSign(
-      composite_ml_dsa_private_key, GetLowLevelCryptoAccess());
+  absl::StatusOr<std::unique_ptr<PublicKeySign>> signer =
+      NewCompositeMlDsaSign(composite_ml_dsa_private_key);
   ASSERT_THAT(signer, IsOk());
 
   absl::string_view message = "message to be signed";
@@ -253,8 +248,7 @@ TEST_P(CompositeMlDsaVerifyBoringSslTest, VerifyWithModifiedOutputPrefixFails) {
   ASSERT_THAT(signature, IsOk());
 
   absl::StatusOr<std::unique_ptr<PublicKeyVerify>> verifier =
-      NewCompositeMlDsaVerify(composite_ml_dsa_private_key.GetPublicKey(),
-                              GetLowLevelCryptoAccess());
+      NewCompositeMlDsaVerify(composite_ml_dsa_private_key.GetPublicKey());
   ASSERT_THAT(verifier, IsOk());
 
   // Invalidate one byte of the output prefix.
@@ -280,8 +274,8 @@ TEST_P(CompositeMlDsaVerifyBoringSslTest, VerifyWithWrongMessageFails) {
           *parameters, /*force_random=*/false,
           /*id_requirement=*/std::nullopt);
 
-  absl::StatusOr<std::unique_ptr<PublicKeySign>> signer = NewCompositeMlDsaSign(
-      composite_ml_dsa_private_key, GetLowLevelCryptoAccess());
+  absl::StatusOr<std::unique_ptr<PublicKeySign>> signer =
+      NewCompositeMlDsaSign(composite_ml_dsa_private_key);
   ASSERT_THAT(signer, IsOk());
 
   absl::string_view message = "message to be signed";
@@ -289,8 +283,7 @@ TEST_P(CompositeMlDsaVerifyBoringSslTest, VerifyWithWrongMessageFails) {
   ASSERT_THAT(signature, IsOk());
 
   absl::StatusOr<std::unique_ptr<PublicKeyVerify>> verifier =
-      NewCompositeMlDsaVerify(composite_ml_dsa_private_key.GetPublicKey(),
-                              GetLowLevelCryptoAccess());
+      NewCompositeMlDsaVerify(composite_ml_dsa_private_key.GetPublicKey());
   ASSERT_THAT(verifier, IsOk());
 
   EXPECT_THAT((*verifier)->Verify(*signature, "wrong_message"), Not(IsOk()));
@@ -316,8 +309,7 @@ TEST_P(CompositeMlDsaVerifyBoringSslTest, FipsMode) {
 
   // Check that creating the verifier fails in FIPS mode.
   EXPECT_THAT(
-      NewCompositeMlDsaVerify(composite_ml_dsa_private_key.GetPublicKey(),
-                              GetLowLevelCryptoAccess())
+      NewCompositeMlDsaVerify(composite_ml_dsa_private_key.GetPublicKey())
           .status(),
       StatusIs(absl::StatusCode::kInternal));
 }
@@ -337,16 +329,15 @@ TEST_P(CompositeMlDsaTestVectorTest, TestVectorSignVerify) {
           param.signature_private_key.get());
   ASSERT_THAT(composite_ml_dsa_private_key, NotNull());
 
-  absl::StatusOr<std::unique_ptr<PublicKeySign>> signer = NewCompositeMlDsaSign(
-      *composite_ml_dsa_private_key, GetLowLevelCryptoAccess());
+  absl::StatusOr<std::unique_ptr<PublicKeySign>> signer =
+      NewCompositeMlDsaSign(*composite_ml_dsa_private_key);
   ASSERT_THAT(signer, IsOk());
 
   absl::StatusOr<std::string> signature = (*signer)->Sign(param.message);
   ASSERT_THAT(signature, IsOk());
 
   absl::StatusOr<std::unique_ptr<PublicKeyVerify>> verifier =
-      NewCompositeMlDsaVerify(composite_ml_dsa_private_key->GetPublicKey(),
-                              GetLowLevelCryptoAccess());
+      NewCompositeMlDsaVerify(composite_ml_dsa_private_key->GetPublicKey());
   ASSERT_THAT(verifier, IsOk());
 
   EXPECT_THAT((*verifier)->Verify(*signature, param.message), IsOk());
