@@ -23,6 +23,7 @@
 #include "gtest/gtest.h"
 #include "absl/log/absl_check.h"
 #include "absl/status/status.h"
+#include "absl/status/status_matchers.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
@@ -37,8 +38,8 @@ namespace crypto {
 namespace tink {
 namespace {
 
-using ::crypto::tink::test::IsOk;
-using ::crypto::tink::test::StatusIs;
+using ::absl_testing::IsOk;
+using ::absl_testing::StatusIs;
 using ::testing::Eq;
 using ::testing::HasSubstr;
 using ::testing::TestWithParam;
@@ -47,9 +48,9 @@ using ::testing::Values;
 struct TestCase {
   JwtRsaSsaPssParameters::Algorithm algorithm;
   JwtRsaSsaPssParameters::KidStrategy kid_strategy;
-  absl::optional<int> id_requirement;
-  absl::optional<std::string> custom_kid;
-  absl::optional<std::string> expected_kid;
+  std::optional<int> id_requirement;
+  std::optional<std::string> custom_kid;
+  std::optional<std::string> expected_kid;
 };
 
 const BigInteger& kF4 = *new BigInteger(std::string("\x1\0\x1", 3));  // 65537

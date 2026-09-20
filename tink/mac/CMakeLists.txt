@@ -291,6 +291,7 @@ tink_cc_test(
     absl::flat_hash_map
     absl::memory
     absl::status
+    absl::status_matchers
     absl::strings
     tink::core::crypto_format
     tink::core::mac
@@ -322,6 +323,7 @@ tink_cc_test(
     gmock
     absl::memory
     absl::status
+    absl::status_matchers
     absl::statusor
     crypto
     tink::core::chunked_mac
@@ -380,6 +382,7 @@ tink_cc_test(
     tink::mac::hmac_key_manager
     tink::mac::mac_key_templates
     gmock
+    absl::status_matchers
     tink::core::key_manager_impl
     tink::core::mac
     tink::util::test_matchers
@@ -396,6 +399,7 @@ tink_cc_test(
   DEPS
     tink::mac::aes_cmac_key_manager
     gmock
+    absl::status_matchers
     tink::core::chunked_mac
     tink::core::mac
     tink::subtle::aes_cmac_boringssl
@@ -416,6 +420,7 @@ tink_cc_test(
     gmock
     absl::memory
     absl::status
+    absl::status_matchers
     absl::statusor
     tink::core::chunked_mac
     tink::core::key_manager_impl
@@ -437,6 +442,7 @@ tink_cc_test(
     tink::mac::failing_mac
     gmock
     absl::status
+    absl::status_matchers
     tink::core::mac
     tink::util::test_matchers
 )
@@ -449,6 +455,7 @@ tink_cc_test(
     tink::mac::aes_cmac_parameters
     gmock
     absl::status
+    absl::status_matchers
     tink::core::parameters
     tink::util::statusor
     tink::util::test_matchers
@@ -463,6 +470,7 @@ tink_cc_test(
     tink::mac::aes_cmac_parameters
     gmock
     absl::status
+    absl::status_matchers
     absl::optional
     tink::core::key
     tink::core::partial_key_access
@@ -483,6 +491,7 @@ tink_cc_test(
     absl::absl_check
     absl::memory
     absl::status
+    absl::status_matchers
     absl::string_view
     absl::optional
     tink::core::insecure_secret_key_access
@@ -510,6 +519,7 @@ tink_cc_test(
     tink::mac::hmac_parameters
     gmock
     absl::status
+    absl::status_matchers
     tink::core::parameters
     tink::util::statusor
     tink::util::test_matchers
@@ -524,6 +534,7 @@ tink_cc_test(
     tink::mac::hmac_parameters
     gmock
     absl::status
+    absl::status_matchers
     absl::optional
     tink::core::key
     tink::core::partial_key_access
@@ -542,6 +553,7 @@ tink_cc_test(
     tink::mac::hmac_proto_serialization
     gmock
     absl::status
+    absl::status_matchers
     absl::statusor
     absl::optional
     tink::core::insecure_secret_key_access
@@ -569,6 +581,7 @@ tink_cc_test(
     tink::mac::key_gen_config_v0
     tink::mac::mac_key_templates
     gmock
+    absl::status_matchers
     tink::core::chunked_mac
     tink::core::key_gen_configuration
     tink::core::keyset_handle

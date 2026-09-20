@@ -19,6 +19,7 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/status/status.h"
+#include "absl/status/status_matchers.h"
 #include "tink/key_status.h"
 #include "tink/util/statusor.h"
 #include "tink/util/test_matchers.h"
@@ -29,8 +30,8 @@ namespace tink {
 namespace internal {
 namespace {
 
-using ::crypto::tink::test::IsOkAndHolds;
-using ::crypto::tink::test::StatusIs;
+using ::absl_testing::IsOkAndHolds;
+using ::absl_testing::StatusIs;
 using ::google::crypto::tink::KeyStatusType;
 
 TEST(KeyStatusUtilTest, FromKeyStatusType) {

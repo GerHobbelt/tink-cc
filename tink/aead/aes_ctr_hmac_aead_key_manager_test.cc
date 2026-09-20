@@ -27,6 +27,7 @@
 #include "gtest/gtest.h"
 #include "absl/memory/memory.h"
 #include "absl/status/status.h"
+#include "absl/status/status_matchers.h"
 #include "tink/aead.h"
 #include "tink/subtle/aead_test_util.h"
 #include "tink/subtle/aes_ctr_boringssl.h"
@@ -48,8 +49,8 @@
 namespace crypto {
 namespace tink {
 
-using ::crypto::tink::test::IsOk;
-using ::crypto::tink::test::StatusIs;
+using ::absl_testing::IsOk;
+using ::absl_testing::StatusIs;
 using ::crypto::tink::util::IstreamInputStream;
 using AesCtrHmacAeadKeyProto = ::google::crypto::tink::AesCtrHmacAeadKey;
 using ::google::crypto::tink::AesCtrHmacAeadKeyFormat;

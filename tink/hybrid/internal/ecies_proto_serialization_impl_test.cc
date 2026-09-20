@@ -24,6 +24,7 @@
 #include "gtest/gtest.h"
 #include "absl/log/check.h"
 #include "absl/status/status.h"
+#include "absl/status/status_matchers.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
@@ -67,11 +68,11 @@ namespace tink {
 namespace internal {
 namespace {
 
+using ::absl_testing::IsOk;
+using ::absl_testing::StatusIs;
 using ::crypto::tink::internal::KeyMaterialTypeTP;
 using ::crypto::tink::internal::OutputPrefixTypeTP;
 using ::crypto::tink::test::HexDecodeOrDie;
-using ::crypto::tink::test::IsOk;
-using ::crypto::tink::test::StatusIs;
 using ::google::crypto::tink::AesGcmKeyFormat;
 using ::google::crypto::tink::AesSivKeyFormat;
 using ::google::crypto::tink::EciesAeadDemParams;
@@ -105,13 +106,13 @@ struct TestCase {
   EciesParameters::CurveType curve_type;
   EciesParameters::HashType hash_type;
   EciesParameters::DemId dem_id;
-  absl::optional<EciesParameters::PointFormat> point_format;
-  absl::optional<std::string> salt;
+  std::optional<EciesParameters::PointFormat> point_format;
+  std::optional<std::string> salt;
   OutputPrefixTypeTP output_prefix_type;
   EciesHkdfKemParams kem_params;
   EciesAeadDemParams dem_params;
   EcPointFormat ec_point_format;
-  absl::optional<int> id;
+  std::optional<int> id;
   std::string output_prefix;
 };
 
@@ -189,9 +190,9 @@ EciesAeadDemParams CreateXChaCha20Poly1305DemParams() {
 }
 
 EciesAeadDemParams CreateAesCtrHmacDemParams(
-    absl::optional<int> aes_key_size, absl::optional<int> iv_size,
-    absl::optional<int> version, absl::optional<int> hmac_key_size,
-    absl::optional<int> tag_size, absl::optional<HashTypeEnum> hash_type) {
+    std::optional<int> aes_key_size, std::optional<int> iv_size,
+    std::optional<int> version, std::optional<int> hmac_key_size,
+    std::optional<int> tag_size, std::optional<HashTypeEnum> hash_type) {
   AesCtrHmacAeadKeyFormatTP format;
   format.mutable_aes_ctr_key_format()->set_key_size(aes_key_size.value_or(0));
   format.mutable_aes_ctr_key_format()->mutable_params()->set_iv_size(

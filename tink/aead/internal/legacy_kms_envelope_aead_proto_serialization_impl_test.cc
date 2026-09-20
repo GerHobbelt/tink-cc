@@ -25,6 +25,7 @@
 #include "absl/log/absl_check.h"
 #include "absl/memory/memory.h"
 #include "absl/status/status.h"
+#include "absl/status/status_matchers.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "tink/aead/aead_parameters.h"
@@ -64,10 +65,10 @@ namespace tink {
 namespace internal {
 namespace {
 
+using ::absl_testing::IsOk;
+using ::absl_testing::StatusIs;
 using ::crypto::tink::internal::KeyMaterialTypeTP;
 using ::crypto::tink::internal::OutputPrefixTypeTP;
-using ::crypto::tink::test::IsOk;
-using ::crypto::tink::test::StatusIs;
 using ::google::crypto::tink::AesCmacKeyFormat;
 using ::google::crypto::tink::AesCtrHmacAeadKeyFormat;
 using ::google::crypto::tink::AesCtrKeyFormat;
@@ -221,7 +222,7 @@ AesEaxParameters GetAesEaxParameters() {
 struct TestCase {
   LegacyKmsEnvelopeAeadParameters::Variant variant;
   OutputPrefixTypeTP output_prefix_type;
-  absl::optional<int> id;
+  std::optional<int> id;
   std::string output_prefix;
   LegacyKmsEnvelopeAeadParameters::DekParsingStrategy dek_parsing_strategy;
   std::shared_ptr<AeadParameters> dek_parameters;

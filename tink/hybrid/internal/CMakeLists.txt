@@ -33,6 +33,7 @@ tink_cc_library(
     crypto
     tink::internal::call_with_core_dump_protection
     tink::internal::dfsan_forwarders
+    tink::internal::secret_buffer
     tink::internal::ssl_unique_ptr
     tink::subtle::subtle_util
     tink::util::secret_data
@@ -329,6 +330,7 @@ tink_cc_test(
     tink::hybrid::internal::hpke_util
     gmock
     absl::status
+    absl::status_matchers
     absl::statusor
     absl::strings
     tink::core::secret_data
@@ -349,6 +351,7 @@ tink_cc_test(
     tink::hybrid::internal::test_hpke_context_boringssl
     gmock
     absl::status
+    absl::status_matchers
     absl::statusor
     crypto
     tink::core::secret_data
@@ -368,6 +371,7 @@ tink_cc_test(
     tink::hybrid::internal::hpke_test_util
     gmock
     absl::status
+    absl::status_matchers
     absl::strings
     absl::optional
     tink::core::hybrid_decrypt
@@ -400,6 +404,7 @@ tink_cc_test(
     tink::hybrid::internal::hpke_util
     gmock
     absl::status
+    absl::status_matchers
     absl::statusor
     absl::strings
     absl::optional
@@ -427,6 +432,7 @@ tink_cc_test(
     tink::hybrid::internal::hpke_test_util
     gmock
     absl::status
+    absl::status_matchers
     tink::util::status
     tink::util::test_matchers
     tink::proto::hpke_cc_proto
@@ -444,6 +450,7 @@ tink_cc_test(
     gmock
     absl::btree
     absl::status
+    absl::status_matchers
     absl::statusor
     absl::strings
     tink::core::hybrid_decrypt
@@ -472,6 +479,7 @@ tink_cc_test(
     tink::hybrid::internal::hpke_test_util
     gmock
     absl::status
+    absl::status_matchers
     tink::util::test_matchers
     tink::proto::hpke_cc_proto
     tink::proto::tink_cc_proto
@@ -488,6 +496,7 @@ tink_cc_test(
     tink::hybrid::internal::hpke_util
     tink::hybrid::internal::hpke_util_boringssl
     gmock
+    absl::status_matchers
     absl::statusor
     crypto
     tink::util::test_matchers
@@ -505,6 +514,7 @@ tink_cc_test(
     tink::hybrid::internal::hpke_util
     gmock
     absl::status
+    absl::status_matchers
     absl::statusor
     tink::util::test_matchers
     tink::proto::hpke_cc_proto
@@ -522,6 +532,7 @@ tink_cc_test(
     tink::hybrid::internal::hpke_test_util
     tink::hybrid::internal::key_gen_config_v0
     gmock
+    absl::status_matchers
     tink::core::configuration
     tink::core::hybrid_decrypt
     tink::core::hybrid_encrypt
@@ -609,6 +620,7 @@ tink_cc_test(
     tink::hybrid::internal::ecies_aead_hkdf_dem_helper
     gmock
     absl::status
+    absl::status_matchers
     absl::string_view
     tink::aead::aes_gcm_key_manager
     tink::daead::aes_siv_key_manager
@@ -678,6 +690,7 @@ tink_cc_test(
     gmock
     absl::check
     absl::status
+    absl::status_matchers
     absl::statusor
     absl::strings
     absl::string_view
@@ -762,6 +775,7 @@ tink_cc_test(
     gmock
     absl::absl_check
     absl::status
+    absl::status_matchers
     absl::statusor
     absl::strings
     absl::string_view

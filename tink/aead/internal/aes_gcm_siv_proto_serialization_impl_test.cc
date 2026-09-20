@@ -23,6 +23,7 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/status/status.h"
+#include "absl/status/status_matchers.h"
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
 #include "tink/aead/aes_gcm_siv_key.h"
@@ -47,11 +48,11 @@ namespace tink {
 namespace internal {
 namespace {
 
+using ::absl_testing::IsOk;
+using ::absl_testing::StatusIs;
 using ::crypto::tink::internal::KeyMaterialTypeTP;
 using ::crypto::tink::internal::OutputPrefixTypeTP;
 using ::crypto::tink::subtle::Random;
-using ::crypto::tink::test::IsOk;
-using ::crypto::tink::test::StatusIs;
 using ::google::crypto::tink::AesGcmSivKeyFormat;
 using ::testing::Eq;
 using ::testing::IsTrue;
@@ -63,7 +64,7 @@ struct TestCase {
   AesGcmSivParameters::Variant variant;
   OutputPrefixTypeTP output_prefix_type;
   int key_size;
-  absl::optional<int> id;
+  std::optional<int> id;
   std::string output_prefix;
 };
 

@@ -22,6 +22,7 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/status/status.h"
+#include "absl/status/status_matchers.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
@@ -52,10 +53,10 @@ namespace crypto {
 namespace tink {
 namespace {
 
+using ::absl_testing::IsOk;
+using ::absl_testing::StatusIs;
 using ::crypto::tink::internal::KeyMaterialTypeTP;
 using ::crypto::tink::internal::OutputPrefixTypeTP;
-using ::crypto::tink::test::IsOk;
-using ::crypto::tink::test::StatusIs;
 using ::google::crypto::tink::JwtEcdsaAlgorithm;
 using ::google::crypto::tink::JwtEcdsaKeyFormat;
 using ::testing::Eq;
@@ -78,8 +79,8 @@ struct TestCase {
   JwtEcdsaParameters::Algorithm algorithm;
   JwtEcdsaAlgorithm proto_algorithm;
   subtle::EllipticCurveType curve;
-  absl::optional<std::string> kid;
-  absl::optional<int> id;
+  std::optional<std::string> kid;
+  std::optional<int> id;
   std::string output_prefix;
 };
 

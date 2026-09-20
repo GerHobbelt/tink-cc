@@ -23,6 +23,7 @@
 #include "gtest/gtest.h"
 #include "absl/memory/memory.h"
 #include "absl/status/status.h"
+#include "absl/status/status_matchers.h"
 #include "tink/internal/parser_index.h"
 #include "tink/internal/serialization.h"
 #include "tink/internal/serialization_test_util.h"
@@ -35,8 +36,8 @@ namespace tink {
 namespace internal {
 namespace {
 
-using ::crypto::tink::test::IsOk;
-using ::crypto::tink::test::StatusIs;
+using ::absl_testing::IsOk;
+using ::absl_testing::StatusIs;
 using ::testing::Eq;
 using ::testing::IsFalse;
 

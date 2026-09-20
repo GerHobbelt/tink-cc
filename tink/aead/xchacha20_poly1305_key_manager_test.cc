@@ -24,6 +24,7 @@
 #include "gtest/gtest.h"
 #include "absl/memory/memory.h"
 #include "absl/status/status.h"
+#include "absl/status/status_matchers.h"
 #include "tink/aead.h"
 #include "tink/internal/ssl_util.h"
 #include "tink/subtle/aead_test_util.h"
@@ -39,8 +40,8 @@ namespace tink {
 
 namespace {
 
-using ::crypto::tink::test::IsOk;
-using ::crypto::tink::test::StatusIs;
+using ::absl_testing::IsOk;
+using ::absl_testing::StatusIs;
 using XChaCha20Poly1305KeyProto = ::google::crypto::tink::XChaCha20Poly1305Key;
 using ::google::crypto::tink::XChaCha20Poly1305KeyFormat;
 using ::testing::Eq;

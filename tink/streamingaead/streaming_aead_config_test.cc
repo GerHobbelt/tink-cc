@@ -24,6 +24,7 @@
 #include "gtest/gtest.h"
 #include "absl/memory/memory.h"
 #include "absl/status/status.h"
+#include "absl/status/status_matchers.h"
 #include "tink/config/global_registry.h"
 #include "tink/config/tink_fips.h"
 #include "tink/insecure_secret_key_access.h"
@@ -59,9 +60,9 @@ namespace crypto {
 namespace tink {
 namespace {
 
+using ::absl_testing::IsOk;
+using ::absl_testing::StatusIs;
 using ::crypto::tink::test::DummyStreamingAead;
-using ::crypto::tink::test::IsOk;
-using ::crypto::tink::test::StatusIs;
 using ::testing::HasSubstr;
 using ::testing::IsNull;
 

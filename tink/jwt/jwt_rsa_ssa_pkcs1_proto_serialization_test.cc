@@ -22,6 +22,7 @@
 #include "gtest/gtest.h"
 #include "absl/log/absl_check.h"
 #include "absl/status/status.h"
+#include "absl/status/status_matchers.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
@@ -54,10 +55,10 @@ namespace crypto {
 namespace tink {
 namespace {
 
+using ::absl_testing::IsOk;
+using ::absl_testing::StatusIs;
 using ::crypto::tink::internal::KeyMaterialTypeTP;
 using ::crypto::tink::internal::OutputPrefixTypeTP;
-using ::crypto::tink::test::IsOk;
-using ::crypto::tink::test::StatusIs;
 using ::google::crypto::tink::JwtRsaSsaPkcs1Algorithm;
 using ::google::crypto::tink::JwtRsaSsaPkcs1KeyFormat;
 using ::testing::Eq;
@@ -75,8 +76,8 @@ struct TestCase {
   JwtRsaSsaPkcs1Parameters::Algorithm algorithm;
   JwtRsaSsaPkcs1Algorithm proto_algorithm;
   int modulus_size_in_bits;
-  absl::optional<std::string> kid;
-  absl::optional<int> id;
+  std::optional<std::string> kid;
+  std::optional<int> id;
 };
 
 const std::string& kF4Str = *new std::string("\x1\0\x1", 3);  // 65537

@@ -22,6 +22,7 @@
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "absl/status/status_matchers.h"
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
 #include "tink/internal/key_gen_configuration_impl.h"
@@ -38,7 +39,7 @@ namespace tink {
 namespace internal {
 namespace {
 
-using ::crypto::tink::test::IsOk;
+using ::absl_testing::IsOk;
 using ::testing::Eq;
 using ::testing::IsTrue;
 using ::testing::SizeIs;
@@ -56,6 +57,9 @@ using KeyCreatorsTest = TestWithParam<TestCase>;
 INSTANTIATE_TEST_SUITE_P(
     KeyCreatorsTestSuite, KeyCreatorsTest,
     Values(TestCase{0x02030400, std::string("\x01\x02\x03\x04\x00", 5),
+                    MlDsaParameters::Instance::kMlDsa44},
+           TestCase{absl::nullopt, "", MlDsaParameters::Instance::kMlDsa44},
+           TestCase{0x02030400, std::string("\x01\x02\x03\x04\x00", 5),
                     MlDsaParameters::Instance::kMlDsa65},
            TestCase{absl::nullopt, "", MlDsaParameters::Instance::kMlDsa65},
            TestCase{0x02030400, std::string("\x01\x02\x03\x04\x00", 5),

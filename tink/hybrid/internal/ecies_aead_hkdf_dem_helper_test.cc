@@ -23,6 +23,7 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/status/status.h"
+#include "absl/status/status_matchers.h"
 #include "absl/strings/string_view.h"
 #include "tink/aead/aes_gcm_key_manager.h"
 #include "tink/daead/aes_siv_key_manager.h"
@@ -40,9 +41,9 @@ namespace tink {
 namespace internal {
 namespace {
 
+using ::absl_testing::IsOk;
+using ::absl_testing::StatusIs;
 using ::crypto::tink::subtle::AeadOrDaead;
-using ::crypto::tink::test::IsOk;
-using ::crypto::tink::test::StatusIs;
 using ::testing::HasSubstr;
 
 // Checks whether Decrypt(Encrypt(message)) == message with the given dem.

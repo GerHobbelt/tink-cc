@@ -22,6 +22,7 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/status/status.h"
+#include "absl/status/status_matchers.h"
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
 #include "tink/big_integer.h"
@@ -43,9 +44,9 @@ namespace crypto {
 namespace tink {
 namespace {
 
+using ::absl_testing::IsOk;
+using ::absl_testing::StatusIs;
 using ::crypto::tink::test::HexDecodeOrDie;
-using ::crypto::tink::test::IsOk;
-using ::crypto::tink::test::StatusIs;
 using ::testing::Eq;
 using ::testing::HasSubstr;
 using ::testing::StrEq;
@@ -56,9 +57,9 @@ struct TestCase {
   JwtEcdsaParameters::KidStrategy kid_strategy;
   JwtEcdsaParameters::Algorithm algorithm;
   subtle::EllipticCurveType curve;
-  absl::optional<std::string> custom_kid;
-  absl::optional<int> id_requirement;
-  absl::optional<std::string> expected_kid;
+  std::optional<std::string> custom_kid;
+  std::optional<int> id_requirement;
+  std::optional<std::string> expected_kid;
 };
 
 using JwtEcdsaPrivateKeyTest = TestWithParam<TestCase>;

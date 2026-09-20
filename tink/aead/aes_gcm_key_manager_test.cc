@@ -26,6 +26,7 @@
 #include "gtest/gtest.h"
 #include "absl/memory/memory.h"
 #include "absl/status/status.h"
+#include "absl/status/status_matchers.h"
 #include "tink/aead.h"
 #include "tink/aead/cord_aead.h"
 #include "tink/aead/internal/cord_aes_gcm_boringssl.h"
@@ -42,9 +43,9 @@ namespace tink {
 
 namespace {
 
+using ::absl_testing::IsOk;
+using ::absl_testing::StatusIs;
 using ::crypto::tink::internal::CordAesGcmBoringSsl;
-using ::crypto::tink::test::IsOk;
-using ::crypto::tink::test::StatusIs;
 using ::crypto::tink::util::IstreamInputStream;
 using AesGcmKeyProto = ::google::crypto::tink::AesGcmKey;
 using ::google::crypto::tink::AesGcmKeyFormat;

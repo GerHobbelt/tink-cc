@@ -20,6 +20,7 @@
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "absl/status/status_matchers.h"
 #include "tink/subtle/common_enums.h"
 #include "tink/util/test_matchers.h"
 
@@ -30,10 +31,10 @@ namespace wycheproof_testing {
 
 namespace {
 
+using ::absl_testing::IsOk;
+using ::absl_testing::StatusIs;
 using ::crypto::tink::subtle::EllipticCurveType;
 using ::crypto::tink::subtle::HashType;
-using ::crypto::tink::test::IsOk;
-using ::crypto::tink::test::StatusIs;
 using ::testing::Eq;
 
 TEST(WycheproofUtilTest, GetBytesFromHexValue) {

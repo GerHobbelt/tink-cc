@@ -24,6 +24,7 @@
 #include "gtest/gtest.h"
 #include "absl/log/absl_check.h"
 #include "absl/status/status.h"
+#include "absl/status/status_matchers.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
@@ -63,12 +64,12 @@ namespace tink {
 namespace internal {
 namespace {
 
+using ::absl_testing::IsOk;
+using ::absl_testing::StatusIs;
 using ::crypto::tink::internal::proto_testing::EqualsProtoKeySerialization;
 using ::crypto::tink::internal::proto_testing::FieldWithNumber;
 using ::crypto::tink::internal::proto_testing::SerializeMessage;
 using ::crypto::tink::test::HexDecodeOrDie;
-using ::crypto::tink::test::IsOk;
-using ::crypto::tink::test::StatusIs;
 using ::crypto::tink::util::SecretDataFromStringView;
 using ::google::crypto::tink::HpkeAead;
 using ::google::crypto::tink::HpkeKdf;
@@ -317,7 +318,7 @@ struct TestCase {
   HpkeKem kem;
   HpkeKdf kdf;
   HpkeAead aead;
-  absl::optional<int> id;
+  std::optional<int> id;
   std::string output_prefix;
   subtle::EllipticCurveType curve;
 };

@@ -22,6 +22,7 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/status/status.h"
+#include "absl/status/status_matchers.h"
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
 #include "tink/jwt/jwt_hmac_parameters.h"
@@ -34,8 +35,8 @@ namespace crypto {
 namespace tink {
 namespace {
 
-using ::crypto::tink::test::IsOk;
-using ::crypto::tink::test::StatusIs;
+using ::absl_testing::IsOk;
+using ::absl_testing::StatusIs;
 using ::testing::Eq;
 using ::testing::HasSubstr;
 using ::testing::TestWithParam;
@@ -45,9 +46,9 @@ struct TestCase {
   int key_size_in_bytes;
   JwtHmacParameters::KidStrategy kid_strategy;
   JwtHmacParameters::Algorithm algorithm;
-  absl::optional<std::string> custom_kid;
-  absl::optional<int> id_requirement;
-  absl::optional<std::string> expected_kid;
+  std::optional<std::string> custom_kid;
+  std::optional<int> id_requirement;
+  std::optional<std::string> expected_kid;
 };
 
 using JwtHmacKeyTest = TestWithParam<TestCase>;

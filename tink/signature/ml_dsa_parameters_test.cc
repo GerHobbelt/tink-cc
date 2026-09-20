@@ -22,6 +22,7 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/status/status.h"
+#include "absl/status/status_matchers.h"
 #include "absl/status/statusor.h"
 #include "tink/parameters.h"
 #include "tink/util/test_matchers.h"
@@ -30,8 +31,8 @@ namespace crypto {
 namespace tink {
 namespace {
 
-using ::crypto::tink::test::IsOk;
-using ::crypto::tink::test::StatusIs;
+using ::absl_testing::IsOk;
+using ::absl_testing::StatusIs;
 using ::testing::Eq;
 using ::testing::TestWithParam;
 using ::testing::Values;
@@ -48,7 +49,13 @@ using MlDsaParametersTest = TestWithParam<VariantTestCase>;
 // be extended if other variants (e.g. no-prefix) are added in the future.
 INSTANTIATE_TEST_SUITE_P(
     MlDsaParametersTestSuite, MlDsaParametersTest,
-    Values(VariantTestCase{MlDsaParameters::Instance::kMlDsa65,
+    Values(VariantTestCase{MlDsaParameters::Instance::kMlDsa44,
+                           MlDsaParameters::Variant::kNoPrefix,
+                           /*has_id_requirement=*/false},
+           VariantTestCase{MlDsaParameters::Instance::kMlDsa44,
+                           MlDsaParameters::Variant::kTink,
+                           /*has_id_requirement=*/true},
+           VariantTestCase{MlDsaParameters::Instance::kMlDsa65,
                            MlDsaParameters::Variant::kNoPrefix,
                            /*has_id_requirement=*/false},
            VariantTestCase{MlDsaParameters::Instance::kMlDsa65,

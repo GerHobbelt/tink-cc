@@ -23,6 +23,7 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/status/status.h"
+#include "absl/status/status_matchers.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
@@ -46,10 +47,10 @@ namespace tink {
 namespace internal {
 namespace {
 
+using ::absl_testing::IsOk;
+using ::absl_testing::StatusIs;
 using ::crypto::tink::internal::KeyMaterialTypeTP;
 using ::crypto::tink::internal::OutputPrefixTypeTP;
-using ::crypto::tink::test::IsOk;
-using ::crypto::tink::test::StatusIs;
 using ::google::crypto::tink::KmsAeadKey;
 using ::google::crypto::tink::KmsAeadKeyFormat;
 using ::testing::Eq;
@@ -67,7 +68,7 @@ const absl::string_view kKeyUri = "some://arbitrary.key.uri?q=123#xyz";
 struct TestCase {
   LegacyKmsAeadParameters::Variant variant;
   OutputPrefixTypeTP output_prefix_type;
-  absl::optional<int> id;
+  std::optional<int> id;
   std::string output_prefix;
 };
 

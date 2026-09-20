@@ -25,6 +25,7 @@
 #include "gtest/gtest.h"
 #include "absl/memory/memory.h"
 #include "absl/status/status.h"
+#include "absl/status/status_matchers.h"
 #include "tink/input_stream.h"
 #include "tink/prf/prf_set.h"
 #include "tink/subtle/common_enums.h"
@@ -44,8 +45,8 @@ namespace tink {
 
 namespace {
 
-using ::crypto::tink::test::IsOk;
-using ::crypto::tink::test::StatusIs;
+using ::absl_testing::IsOk;
+using ::absl_testing::StatusIs;
 using HkdfPrfKeyProto = ::google::crypto::tink::HkdfPrfKey;
 using ::google::crypto::tink::HkdfPrfKeyFormat;
 using ::testing::Eq;

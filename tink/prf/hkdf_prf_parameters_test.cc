@@ -23,6 +23,7 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/status/status.h"
+#include "absl/status/status_matchers.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "tink/parameters.h"
@@ -34,8 +35,8 @@ namespace crypto {
 namespace tink {
 namespace {
 
-using ::crypto::tink::test::IsOk;
-using ::crypto::tink::test::StatusIs;
+using ::absl_testing::IsOk;
+using ::absl_testing::StatusIs;
 using ::testing::Eq;
 using ::testing::HasSubstr;
 using ::testing::IsFalse;
@@ -150,7 +151,7 @@ TEST(HkdfPrfParametersTest, CopyAssignment) {
 }
 
 TEST(HkdfPrfParametersTest, MoveConstructor) {
-  util::StatusOr<HkdfPrfParameters> parameters = HkdfPrfParameters::Create(
+  absl::StatusOr<HkdfPrfParameters> parameters = HkdfPrfParameters::Create(
       /*key_size_in_bytes=*/16, HkdfPrfParameters::HashType::kSha256,
       /*salt=*/absl::nullopt);
   ASSERT_THAT(parameters, IsOk());
@@ -162,12 +163,12 @@ TEST(HkdfPrfParametersTest, MoveConstructor) {
 }
 
 TEST(HkdfPrfParametersTest, MoveAssignment) {
-  util::StatusOr<HkdfPrfParameters> parameters = HkdfPrfParameters::Create(
+  absl::StatusOr<HkdfPrfParameters> parameters = HkdfPrfParameters::Create(
       /*key_size_in_bytes=*/16, HkdfPrfParameters::HashType::kSha256,
       /*salt=*/absl::nullopt);
   ASSERT_THAT(parameters, IsOk());
 
-  util::StatusOr<HkdfPrfParameters> moved = HkdfPrfParameters::Create(
+  absl::StatusOr<HkdfPrfParameters> moved = HkdfPrfParameters::Create(
       /*key_size_in_bytes=*/32, HkdfPrfParameters::HashType::kSha512,
       /*salt=*/test::HexDecodeOrDie(kSalt));
   ASSERT_THAT(moved, IsOk());

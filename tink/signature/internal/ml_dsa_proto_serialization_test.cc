@@ -24,6 +24,7 @@
 #include "absl/log/absl_check.h"
 #include "absl/log/absl_log.h"
 #include "absl/status/status.h"
+#include "absl/status/status_matchers.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
@@ -49,10 +50,10 @@ namespace crypto {
 namespace tink {
 namespace {
 
+using ::absl_testing::IsOk;
+using ::absl_testing::StatusIs;
 using ::crypto::tink::internal::KeyMaterialTypeTP;
 using ::crypto::tink::internal::OutputPrefixTypeTP;
-using ::crypto::tink::test::IsOk;
-using ::crypto::tink::test::StatusIs;
 using ::google::crypto::tink::MlDsaInstance;
 using ::google::crypto::tink::MlDsaKeyFormat;
 using ::google::crypto::tink::MlDsaParams;
@@ -85,7 +86,10 @@ class MlDsaProtoSerializationTest : public TestWithParam<TestCase> {
 
 INSTANTIATE_TEST_SUITE_P(
     MlDsaProtoSerializationTestSuite, MlDsaProtoSerializationTest,
-    Values(TestCase{MlDsaParameters::Instance::kMlDsa65,
+    Values(TestCase{MlDsaParameters::Instance::kMlDsa44,
+                    MlDsaParameters::Variant::kTink, OutputPrefixTypeTP::kTink,
+                    0x02030400, std::string("\x01\x02\x03\x04\x00", 5)},
+           TestCase{MlDsaParameters::Instance::kMlDsa65,
                     MlDsaParameters::Variant::kTink, OutputPrefixTypeTP::kTink,
                     0x02030400, std::string("\x01\x02\x03\x04\x00", 5)},
            TestCase{MlDsaParameters::Instance::kMlDsa65,
@@ -120,6 +124,8 @@ MlDsaPrivateKey GenerateMlDsaPrivateKey(MlDsaParameters::Instance instance,
 
 MlDsaInstance ToProtoInstance(MlDsaParameters::Instance instance) {
   switch (instance) {
+    case MlDsaParameters::Instance::kMlDsa44:
+      return MlDsaInstance::ML_DSA_44;
     case MlDsaParameters::Instance::kMlDsa65:
       return MlDsaInstance::ML_DSA_65;
     case MlDsaParameters::Instance::kMlDsa87:
@@ -273,7 +279,7 @@ TEST_F(MlDsaProtoSerializationTest, ParseParametersWithInvalidInstanceFails) {
     // Out of range instance - too large.
     MlDsaKeyFormat key_format_proto;
     MlDsaParams& params = *key_format_proto.mutable_params();
-    params.set_ml_dsa_instance(static_cast<MlDsaInstance>(3));
+    params.set_ml_dsa_instance(static_cast<MlDsaInstance>(4));
 
     absl::StatusOr<internal::ProtoParametersSerialization> serialization =
         internal::ProtoParametersSerialization::Create(

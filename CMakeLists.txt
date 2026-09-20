@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(Tink VERSION 2.6.0 LANGUAGES CXX)
+project(Tink VERSION 2.7.0 LANGUAGES CXX)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
@@ -23,6 +23,21 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
   set(ABSL_MSVC_STATIC_RUNTIME ON)
   set(protobuf_MSVC_STATIC_RUNTIME ON)
   set(CMAKE_MSVC_RUNTIME_LIBRARY MultiThreaded$<$<CONFIG:Debug>:Debug>)
+endif()
+
+if (TINK_BUILD_TESTS)
+  # We do not want to test Abseil
+  set(ABSL_BUILD_TESTING OFF CACHE BOOL "" FORCE)
+  # We do build the Abseil test helpers though -- we use them.
+  set(ABSL_BUILD_TEST_HELPERS ON CACHE BOOL "" FORCE)
+  # Tink needs Googletest, so Abseil is never responsible for installing it.
+  set(ABSL_USE_EXTERNAL_GOOGLETEST ON CACHE BOOL "" FORCE)
+  # If Tink uses an installed GTest, Abseil should use that one too.
+  if (TINK_USE_INSTALLED_GOOGLETEST)
+    set(ABSL_FIND_GOOGLETEST ON CACHE BOOL "" FORCE)
+  else()
+    set(ABSL_FIND_GOOGLETEST OFF CACHE BOOL "" FORCE)
+  endif()
 endif()
 
 include(CPack)

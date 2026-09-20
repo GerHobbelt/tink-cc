@@ -22,6 +22,7 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/status/status.h"
+#include "absl/status/status_matchers.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
@@ -57,10 +58,10 @@ namespace crypto {
 namespace tink {
 namespace {
 
+using ::absl_testing::IsOk;
+using ::absl_testing::StatusIs;
 using ::crypto::tink::internal::KeyMaterialTypeTP;
 using ::crypto::tink::internal::OutputPrefixTypeTP;
-using ::crypto::tink::test::IsOk;
-using ::crypto::tink::test::StatusIs;
 using ::google::crypto::tink::EcdsaKeyFormat;
 using ::google::crypto::tink::EcdsaParams;
 using ::google::crypto::tink::EcdsaSignatureEncoding;
@@ -89,7 +90,7 @@ struct TestCase {
   HashType hash = HashType::SHA256;
   EcdsaSignatureEncoding encoding = EcdsaSignatureEncoding::DER;
   subtle::EllipticCurveType subtle_curve = subtle::EllipticCurveType::NIST_P256;
-  absl::optional<int> id;
+  std::optional<int> id;
   std::string output_prefix;
 };
 

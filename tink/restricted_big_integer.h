@@ -17,6 +17,8 @@
 #ifndef TINK_RESTRICTED_BIG_INTEGER_H_
 #define TINK_RESTRICTED_BIG_INTEGER_H_
 
+// NOLINTBEGIN(whitespace/line_length) (Formatted when commented in)
+// TINK-PENDING-REMOVAL-IN-3.0.0-START
 #include <cstddef>
 #include <cstdint>
 
@@ -32,25 +34,28 @@ namespace tink {
 
 // Stores a RestrictedBigInteger value as a big endian encoded string, which
 // requires secret key access. Removes leading zeros prior to creation.
-// This class is particularly useful for working with certain primitives which
-// use secret big integers types for the key material.
+// This class is particularly useful for working with certain primitives
+// which use secret big integers types for the key material.
 class RestrictedBigInteger {
  public:
   RestrictedBigInteger() = default;
 
   // Copyable and movable.
   RestrictedBigInteger(const RestrictedBigInteger& other) = default;
-  RestrictedBigInteger& operator=(const RestrictedBigInteger& other) = default;
+  RestrictedBigInteger& operator=(const RestrictedBigInteger& other) =
+  default;
   RestrictedBigInteger(RestrictedBigInteger&& other) = default;
   RestrictedBigInteger& operator=(RestrictedBigInteger&& other) = default;
 
-  // Creates a new RestrictedBigInteger object that wraps `secret_big_integer`,
+  // Creates a new RestrictedBigInteger object that wraps
+  // `secret_big_integer`,
   // after removing the leading zeros. Note that creating a `token` requires
   // access to InsecureSecretKeyAccess::Get().
   explicit RestrictedBigInteger(absl::string_view secret_big_integer,
                                 SecretKeyAccessToken token);
 
-  // Creates a new RestrictedBigInteger object that wraps `secret_big_integer`,
+  // Creates a new RestrictedBigInteger object that wraps
+  // `secret_big_integer`,
   // after removing the leading zeros. Note that creating a `token` requires
   // access to InsecureSecretKeyAccess::Get().
   explicit RestrictedBigInteger(SecretData secret_big_integer,
@@ -66,7 +71,8 @@ class RestrictedBigInteger {
     return secret_;
   }
 
-  // Returns the integer as a RestrictedData encoded on `encoding_size` bytes.
+  // Returns the integer as a RestrictedData encoded on `encoding_size`
+  // bytes.
   // If the encoding is smaller than the encoding size, it is padded with
   // leading zeros. If the encoding is larger than the encoding size,
   // returns an error.
@@ -86,5 +92,8 @@ class RestrictedBigInteger {
 
 }  // namespace tink
 }  // namespace crypto
+
+// TINK-PENDING-REMOVAL-IN-3.0.0-END
+// NOLINTEND(whitespace/line_length)
 
 #endif  // TINK_RESTRICTED_BIG_INTEGER_H_

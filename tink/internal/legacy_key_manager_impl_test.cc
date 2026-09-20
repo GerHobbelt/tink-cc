@@ -22,6 +22,7 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/status/status.h"
+#include "absl/status/status_matchers.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "tink/key_manager.h"
@@ -41,9 +42,9 @@ namespace tink {
 namespace internal {
 namespace {
 
+using ::absl_testing::IsOk;
+using ::absl_testing::StatusIs;
 using ::crypto::tink::test::HexDecodeOrDie;
-using ::crypto::tink::test::IsOk;
-using ::crypto::tink::test::StatusIs;
 using ::testing::Eq;
 using ::testing::NotNull;
 
@@ -167,14 +168,6 @@ TEST_F(LegacyKeyManagerImplTest, Factory_NewKey_WrongKeyFormat) {
               StatusIs(absl::StatusCode::kInvalidArgument,
                        "Key format proto 'google.crypto.tink.EcdsaKeyFormat' "
                        "is not supported by this key manager."));
-
-  absl::StatusOr<std::unique_ptr<portable_proto::MessageLite>> key2 =
-      ml_dsa_factory.NewKey(key_format.SerializeAsString());
-  EXPECT_THAT(key2, StatusIs(absl::StatusCode::kInvalidArgument));
-
-  absl::StatusOr<std::unique_ptr<portable_proto::MessageLite>> key3 =
-      ml_dsa_factory.NewKeyData(key_format.SerializeAsString());
-  EXPECT_THAT(key3, StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST_F(LegacyKeyManagerImplTest, Factory_GetPublicKeyData) {

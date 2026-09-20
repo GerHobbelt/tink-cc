@@ -34,6 +34,7 @@
 #include "absl/types/optional.h"
 #include "tink/internal/call_with_core_dump_protection.h"
 #include "tink/internal/keyset_handle_builder_entry.h"
+#include "tink/internal/legacy_annotations.h"
 #include "tink/key.h"
 #include "tink/key_gen_configuration.h"
 #include "tink/key_status.h"
@@ -73,6 +74,7 @@ KeysetHandleBuilder::KeysetHandleBuilder(const KeysetHandle& handle) {
     KeysetHandleBuilder::Entry builder_entry =
         KeysetHandleBuilder::Entry::CreateFromKey(
             std::move(entry.key_), entry.GetStatus(), entry.IsPrimary());
+    builder_entry.SetFixedId(entry.GetId());
     AddEntry(std::move(builder_entry));
   }
 }
@@ -161,8 +163,9 @@ absl::Status KeysetHandleBuilder::CheckIdAssignments() {
 KeysetHandleBuilder& KeysetHandleBuilder::SetMonitoringAnnotations(
     const absl::flat_hash_map<std::string, std::string>&
         monitoring_annotations) {
-  monitoring_annotations_ = monitoring_annotations;
-  return *this;
+  return AddAnnotations(
+      absl::make_unique<crypto::tink::internal::LegacyAnnotations>(
+          monitoring_annotations));
 }
 
 absl::StatusOr<KeysetHandle> KeysetHandleBuilder::Build(
@@ -171,6 +174,10 @@ absl::StatusOr<KeysetHandle> KeysetHandleBuilder::Build(
     return absl::Status(absl::StatusCode::kFailedPrecondition,
                         "KeysetHandleBuilder::Build may only be called once");
   }
+  if (!annotations_status_.ok()) {
+    return annotations_status_;
+  }
+
   build_called_ = true;
   util::SecretProto<Keyset> keyset;
   absl::optional<int> primary_id = absl::nullopt;
@@ -218,7 +225,7 @@ absl::StatusOr<KeysetHandle> KeysetHandleBuilder::Build(
     return entries.status();
   }
   return KeysetHandle(std::move(keyset), *std::move(entries),
-                      monitoring_annotations_);
+                      std::move(annotations_));
 }
 
 }  // namespace tink

@@ -23,6 +23,7 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/status/status.h"
+#include "absl/status/status_matchers.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
@@ -48,12 +49,12 @@ namespace tink {
 namespace internal {
 namespace {
 
+using ::absl_testing::IsOk;
+using ::absl_testing::StatusIs;
 using ::crypto::tink::InsecureSecretKeyAccess;
 using ::crypto::tink::internal::KeyMaterialTypeTP;
 using ::crypto::tink::internal::OutputPrefixTypeTP;
 using ::crypto::tink::subtle::Random;
-using ::crypto::tink::test::IsOk;
-using ::crypto::tink::test::StatusIs;
 using ::google::crypto::tink::XAesGcmKeyFormat;
 using ::testing::Eq;
 using ::testing::HasSubstr;
@@ -66,7 +67,7 @@ struct XAesGcmTestCase {
   XAesGcmParameters::Variant variant;
   int salt_size;
   OutputPrefixTypeTP output_prefix_type;
-  absl::optional<int> id;
+  std::optional<int> id;
   std::string output_prefix;
 };
 
