@@ -122,14 +122,17 @@ tink_cc_library(
 tink_cc_library(
   NAME aes_eax_key_manager
   SRCS
+    aes_eax_key_manager.cc
     aes_eax_key_manager.h
   DEPS
     absl::memory
     absl::status
+    absl::statusor
     absl::strings
     tink::core::aead
     tink::core::key_type_manager
     tink::core::template_util
+    tink::core::key_manager
     tink::subtle::aes_eax_boringssl
     tink::subtle::random
     tink::util::constants
@@ -173,9 +176,11 @@ tink_cc_library(
 tink_cc_library(
   NAME aes_gcm_siv_key_manager
   SRCS
+    aes_gcm_siv_key_manager.cc
     aes_gcm_siv_key_manager.h
   DEPS
     absl::memory
+    absl::statusor
     absl::strings
     tink::core::aead
     tink::core::key_type_manager
@@ -229,6 +234,7 @@ tink_cc_library(
 tink_cc_library(
   NAME xchacha20_poly1305_key_manager
   SRCS
+    xchacha20_poly1305_key_manager.cc
     xchacha20_poly1305_key_manager.h
   DEPS
     absl::memory
@@ -1235,8 +1241,8 @@ tink_cc_test(
     tink::core::key
     tink::core::partial_key_access
     tink::core::restricted_data
-    tink::util::statusor
-    tink::util::test_matchers
+    tink::aead::internal::testing::aead_test_vector
+    tink::aead::internal::testing::aes_gcm_test_vectors
 )
 
 tink_cc_test(
@@ -1355,8 +1361,8 @@ tink_cc_test(
     tink::core::key
     tink::core::partial_key_access
     tink::core::restricted_data
-    tink::util::statusor
-    tink::util::test_matchers
+    tink::aead::internal::testing::aead_test_vector
+    tink::aead::internal::testing::aes_eax_test_vectors
 )
 
 tink_cc_test(
@@ -1537,8 +1543,8 @@ tink_cc_test(
     tink::core::key
     tink::core::partial_key_access
     tink::core::restricted_data
-    tink::util::statusor
-    tink::util::test_matchers
+    tink::aead::internal::testing::aead_test_vector
+    tink::aead::internal::testing::aes_ctr_hmac_aead_test_vectors
 )
 
 tink_cc_test(

@@ -27,7 +27,6 @@
 #include "tink/core/template_util.h"
 #include "tink/input_stream.h"
 #include "tink/streaming_aead.h"
-#include "tink/subtle/aes_ctr_hmac_streaming.h"
 #include "tink/util/constants.h"
 #include "tink/util/enums.h"
 #include "tink/util/errors.h"
@@ -47,26 +46,9 @@ class AesCtrHmacStreamingKeyManager
                             google::crypto::tink::AesCtrHmacStreamingKeyFormat,
                             List<StreamingAead>> {
  public:
-  class StreamingAeadFactory
-      : public PrimitiveFactory<StreamingAead> {
+  class StreamingAeadFactory : public PrimitiveFactory<StreamingAead> {
     absl::StatusOr<std::unique_ptr<StreamingAead>> Create(
-        const google::crypto::tink::AesCtrHmacStreamingKey& key)
-        const override {
-      subtle::AesCtrHmacStreaming::Params params;
-      params.ikm = util::SecretDataFromStringView(key.key_value());
-      params.hkdf_algo = crypto::tink::util::Enums::ProtoToSubtle(
-          key.params().hkdf_hash_type());
-      params.key_size = key.params().derived_key_size();
-      params.ciphertext_segment_size = key.params().ciphertext_segment_size();
-      params.ciphertext_offset = 0;
-      params.tag_algo = crypto::tink::util::Enums::ProtoToSubtle(
-          key.params().hmac_params().hash());
-      params.tag_size = key.params().hmac_params().tag_size();
-      auto streaming_result =
-          crypto::tink::subtle::AesCtrHmacStreaming::New(params);
-      if (!streaming_result.ok()) return streaming_result.status();
-      return {std::move(streaming_result.value())};
-    }
+        const google::crypto::tink::AesCtrHmacStreamingKey& key) const override;
   };
 
   AesCtrHmacStreamingKeyManager()

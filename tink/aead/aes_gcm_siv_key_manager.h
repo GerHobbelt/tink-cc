@@ -26,7 +26,6 @@
 #include "tink/aead.h"
 #include "tink/core/key_type_manager.h"
 #include "tink/core/template_util.h"
-#include "tink/subtle/aes_gcm_siv_boringssl.h"
 #include "tink/subtle/random.h"
 #include "tink/util/constants.h"
 #include "tink/util/secret_data.h"
@@ -46,10 +45,7 @@ class AesGcmSivKeyManager
  public:
   class AeadFactory : public PrimitiveFactory<Aead> {
     absl::StatusOr<std::unique_ptr<Aead>> Create(
-        const google::crypto::tink::AesGcmSivKey& key) const override {
-      return subtle::AesGcmSivBoringSsl::New(
-          util::SecretDataFromStringView(key.key_value()));
-    }
+        const google::crypto::tink::AesGcmSivKey& key) const;
   };
 
   AesGcmSivKeyManager() : KeyTypeManager(std::make_unique<AeadFactory>()) {}

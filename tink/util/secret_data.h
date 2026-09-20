@@ -27,7 +27,6 @@
 #include "absl/base/macros.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
-#include "openssl/crypto.h"
 #include "tink/internal/call_with_core_dump_protection.h"
 #include "tink/internal/safe_stringops.h"
 #include "tink/internal/sanitizing_allocator.h"
@@ -50,7 +49,9 @@ struct SanitizingDeleter {
 
 }  // namespace internal
 
-using SecretData = ::crypto::tink::SecretData;
+using SecretData [[deprecated(
+    "Use ::crypto::tink::SecretData instead")]] ABSL_REFACTOR_INLINE =
+    ::crypto::tink::SecretData;
 
 // Constant-time comparison for SecretData
 // SecretDataEquals should be used instead of regular operator== in most cases.

@@ -27,7 +27,6 @@
 #include "tink/core/template_util.h"
 #include "tink/deterministic_aead.h"
 #include "tink/input_stream.h"
-#include "tink/subtle/aes_siv_boringssl.h"
 #include "tink/subtle/random.h"
 #include "tink/util/constants.h"
 #include "tink/util/errors.h"
@@ -50,14 +49,12 @@ class AesSivKeyManager
  public:
   class DeterministicAeadFactory : public PrimitiveFactory<DeterministicAead> {
     absl::StatusOr<std::unique_ptr<DeterministicAead>> Create(
-        const google::crypto::tink::AesSivKey& key) const override {
-      return subtle::AesSivBoringSsl::New(
-          util::SecretDataFromStringView(key.key_value()));
-    }
+        const google::crypto::tink::AesSivKey& key) const override;
   };
 
   AesSivKeyManager()
-      : KeyTypeManager(std::make_unique<DeterministicAeadFactory>()) {}
+      : KeyTypeManager(
+            std::make_unique<AesSivKeyManager::DeterministicAeadFactory>()) {}
 
   uint32_t get_version() const override { return 0; }
 

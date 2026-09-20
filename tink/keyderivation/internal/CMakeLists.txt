@@ -180,7 +180,11 @@ tink_cc_library(
     tink::signature::ed25519_public_key
     tink::signature::ml_dsa_parameters
     tink::signature::ml_dsa_private_key
+    tink::signature::slh_dsa_parameters
+    tink::signature::slh_dsa_private_key
     tink::signature::internal::ml_dsa_proto_serialization
+    tink::signature::internal::slh_dsa_parameter_set
+    tink::signature::internal::slh_dsa_proto_serialization
     tink::streamingaead::aes_ctr_hmac_streaming_key
     tink::streamingaead::aes_ctr_hmac_streaming_parameters
     tink::streamingaead::aes_ctr_hmac_streaming_proto_serialization
@@ -450,4 +454,29 @@ tink_cc_test(
     tink::core::key_gen_configuration
     tink::internal::key_gen_configuration_impl
     tink::internal::key_type_info_store
+)
+
+tink_cc_library(
+  NAME prf_based_key_derivation_test_vectors
+  SRCS
+    prf_based_key_derivation_test_vectors.cc
+    prf_based_key_derivation_test_vectors.h
+  DEPS
+    absl::no_destructor
+    absl::absl_check
+    absl::status_macros
+    absl::statusor
+    tink::core::insecure_secret_key_access_testonly
+    tink::core::partial_key_access
+    tink::core::partial_key_access_token
+    tink::core::restricted_data
+    tink::core::secret_key_access_token
+    tink::aead::xchacha20_poly1305_parameters
+    tink::keyderivation::prf_based_key_derivation_key
+    tink::keyderivation::prf_based_key_derivation_parameters
+    tink::prf::aes_cmac_prf_key
+    tink::prf::hkdf_prf_key
+    tink::prf::hkdf_prf_parameters
+    tink::util::test_util
+  TESTONLY
 )

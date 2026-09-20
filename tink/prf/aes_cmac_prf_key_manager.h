@@ -31,9 +31,7 @@
 #include "tink/core/template_util.h"
 #include "tink/input_stream.h"
 #include "tink/key_manager.h"
-#include "tink/mac/internal/stateful_cmac_boringssl.h"
 #include "tink/prf/prf_set.h"
-#include "tink/subtle/prf/prf_set_util.h"
 #include "tink/subtle/random.h"
 #include "tink/util/constants.h"
 #include "tink/util/errors.h"
@@ -56,12 +54,7 @@ class AesCmacPrfKeyManager
  public:
   class PrfSetFactory : public PrimitiveFactory<Prf> {
     absl::StatusOr<std::unique_ptr<Prf>> Create(
-        const google::crypto::tink::AesCmacPrfKey& key) const override {
-      return subtle::CreatePrfFromStatefulMacFactory(
-          std::make_unique<internal::StatefulCmacBoringSslFactory>(
-              AesCmacPrfKeyManager::MaxOutputLength(),
-              util::SecretDataFromStringView(key.key_value())));
-    }
+        const google::crypto::tink::AesCmacPrfKey& key) const override;
   };
 
   AesCmacPrfKeyManager()

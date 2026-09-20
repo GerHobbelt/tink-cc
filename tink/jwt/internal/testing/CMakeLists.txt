@@ -11,3 +11,48 @@ tink_cc_library(
     absl::strings
   TESTONLY
 )
+
+tink_cc_library(
+  NAME jwt_hmac_test_vectors
+  SRCS
+    jwt_hmac_test_vectors.cc
+    jwt_hmac_test_vectors.h
+  DEPS
+    absl::core_headers
+    absl::no_destructor
+    absl::flat_hash_map
+    absl::absl_check
+    absl::strings
+  TESTONLY
+)
+
+tink_cc_library(
+  NAME jwt_ecdsa_test_vectors
+  SRCS
+    jwt_ecdsa_test_vectors.cc
+    jwt_ecdsa_test_vectors.h
+  DEPS
+    absl::no_destructor
+    absl::flat_hash_map
+    absl::absl_check
+    absl::string_view
+    tink::subtle::common_enums
+    tink::util::test_util
+  TESTONLY
+)
+
+tink_cc_library(
+  NAME jwt_ml_dsa_test_vectors
+  SRCS
+    jwt_ml_dsa_test_vectors.cc
+    jwt_ml_dsa_test_vectors.h
+  DEPS
+    absl::no_destructor
+    absl::flat_hash_map
+    absl::absl_check
+    absl::string_view
+    tink::jwt::jwt_ml_dsa_parameters
+    tink::util::test_util
+  TESTONLY
+)
+

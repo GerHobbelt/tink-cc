@@ -5,11 +5,13 @@ add_subdirectory(internal)
 tink_cc_library(
   NAME hkdf_prf_key_manager
   SRCS
+    hkdf_prf_key_manager.cc
     hkdf_prf_key_manager.h
   DEPS
     tink::prf::prf_set
     absl::memory
     absl::status
+    absl::statusor
     absl::strings
     tink::core::key_type_manager
     tink::core::template_util
@@ -101,11 +103,13 @@ tink_cc_library(
 tink_cc_library(
   NAME aes_cmac_prf_key_manager
   SRCS
+    aes_cmac_prf_key_manager.cc
     aes_cmac_prf_key_manager.h
   DEPS
     tink::prf::prf_set
     absl::memory
     absl::status
+    absl::statusor
     absl::strings
     tink::core::key_type_manager
     tink::core::template_util
@@ -141,8 +145,6 @@ tink_cc_library(
     tink::core::key_type_manager
     tink::core::template_util
     tink::core::input_stream
-    tink::core::key_manager
-    tink::internal::fips_utils
     tink::mac::internal::stateful_hmac_boringssl
     tink::subtle::common_enums
     tink::subtle::random
@@ -541,12 +543,10 @@ tink_cc_test(
     gmock
     absl::status
     absl::status_matchers
-    absl::optional
     tink::core::key
     tink::core::partial_key_access
     tink::core::restricted_data
-    tink::util::statusor
-    tink::util::test_matchers
+    tink::prf::internal::aes_cmac_prf_test_vectors
 )
 
 tink_cc_test(
@@ -602,12 +602,10 @@ tink_cc_test(
     gmock
     absl::status
     absl::status_matchers
-    absl::optional
     tink::core::key
     tink::core::partial_key_access
     tink::core::restricted_data
-    tink::util::statusor
-    tink::util::test_matchers
+    tink::prf::internal::hmac_prf_test_vectors
 )
 
 tink_cc_test(
@@ -667,13 +665,10 @@ tink_cc_test(
     gmock
     absl::status
     absl::status_matchers
-    absl::optional
     tink::core::key
     tink::core::partial_key_access
     tink::core::restricted_data
-    tink::util::statusor
-    tink::util::test_matchers
-    tink::util::test_util
+    tink::prf::internal::hkdf_prf_test_vectors
 )
 
 tink_cc_test(

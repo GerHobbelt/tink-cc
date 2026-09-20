@@ -31,12 +31,8 @@
 #include "tink/core/key_type_manager.h"
 #include "tink/core/template_util.h"
 #include "tink/input_stream.h"
-#include "tink/internal/fips_utils.h"
-#include "tink/key_manager.h"
-#include "tink/mac/internal/stateful_hmac_boringssl.h"
 #include "tink/prf/prf_set.h"
 #include "tink/subtle/common_enums.h"
-#include "tink/subtle/prf/prf_set_util.h"
 #include "tink/subtle/random.h"
 #include "tink/util/constants.h"
 #include "tink/util/enums.h"
@@ -58,21 +54,7 @@ class HmacPrfKeyManager
  public:
   class PrfFactory : public PrimitiveFactory<Prf> {
     absl::StatusOr<std::unique_ptr<Prf>> Create(
-        const google::crypto::tink::HmacPrfKey& key) const override {
-      crypto::tink::subtle::HashType hash =
-          util::Enums::ProtoToSubtle(key.params().hash());
-      absl::optional<uint64_t> max_output_length = MaxOutputLength(hash);
-      if (!max_output_length.has_value()) {
-        return absl::Status(
-            absl::StatusCode::kInvalidArgument,
-            absl::StrCat("Unknown hash when constructing HMAC PRF ",
-                         HashType_Name(key.params().hash())));
-      }
-      return subtle::CreatePrfFromStatefulMacFactory(
-          std::make_unique<internal::StatefulHmacBoringSslFactory>(
-              hash, *max_output_length,
-              util::SecretDataFromStringView(key.key_value())));
-    }
+        const google::crypto::tink::HmacPrfKey& key) const override;
   };
 
   HmacPrfKeyManager()
