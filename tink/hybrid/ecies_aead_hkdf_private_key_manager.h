@@ -48,13 +48,11 @@ class EciesAeadHkdfPrivateKeyManager
   class HybridDecryptFactory : public PrimitiveFactory<HybridDecrypt> {
     absl::StatusOr<std::unique_ptr<HybridDecrypt>> Create(
         const google::crypto::tink::EciesAeadHkdfPrivateKey& ecies_private_key)
-        const override {
-      return EciesAeadHkdfHybridDecrypt::New(ecies_private_key);
-    }
+        const override;
   };
 
   EciesAeadHkdfPrivateKeyManager()
-      : PrivateKeyTypeManager(absl::make_unique<HybridDecryptFactory>()) {}
+      : PrivateKeyTypeManager(std::make_unique<HybridDecryptFactory>()) {}
 
   uint32_t get_version() const override { return 0; }
 

@@ -16,7 +16,7 @@
 
 module(
     name = "tink_cc",
-    version = "2.7.0",
+    version = "2.8.0",
 )
 
 bazel_dep(name = "rules_shell", version = "0.8.0")
@@ -54,7 +54,7 @@ bazel_dep(
 )
 bazel_dep(
     name = "abseil-cpp",
-    version = "20250814.1",
+    version = "20260526.0",
 )
 
 bazel_dep(

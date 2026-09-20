@@ -4,6 +4,26 @@ add_subdirectory(internal)
 add_subdirectory(subtle)
 
 tink_cc_library(
+  NAME prehash
+  SRCS
+    prehash.cc
+    prehash.h
+  DEPS
+    absl::statusor
+    absl::strings
+)
+
+tink_cc_library(
+  NAME sign_prehash
+  SRCS
+    sign_prehash.cc
+    sign_prehash.h
+  DEPS
+    absl::statusor
+    absl::strings
+)
+
+tink_cc_library(
   NAME public_key_verify_wrapper
   SRCS
     public_key_verify_wrapper.cc
@@ -407,6 +427,7 @@ tink_cc_library(
     tink::signature::rsa_ssa_pkcs1_verify_key_manager
     tink::signature::rsa_ssa_pss_sign_key_manager
     tink::signature::rsa_ssa_pss_verify_key_manager
+    absl::core_headers
     absl::memory
     absl::status
     absl::statusor
@@ -1750,6 +1771,7 @@ tink_cc_library(
     tink::core::restricted_data
     tink::internal::call_with_core_dump_protection
     tink::internal::dfsan_forwarders
+    tink::internal::fips_utils
     tink::util::secret_data
 )
 
@@ -1773,6 +1795,7 @@ tink_cc_test(
     tink::core::key
     tink::core::partial_key_access
     tink::core::restricted_data
+    tink::internal::fips_utils
     tink::internal::secret_buffer
     tink::util::secret_data
     tink::util::test_matchers
@@ -1875,6 +1898,7 @@ tink_cc_library(
     tink::core::restricted_data
     tink::internal::call_with_core_dump_protection
     tink::internal::dfsan_forwarders
+    tink::internal::fips_utils
     tink::signature::internal::slh_dsa_parameter_set
 )
 
@@ -1896,8 +1920,8 @@ tink_cc_test(
     tink::core::key
     tink::core::partial_key_access
     tink::core::restricted_data
+    tink::internal::fips_utils
     tink::subtle::random
-    tink::util::test_matchers
   TAGS
     exclude_if_openssl
 )
