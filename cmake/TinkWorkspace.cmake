@@ -66,13 +66,27 @@ if (TINK_BUILD_TESTS)
     )
   endif()
 
-  set(BENCHMARK_ENABLE_TESTING OFF CACHE BOOL "Tink dependency override" FORCE)
+  if (TINK_USE_INSTALLED_BENCHMARK)
+    # This uses the benchmark CONFIG; if successful, this call to
+    # find_package generates the targets benchmark::benchmark and
+    # benchmark::benchmark_main.
+    find_package(benchmark CONFIG REQUIRED)
+    # Ensure non-namespaced targets are also available for compatibility.
+    if (NOT TARGET benchmark)
+      _create_interface_target(benchmark benchmark::benchmark)
+    endif()
+    if (NOT TARGET benchmark_main)
+      _create_interface_target(benchmark_main benchmark::benchmark_main)
+    endif()
+  else()
+    set(BENCHMARK_ENABLE_TESTING OFF CACHE BOOL "Tink dependency override" FORCE)
 
-  http_archive(
-      NAME benchmark
-      URL https://github.com/google/benchmark/archive/refs/tags/v1.9.5.tar.gz
-      SHA256 9631341c82bac4a288bef951f8b26b41f69021794184ece969f8473977eaa340
-    )
+    http_archive(
+        NAME benchmark
+        URL https://github.com/google/benchmark/archive/refs/tags/v1.9.5.tar.gz
+        SHA256 9631341c82bac4a288bef951f8b26b41f69021794184ece969f8473977eaa340
+      )
+  endif()
 
   http_archive(
     NAME wycheproof
@@ -90,8 +104,8 @@ endif()
 if (NOT TINK_USE_INSTALLED_ABSEIL)
   http_archive(
     NAME abseil
-    URL https://github.com/abseil/abseil-cpp/releases/download/20260107.0/abseil-cpp-20260107.0.tar.gz
-    SHA256 4c124408da902be896a2f368042729655709db5e3004ec99f57e3e14439bc1b2
+    URL https://github.com/abseil/abseil-cpp/releases/download/20250814.1/abseil-cpp-20250814.1.tar.gz
+    SHA256 1692f77d1739bacf3f94337188b78583cf09bab7e420d2dc6c5605a4f86785a1
   )
 else()
   # This is everything that needs to be done here. Abseil already defines its
