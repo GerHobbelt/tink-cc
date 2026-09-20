@@ -22,7 +22,13 @@ tink_cc_library(
     absl::no_destructor
     absl::flat_hash_map
     absl::absl_check
+    absl::statusor
     absl::strings
+    tink::core::insecure_secret_key_access
+    tink::core::partial_key_access
+    tink::core::restricted_data
+    tink::jwt::jwt_hmac_key
+    tink::jwt::jwt_hmac_parameters
   TESTONLY
 )
 
@@ -35,7 +41,16 @@ tink_cc_library(
     absl::no_destructor
     absl::flat_hash_map
     absl::absl_check
+    absl::statusor
     absl::string_view
+    tink::core::big_integer
+    tink::core::ec_point
+    tink::core::insecure_secret_key_access
+    tink::core::partial_key_access
+    tink::core::restricted_data
+    tink::jwt::jwt_ecdsa_parameters
+    tink::jwt::jwt_ecdsa_private_key
+    tink::jwt::jwt_ecdsa_public_key
     tink::subtle::common_enums
     tink::util::test_util
   TESTONLY

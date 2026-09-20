@@ -739,10 +739,11 @@ tink_cc_test(
     absl::status_matchers
     absl::statusor
     absl::string_view
-    absl::optional
+    tink::core::insecure_secret_key_access
     tink::core::key
     tink::core::partial_key_access
     tink::core::restricted_data
+    tink::jwt::internal::testing::jwt_hmac_test_vectors
 )
 
 tink_cc_test(
@@ -801,14 +802,13 @@ tink_cc_test(
     absl::status_matchers
     absl::statusor
     absl::string_view
-    absl::optional
     tink::core::big_integer
     tink::core::ec_point
     tink::core::key
     tink::core::partial_key_access
     tink::internal::ec_util
+    tink::jwt::internal::testing::jwt_ecdsa_test_vectors
     tink::subtle::common_enums
-    tink::util::test_matchers
     tink::util::test_util
 )
 
@@ -824,19 +824,14 @@ tink_cc_test(
     absl::status
     absl::status_matchers
     absl::statusor
-    absl::optional
-    crypto
     tink::core::big_integer
     tink::core::ec_point
     tink::core::insecure_secret_key_access
     tink::core::key
     tink::core::partial_key_access
-    tink::core::restricted_big_integer
     tink::core::restricted_data
-    tink::internal::ec_util
+    tink::jwt::internal::testing::jwt_ecdsa_test_vectors
     tink::subtle::common_enums
-    tink::util::secret_data
-    tink::util::test_matchers
     tink::util::test_util
 )
 
@@ -902,15 +897,16 @@ tink_cc_test(
     tink::jwt::jwt_rsa_ssa_pkcs1_parameters
     tink::jwt::jwt_rsa_ssa_pkcs1_public_key
     gmock
+    absl::no_destructor
+    absl::flat_hash_map
+    absl::absl_check
     absl::status
     absl::status_matchers
-    absl::strings
     absl::string_view
-    absl::optional
     tink::core::big_integer
     tink::core::key
     tink::core::partial_key_access
-    tink::util::test_matchers
+    tink::jwt::internal::testing::jwt_rsa_ssa_test_vectors
     tink::util::test_util
 )
 
@@ -923,6 +919,8 @@ tink_cc_test(
     tink::jwt::jwt_rsa_ssa_pkcs1_private_key
     tink::jwt::jwt_rsa_ssa_pkcs1_public_key
     gmock
+    absl::no_destructor
+    absl::flat_hash_map
     absl::absl_check
     absl::status
     absl::status_matchers
@@ -1001,16 +999,16 @@ tink_cc_test(
     tink::jwt::jwt_rsa_ssa_pss_parameters
     tink::jwt::jwt_rsa_ssa_pss_public_key
     gmock
+    absl::no_destructor
+    absl::flat_hash_map
     absl::absl_check
     absl::status
     absl::status_matchers
-    absl::strings
     absl::string_view
-    absl::optional
     tink::core::big_integer
     tink::core::key
     tink::core::partial_key_access
-    tink::util::test_matchers
+    tink::jwt::internal::testing::jwt_rsa_ssa_test_vectors
     tink::util::test_util
 )
 
@@ -1023,6 +1021,8 @@ tink_cc_test(
     tink::jwt::jwt_rsa_ssa_pss_private_key
     tink::jwt::jwt_rsa_ssa_pss_public_key
     gmock
+    absl::no_destructor
+    absl::flat_hash_map
     absl::absl_check
     absl::status
     absl::status_matchers
@@ -1132,11 +1132,10 @@ tink_cc_test(
     absl::status_matchers
     absl::statusor
     absl::string_view
-    absl::optional
     crypto
     tink::core::key
     tink::core::partial_key_access
-    tink::util::test_util
+    tink::jwt::internal::testing::jwt_ml_dsa_test_vectors
   TAGS
     exclude_if_openssl
 )
@@ -1185,7 +1184,8 @@ tink_cc_test(
     tink::core::key
     tink::core::partial_key_access
     tink::core::restricted_data
-    tink::util::test_util
+    tink::internal::fips_utils
+    tink::jwt::internal::testing::jwt_ml_dsa_test_vectors
   TAGS
     exclude_if_openssl
 )

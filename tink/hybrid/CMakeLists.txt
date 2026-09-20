@@ -478,13 +478,11 @@ tink_cc_test(
   DEPS
     tink::hybrid::ecies_aead_hkdf_private_key_manager
     tink::hybrid::ecies_aead_hkdf_public_key_manager
-    tink::hybrid::ecies_parameters
     tink::hybrid::ecies_private_key
     tink::hybrid::ecies_public_key
     tink::hybrid::hybrid_config
     tink::hybrid::hybrid_key_templates
     gmock
-    absl::memory
     absl::status
     absl::status_matchers
     absl::statusor
@@ -499,20 +497,18 @@ tink_cc_test(
     tink::core::keyset_handle
     tink::core::parameters
     tink::core::partial_key_access
-    tink::core::primitive_set
     tink::core::registry
     tink::core::restricted_data
     tink::config::global_registry
-    tink::internal::ec_util
+    tink::hybrid::internal::testing::ecies_aead_hkdf_test_vectors
     tink::internal::fips_utils
     tink::internal::mutable_serialization_registry
+    tink::internal::primitive_set
     tink::internal::proto_key_serialization
     tink::internal::proto_parameters_serialization
     tink::internal::serialization
     tink::internal::tink_proto_structs
-    tink::subtle::random
-    tink::util::secret_data
-    tink::util::test_matchers
+    tink::subtle::common_enums
     tink::util::test_util
     tink::proto::aes_gcm_cc_proto
     tink::proto::common_cc_proto
@@ -547,15 +543,12 @@ tink_cc_test(
     tink::config::tink_fips
     tink::hybrid::internal::hpke_private_key_manager
     tink::hybrid::internal::hpke_public_key_manager
-    tink::internal::ec_util
+    tink::hybrid::internal::testing::hpke_test_vectors
     tink::internal::mutable_serialization_registry
     tink::internal::proto_key_serialization
     tink::internal::proto_parameters_serialization
     tink::internal::serialization
     tink::internal::tink_proto_structs
-    tink::subtle::random
-    tink::util::secret_data
-    tink::util::test_matchers
     tink::proto::hpke_cc_proto
     tink::proto::tink_cc_proto
   TAGS
@@ -807,6 +800,7 @@ tink_cc_test(
     hpke_public_key_test.cc
   DEPS
     tink::hybrid::hpke_parameters
+    tink::hybrid::hpke_private_key
     tink::hybrid::hpke_public_key
     gmock
     absl::status
@@ -819,7 +813,6 @@ tink_cc_test(
     tink::hybrid::internal::testing::hpke_test_vectors
     tink::internal::ec_util
     tink::subtle::common_enums
-    tink::subtle::random
     tink::util::test_util
   TAGS
     exclude_if_openssl
@@ -838,7 +831,6 @@ tink_cc_test(
     absl::status_matchers
     absl::statusor
     absl::strings
-    absl::string_view
     absl::optional
     crypto
     tink::core::insecure_secret_key_access
@@ -846,11 +838,7 @@ tink_cc_test(
     tink::core::partial_key_access
     tink::core::restricted_data
     tink::hybrid::internal::testing::hpke_test_vectors
-    tink::internal::mlkem_util
     tink::internal::secret_buffer
-    tink::internal::xwing_util
-    tink::subtle::common_enums
-    tink::subtle::random
     tink::util::secret_data
     tink::util::test_util
   TAGS
@@ -879,7 +867,6 @@ tink_cc_test(
     tink::core::parameters
     tink::core::partial_key_access
     tink::core::restricted_data
-    tink::core::secret_data
     tink::hybrid::internal::testing::hpke_test_vectors
     tink::internal::mutable_serialization_registry
     tink::internal::proto_key_serialization
@@ -889,8 +876,6 @@ tink_cc_test(
     tink::internal::testing::equals_proto_key_serialization
     tink::internal::testing::field_with_number
     tink::subtle::common_enums
-    tink::util::secret_data
-    tink::util::test_util
     tink::proto::hpke_cc_proto
   TAGS
     exclude_if_openssl
@@ -926,8 +911,6 @@ tink_cc_test(
     tink::hybrid::ecies_private_key
     tink::hybrid::ecies_public_key
     gmock
-    absl::log
-    absl::absl_log
     absl::status
     absl::status_matchers
     absl::statusor
@@ -939,6 +922,7 @@ tink_cc_test(
     tink::core::partial_key_access
     tink::hybrid::internal::testing::ecies_aead_hkdf_test_vectors
     tink::internal::ec_util
+    tink::internal::testing::ec_test_vectors
     tink::subtle::common_enums
     tink::subtle::random
     tink::util::test_util
@@ -953,7 +937,6 @@ tink_cc_test(
     tink::hybrid::ecies_private_key
     tink::hybrid::ecies_public_key
     gmock
-    absl::absl_check
     absl::status
     absl::status_matchers
     absl::statusor

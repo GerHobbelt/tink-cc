@@ -430,17 +430,19 @@ tink_cc_test(
     aes_cmac_prf_key_manager_test.cc
   DEPS
     tink::prf::aes_cmac_prf_key_manager
+    tink::prf::config_2026
+    tink::prf::prf_config
     tink::prf::prf_set
     gmock
-    absl::memory
     absl::status_matchers
+    absl::statusor
     tink::core::input_stream
+    tink::core::key_status
+    tink::core::keyset_handle
+    tink::prf::internal::aes_cmac_prf_test_vectors
     tink::subtle::aes_cmac_boringssl
     tink::util::istream_input_stream
     tink::util::secret_data
-    tink::util::status
-    tink::util::statusor
-    tink::util::test_matchers
     tink::proto::aes_cmac_prf_cc_proto
     tink::proto::tink_cc_proto
 )
@@ -479,7 +481,7 @@ tink_cc_test(
     tink::prf::hmac_prf_key
     tink::prf::hmac_prf_key_manager
     tink::prf::hmac_prf_parameters
-    tink::prf::key_gen_config_v0
+    tink::prf::key_gen_config_2026
     tink::prf::prf_config
     tink::prf::prf_key_templates
     tink::prf::prf_set
@@ -494,15 +496,16 @@ tink_cc_test(
     tink::core::partial_key_access
     tink::core::registry
     tink::core::restricted_data
+    tink::core::secret_key_access_token
     tink::config::global_registry
     tink::internal::fips_utils
     tink::internal::legacy_proto_key
     tink::internal::mutable_serialization_registry
     tink::internal::proto_key_serialization
     tink::internal::proto_parameters_serialization
-    tink::subtle::random
-    tink::util::statusor
-    tink::util::test_matchers
+    tink::prf::internal::aes_cmac_prf_test_vectors
+    tink::prf::internal::hkdf_prf_test_vectors
+    tink::prf::internal::hmac_prf_test_vectors
     tink::proto::tink_cc_proto
 )
 

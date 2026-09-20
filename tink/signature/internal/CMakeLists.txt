@@ -10,6 +10,7 @@ tink_cc_library(
   DEPS
     absl::memory
     absl::status
+    absl::status_macros
     absl::strings
     crypto
     tink::core::public_key_sign
@@ -60,12 +61,12 @@ tink_cc_test(
     gmock
     absl::status
     absl::status_matchers
-    absl::string_view
     tink::core::public_key_sign
     tink::core::public_key_verify
     tink::internal::ec_util
     tink::internal::fips_utils
     tink::internal::md_util
+    tink::internal::testing::ec_test_vectors
     tink::subtle::common_enums
     tink::subtle::ecdsa_verify_boringssl
     tink::subtle::subtle_util_boringssl
@@ -600,6 +601,8 @@ tink_cc_test(
     tink::signature::rsa_ssa_pkcs1_parameters
     tink::signature::rsa_ssa_pkcs1_private_key
     tink::signature::rsa_ssa_pkcs1_public_key
+    tink::signature::internal::testing::rsa_ssa_pkcs1_test_vectors
+    tink::signature::internal::testing::signature_test_vector
     tink::util::test_matchers
     tink::util::test_util
     tink::proto::common_cc_proto
@@ -682,6 +685,8 @@ tink_cc_test(
     tink::signature::rsa_ssa_pss_parameters
     tink::signature::rsa_ssa_pss_private_key
     tink::signature::rsa_ssa_pss_public_key
+    tink::signature::internal::testing::rsa_ssa_pss_test_vectors
+    tink::signature::internal::testing::signature_test_vector
     tink::util::test_matchers
     tink::proto::common_cc_proto
     tink::proto::rsa_ssa_pss_cc_proto
@@ -1775,13 +1780,8 @@ tink_cc_library(
     absl::statusor
     absl::strings
     tink::core::crypto_format
-    tink::core::primitive_set
     tink::core::primitive_wrapper
-    tink::internal::monitoring
-    tink::internal::monitoring_context
-    tink::internal::monitoring_key_set_info
-    tink::internal::monitoring_util
-    tink::internal::registry_impl
+    tink::internal::primitive_set
     tink::internal::util
     tink::signature::prehash
     tink::proto::tink_cc_proto
@@ -1799,7 +1799,7 @@ tink_cc_test(
     absl::status_matchers
     absl::statusor
     absl::strings
-    tink::core::primitive_set
+    tink::internal::primitive_set
     tink::signature::prehash
     tink::util::test_util
     tink::proto::tink_cc_proto

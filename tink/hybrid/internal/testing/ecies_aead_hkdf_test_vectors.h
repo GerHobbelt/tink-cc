@@ -23,16 +23,15 @@
 #include "tink/hybrid/internal/testing/hybrid_test_vectors.h"
 #include "tink/subtle/common_enums.h"
 
-namespace crypto {
-namespace tink {
-namespace internal {
+namespace crypto::tink::internal {
 
+// Returns static test vectors for ECIES-AEAD-HKDF from RFC 6979 and Wycheproof.
 const std::vector<HybridTestVector>& CreateEciesTestVectors();
 
+// Returns a valid static ECIES private key for the given curve type from RFC
+// 6979.
 const EciesPrivateKey* GetEciesPrivateKey(subtle::EllipticCurveType curve_type);
 
-}  // namespace internal
-}  // namespace tink
-}  // namespace crypto
+}  // namespace crypto::tink::internal
 
 #endif  // TINK_HYBRID_INTERNAL_TESTING_ECIES_AEAD_HKDF_TEST_VECTORS_H_

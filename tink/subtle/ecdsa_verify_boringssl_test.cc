@@ -18,6 +18,7 @@
 
 #include <iostream>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 
@@ -25,19 +26,24 @@
 #include "gtest/gtest.h"
 #include "absl/log/absl_check.h"
 #include "absl/status/status.h"
+#include "absl/status/status_macros.h"
 #include "absl/status/status_matchers.h"
 #include "absl/strings/str_cat.h"
+#include "tink/big_integer.h"
+#include "tink/ec_point.h"
+#include "tink/internal/ec_util.h"
 #include "tink/internal/fips_utils.h"
+#include "tink/internal/testing/ec_test_vectors.h"
 #include "tink/internal/testing/wycheproof_util.h"
+#include "tink/partial_key_access.h"
 #include "tink/public_key_verify.h"
+#include "tink/signature/ecdsa_parameters.h"
 #include "tink/signature/ecdsa_private_key.h"
+#include "tink/signature/ecdsa_public_key.h"
 #include "tink/signature/internal/testing/ecdsa_test_vectors.h"
 #include "tink/signature/internal/testing/signature_test_vector.h"
 #include "tink/subtle/common_enums.h"
 #include "tink/subtle/ecdsa_sign_boringssl.h"
-#include "tink/subtle/subtle_util_boringssl.h"
-#include "tink/util/statusor.h"
-#include "tink/util/test_matchers.h"
 
 namespace crypto {
 namespace tink {
@@ -65,10 +71,8 @@ TEST_F(EcdsaVerifyBoringSslTest, BasicSigning) {
   subtle::EcdsaSignatureEncoding encodings[2] = {
       EcdsaSignatureEncoding::DER, EcdsaSignatureEncoding::IEEE_P1363};
   for (EcdsaSignatureEncoding encoding : encodings) {
-    auto ec_key_result =
-        SubtleUtilBoringSSL::GetNewEcKey(EllipticCurveType::NIST_P256);
-    ASSERT_THAT(ec_key_result, IsOk());
-    auto ec_key = std::move(ec_key_result.value());
+    const internal::EcKey& ec_key =
+        internal::GetEcKey(EllipticCurveType::NIST_P256);
 
     auto signer_result =
         EcdsaSignBoringSsl::New(ec_key, HashType::SHA256, encoding);
@@ -107,10 +111,8 @@ TEST_F(EcdsaVerifyBoringSslTest, EncodingsMismatch) {
   subtle::EcdsaSignatureEncoding encodings[2] = {
       EcdsaSignatureEncoding::DER, EcdsaSignatureEncoding::IEEE_P1363};
   for (EcdsaSignatureEncoding encoding : encodings) {
-    auto ec_key_result =
-        SubtleUtilBoringSSL::GetNewEcKey(EllipticCurveType::NIST_P256);
-    ASSERT_THAT(ec_key_result, IsOk());
-    auto ec_key = std::move(ec_key_result.value());
+    const internal::EcKey& ec_key =
+        internal::GetEcKey(EllipticCurveType::NIST_P256);
 
     auto signer_result =
         EcdsaSignBoringSsl::New(ec_key, HashType::SHA256, encoding);
@@ -140,8 +142,8 @@ TEST_F(EcdsaVerifyBoringSslTest, NewErrors) {
     GTEST_SKIP()
         << "Test is skipped if kOnlyUseFips but BoringCrypto is unavailable.";
   }
-  auto ec_key =
-      SubtleUtilBoringSSL::GetNewEcKey(EllipticCurveType::NIST_P256).value();
+  const internal::EcKey& ec_key =
+      internal::GetEcKey(EllipticCurveType::NIST_P256);
   auto verifier_result = EcdsaVerifyBoringSsl::New(
       ec_key, HashType::SHA1, EcdsaSignatureEncoding::IEEE_P1363);
   EXPECT_THAT(verifier_result, Not(IsOk()));
@@ -150,15 +152,76 @@ TEST_F(EcdsaVerifyBoringSslTest, NewErrors) {
 static absl::StatusOr<std::unique_ptr<EcdsaVerifyBoringSsl>> GetVerifier(
     const google::protobuf::Value& test_group,
     subtle::EcdsaSignatureEncoding encoding) {
-  SubtleUtilBoringSSL::EcKey key;
   const auto& test_group_fields = test_group.struct_value().fields();
   const auto& key_fields =
       test_group_fields.at("publicKey").struct_value().fields();
-  key.pub_x = GetIntegerFromHexValue(key_fields.at("wx"));
-  key.pub_y = GetIntegerFromHexValue(key_fields.at("wy"));
-  key.curve = GetEllipticCurveTypeFromValue(key_fields.at("curve"));
+  std::string pub_x = GetIntegerFromHexValue(key_fields.at("wx"));
+  std::string pub_y = GetIntegerFromHexValue(key_fields.at("wy"));
+  EllipticCurveType curve =
+      GetEllipticCurveTypeFromValue(key_fields.at("curve"));
   HashType md = GetHashTypeFromValue(test_group_fields.at("sha"));
-  auto result = EcdsaVerifyBoringSsl::New(key, md, encoding);
+
+  EcdsaParameters::CurveType curve_type;
+  switch (curve) {
+    case EllipticCurveType::NIST_P256:
+      curve_type = EcdsaParameters::CurveType::kNistP256;
+      break;
+    case EllipticCurveType::NIST_P384:
+      curve_type = EcdsaParameters::CurveType::kNistP384;
+      break;
+    case EllipticCurveType::NIST_P521:
+      curve_type = EcdsaParameters::CurveType::kNistP521;
+      break;
+    default:
+      return absl::InvalidArgumentError("Unsupported curve type");
+  }
+
+  EcdsaParameters::HashType hash_type;
+  switch (md) {
+    case HashType::SHA256:
+      hash_type = EcdsaParameters::HashType::kSha256;
+      break;
+    case HashType::SHA384:
+      hash_type = EcdsaParameters::HashType::kSha384;
+      break;
+    case HashType::SHA512:
+      hash_type = EcdsaParameters::HashType::kSha512;
+      break;
+    default:
+      return absl::InvalidArgumentError("Unsupported hash type");
+  }
+
+  EcdsaParameters::SignatureEncoding sig_encoding;
+  switch (encoding) {
+    case subtle::EcdsaSignatureEncoding::DER:
+      sig_encoding = EcdsaParameters::SignatureEncoding::kDer;
+      break;
+    case subtle::EcdsaSignatureEncoding::IEEE_P1363:
+      sig_encoding = EcdsaParameters::SignatureEncoding::kIeeeP1363;
+      break;
+    default:
+      return absl::InvalidArgumentError("Unsupported signature encoding");
+  }
+
+  absl::StatusOr<EcdsaParameters> params =
+      EcdsaParameters::Builder()
+          .SetCurveType(curve_type)
+          .SetHashType(hash_type)
+          .SetSignatureEncoding(sig_encoding)
+          .SetVariant(EcdsaParameters::Variant::kNoPrefix)
+          .Build();
+  if (!params.ok()) {
+    return params.status();
+  }
+
+  ABSL_ASSIGN_OR_RETURN(
+      EcdsaPublicKey public_key,
+      EcdsaPublicKey::Create(
+          *params, EcPoint(BigInteger(pub_x), BigInteger(pub_y)),
+          /*id_requirement=*/std::nullopt, GetPartialKeyAccess()));
+
+  absl::StatusOr<std::unique_ptr<EcdsaVerifyBoringSsl>> result =
+      EcdsaVerifyBoringSsl::New(public_key);
   if (!result.ok()) {
     std::cout << "Failed: " << result.status() << "\n";
   }
@@ -300,23 +363,23 @@ TEST_F(EcdsaVerifyBoringSslTest, TestFipsFailWithoutBoringCrypto) {
         << "Test assumes kOnlyUseFips but BoringCrypto is unavailable.";
   }
 
-  auto ec_key =
-      SubtleUtilBoringSSL::GetNewEcKey(EllipticCurveType::NIST_P256).value();
-  EXPECT_THAT(EcdsaVerifyBoringSsl::New(ec_key, HashType::SHA256,
+  const internal::EcKey& ec_key_256 =
+      internal::GetEcKey(EllipticCurveType::NIST_P256);
+  EXPECT_THAT(EcdsaVerifyBoringSsl::New(ec_key_256, HashType::SHA256,
                                         EcdsaSignatureEncoding::DER)
                   .status(),
               StatusIs(absl::StatusCode::kInternal));
 
-  ec_key =
-      SubtleUtilBoringSSL::GetNewEcKey(EllipticCurveType::NIST_P384).value();
-  EXPECT_THAT(EcdsaVerifyBoringSsl::New(ec_key, HashType::SHA256,
+  const internal::EcKey& ec_key_384 =
+      internal::GetEcKey(EllipticCurveType::NIST_P384);
+  EXPECT_THAT(EcdsaVerifyBoringSsl::New(ec_key_384, HashType::SHA256,
                                         EcdsaSignatureEncoding::DER)
                   .status(),
               StatusIs(absl::StatusCode::kInternal));
 
-  ec_key =
-      SubtleUtilBoringSSL::GetNewEcKey(EllipticCurveType::NIST_P521).value();
-  EXPECT_THAT(EcdsaVerifyBoringSsl::New(ec_key, HashType::SHA256,
+  const internal::EcKey& ec_key_521 =
+      internal::GetEcKey(EllipticCurveType::NIST_P521);
+  EXPECT_THAT(EcdsaVerifyBoringSsl::New(ec_key_521, HashType::SHA256,
                                         EcdsaSignatureEncoding::DER)
                   .status(),
               StatusIs(absl::StatusCode::kInternal));

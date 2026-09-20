@@ -13,10 +13,10 @@ tink_cc_library(
     absl::strings
     tink::core::aead
     tink::core::crypto_format
-    tink::core::primitive_set
     tink::core::primitive_wrapper
     tink::internal::monitoring
     tink::internal::monitoring_util
+    tink::internal::primitive_set
     tink::internal::registry_impl
     tink::internal::util
     tink::util::status
@@ -42,8 +42,8 @@ tink_cc_library(
     absl::status
     absl::cord
     tink::core::crypto_format
-    tink::core::primitive_set
     tink::core::primitive_wrapper
+    tink::internal::primitive_set
     tink::util::status
     tink::util::statusor
 )
@@ -845,10 +845,10 @@ tink_cc_test(
     absl::strings
     tink::core::aead
     tink::core::crypto_format
-    tink::core::primitive_set
     tink::core::registry
     tink::internal::monitoring
     tink::internal::monitoring_client_mocks
+    tink::internal::primitive_set
     tink::internal::registry_impl
     tink::util::test_matchers
     tink::util::test_util
@@ -873,7 +873,7 @@ tink_cc_test(
     tink::aead::aes_gcm_siv_parameters
     tink::aead::chacha20_poly1305_key
     tink::aead::chacha20_poly1305_parameters
-    tink::aead::key_gen_config_v0
+    tink::aead::key_gen_config_2026
     tink::aead::kms_aead_key_manager
     tink::aead::kms_envelope_aead_key_manager
     tink::aead::legacy_kms_aead_key
@@ -886,7 +886,6 @@ tink_cc_test(
     tink::aead::xchacha20_poly1305_parameters
     gmock
     absl::absl_check
-    absl::memory
     absl::status
     absl::status_matchers
     absl::statusor
@@ -901,6 +900,13 @@ tink_cc_test(
     tink::core::proto_parameters_format
     tink::core::registry
     tink::core::restricted_data
+    tink::aead::internal::testing::aes_ctr_hmac_aead_test_vectors
+    tink::aead::internal::testing::aes_eax_test_vectors
+    tink::aead::internal::testing::aes_gcm_siv_test_vectors
+    tink::aead::internal::testing::aes_gcm_test_vectors
+    tink::aead::internal::testing::chacha20_poly1305_test_vectors
+    tink::aead::internal::testing::x_aes_gcm_test_vectors
+    tink::aead::internal::testing::xchacha20_poly1305_test_vectors
     tink::config::global_registry
     tink::config::tink_fips
     tink::internal::fips_utils
@@ -911,8 +917,6 @@ tink_cc_test(
     tink::internal::proto_parameters_serialization
     tink::internal::serialization
     tink::internal::tink_proto_structs
-    tink::subtle::random
-    tink::util::test_matchers
     tink::proto::aes_eax_cc_proto
     tink::proto::aes_gcm_cc_proto
     tink::proto::aes_gcm_siv_cc_proto
@@ -996,10 +1000,16 @@ tink_cc_test(
   SRCS
     aes_eax_key_manager_test.cc
   DEPS
+    tink::aead::aead_config
     tink::aead::aes_eax_key_manager
     gmock
     absl::status_matchers
     tink::core::aead
+    tink::core::key_status
+    tink::core::keyset_handle
+    tink::aead::internal::testing::aead_test_vector
+    tink::aead::internal::testing::aes_eax_test_vectors
+    tink::config::global_registry
     tink::subtle::aead_test_util
     tink::subtle::aes_eax_boringssl
     tink::util::secret_data
@@ -1015,14 +1025,23 @@ tink_cc_test(
   SRCS
     aes_gcm_key_manager_test.cc
   DEPS
+    tink::aead::aead_config
     tink::aead::aes_gcm_key_manager
     tink::aead::cord_aead
+    tink::aead::cord_aead_wrapper
     gmock
     absl::memory
     absl::status
     absl::status_matchers
+    absl::cord
     tink::core::aead
+    tink::core::key_status
+    tink::core::keyset_handle
+    tink::core::registry
     tink::aead::internal::cord_aes_gcm_boringssl
+    tink::aead::internal::testing::aead_test_vector
+    tink::aead::internal::testing::aes_gcm_test_vectors
+    tink::config::global_registry
     tink::subtle::aead_test_util
     tink::subtle::aes_gcm_boringssl
     tink::util::istream_input_stream
@@ -1037,11 +1056,17 @@ tink_cc_test(
   SRCS
     aes_gcm_siv_key_manager_test.cc
   DEPS
+    tink::aead::aead_config
     tink::aead::aes_gcm_siv_key_manager
     gmock
     absl::status
     absl::status_matchers
     tink::core::aead
+    tink::core::key_status
+    tink::core::keyset_handle
+    tink::aead::internal::testing::aead_test_vector
+    tink::aead::internal::testing::aes_gcm_siv_test_vectors
+    tink::config::global_registry
     tink::internal::ssl_util
     tink::subtle::aead_test_util
     tink::subtle::aes_gcm_siv_boringssl
@@ -1056,21 +1081,24 @@ tink_cc_test(
   SRCS
     aes_ctr_hmac_aead_key_manager_test.cc
   DEPS
+    tink::aead::aes_ctr_hmac_aead_key
     tink::aead::aes_ctr_hmac_aead_key_manager
+    tink::aead::aes_ctr_hmac_aead_proto_serialization
+    tink::aead::config_2026
     gmock
-    absl::memory
     absl::status
     absl::status_matchers
     tink::core::aead
+    tink::core::key_status
+    tink::core::keyset_handle
+    tink::aead::internal::testing::aead_test_vector
+    tink::aead::internal::testing::aes_ctr_hmac_aead_test_vectors
     tink::subtle::subtle
     tink::subtle::aead_test_util
     tink::subtle::aes_ctr_boringssl
     tink::util::enums
     tink::util::istream_input_stream
     tink::util::secret_data
-    tink::util::status
-    tink::util::statusor
-    tink::util::test_matchers
     tink::proto::aes_ctr_cc_proto
     tink::proto::aes_ctr_hmac_aead_cc_proto
     tink::proto::common_cc_proto
@@ -1083,12 +1111,19 @@ tink_cc_test(
   SRCS
     xchacha20_poly1305_key_manager_test.cc
   DEPS
+    tink::aead::aead_config
     tink::aead::xchacha20_poly1305_key_manager
     gmock
     absl::memory
     absl::status
     absl::status_matchers
+    crypto
     tink::core::aead
+    tink::core::key_status
+    tink::core::keyset_handle
+    tink::aead::internal::testing::aead_test_vector
+    tink::aead::internal::testing::xchacha20_poly1305_test_vectors
+    tink::config::global_registry
     tink::internal::ssl_util
     tink::subtle::aead_test_util
     tink::subtle::xchacha20_poly1305_boringssl
@@ -1193,7 +1228,7 @@ tink_cc_test(
     absl::status_matchers
     absl::strings
     absl::cord
-    tink::core::primitive_set
+    tink::internal::primitive_set
     tink::util::status
     tink::util::test_matchers
     tink::util::test_util
@@ -1301,8 +1336,8 @@ tink_cc_test(
     tink::core::key
     tink::core::partial_key_access
     tink::core::restricted_data
-    tink::util::statusor
-    tink::util::test_matchers
+    tink::aead::internal::testing::aead_test_vector
+    tink::aead::internal::testing::aes_gcm_siv_test_vectors
 )
 
 tink_cc_test(
@@ -1421,8 +1456,8 @@ tink_cc_test(
     tink::core::key
     tink::core::partial_key_access
     tink::core::restricted_data
-    tink::util::statusor
-    tink::util::test_matchers
+    tink::aead::internal::testing::aead_test_vector
+    tink::aead::internal::testing::xchacha20_poly1305_test_vectors
 )
 
 tink_cc_test(
@@ -1478,12 +1513,17 @@ tink_cc_test(
     gmock
     absl::status
     absl::status_matchers
+    absl::strings
+    absl::string_view
     absl::optional
+    crypto
+    tink::core::insecure_secret_key_access
     tink::core::key
     tink::core::partial_key_access
     tink::core::restricted_data
-    tink::util::statusor
-    tink::util::test_matchers
+    tink::aead::internal::testing::aead_test_vector
+    tink::aead::internal::testing::chacha20_poly1305_test_vectors
+    tink::internal::ssl_unique_ptr
 )
 
 tink_cc_test(
@@ -1608,8 +1648,8 @@ tink_cc_test(
     tink::core::key
     tink::core::partial_key_access
     tink::core::restricted_data
-    tink::util::statusor
-    tink::util::test_matchers
+    tink::aead::internal::testing::aead_test_vector
+    tink::aead::internal::testing::x_aes_gcm_test_vectors
 )
 
 tink_cc_test(
@@ -1617,19 +1657,21 @@ tink_cc_test(
   SRCS
     x_aes_gcm_key_manager_test.cc
   DEPS
+    tink::aead::config_2026
     tink::aead::cord_aead
     tink::aead::x_aes_gcm_key_manager
+    tink::aead::x_aes_gcm_proto_serialization
     gmock
     absl::status
     absl::status_matchers
     absl::cord
-    tink::core::aead
     tink::core::key_type_manager
+    tink::core::key_status
+    tink::core::keyset_handle
+    tink::aead::internal::testing::aead_test_vector
+    tink::aead::internal::testing::x_aes_gcm_test_vectors
     tink::internal::fips_utils
     tink::subtle::random
-    tink::util::status
-    tink::util::statusor
-    tink::util::test_matchers
     tink::proto::tink_cc_proto
     tink::proto::x_aes_gcm_cc_proto
 )

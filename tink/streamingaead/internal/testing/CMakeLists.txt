@@ -7,6 +7,8 @@ tink_cc_library(
     aes_ctr_hmac_streaming_test_vectors.h
   DEPS
     tink::streamingaead::internal::testing::streamingaead_test_vector
+    absl::no_destructor
+    absl::flat_hash_map
     absl::absl_check
     absl::statusor
     absl::strings
@@ -36,9 +38,10 @@ tink_cc_library(
     aes_gcm_hkdf_streaming_test_vectors.cc
     aes_gcm_hkdf_streaming_test_vectors.h
   DEPS
-    tink::streamingaead::internal::testing::aes_ctr_hmac_streaming_test_vectors
     tink::streamingaead::internal::testing::streamingaead_test_vector
+    absl::no_destructor
     absl::absl_check
+    absl::statusor
     absl::strings
     absl::string_view
     tink::core::insecure_secret_key_access
@@ -46,7 +49,6 @@ tink_cc_library(
     tink::core::restricted_data
     tink::streamingaead::aes_gcm_hkdf_streaming_key
     tink::streamingaead::aes_gcm_hkdf_streaming_parameters
-    tink::util::statusor
     tink::util::test_util
   TESTONLY
 )

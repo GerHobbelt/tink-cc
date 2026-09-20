@@ -25,14 +25,13 @@
 #include "absl/log/absl_check.h"
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
-#include "tink/big_integer.h"
-#include "tink/ec_point.h"
 #include "tink/hybrid/ecies_parameters.h"
 #include "tink/hybrid/ecies_private_key.h"
 #include "tink/hybrid/ecies_public_key.h"
 #include "tink/hybrid/hybrid_private_key.h"
 #include "tink/hybrid/internal/testing/hybrid_test_vectors.h"
 #include "tink/insecure_secret_key_access.h"
+#include "tink/internal/testing/ec_test_vectors.h"
 #include "tink/partial_key_access.h"
 #include "tink/restricted_data.h"
 #include "tink/subtle/common_enums.h"
@@ -41,62 +40,10 @@
 namespace crypto {
 namespace tink {
 namespace internal {
+
 namespace {
 
 using ::crypto::tink::test::HexDecodeOrDie;
-
-EcPoint P256Point() {
-  return EcPoint(
-      BigInteger(HexDecodeOrDie(
-          "60FED4BA255A9D31C961EB74C6356D68C049B8923B61FA6CE669622E60F29FB6")),
-      BigInteger(HexDecodeOrDie(
-          "7903FE1008B8BC99A41AE9E95628BC64F2F1B20C2D7E9F5177A3C294D4462299")));
-}
-
-RestrictedData P256SecretValue() {
-  return RestrictedData(
-      HexDecodeOrDie(
-          "C9AFA9D845BA75166B5C215767B1D6934E50C3DB36E89B127B8A622B120F6721"),
-      InsecureSecretKeyAccess::Get());
-}
-
-EcPoint P384Point() {
-  return EcPoint(
-      BigInteger(HexDecodeOrDie("009d92e0330dfc60ba8b2be32e10f7d2f8457678a112ca"
-                                "fd4544b29b7e6addf0249968f54c"
-                                "732aa49bc4a38f467edb8424")),
-      BigInteger(HexDecodeOrDie("0081a3a9c9e878b86755f018a8ec3c5e80921910af919b"
-                                "95f18976e35acc04efa2962e277a"
-                                "0b2c990ae92b62d6c75180ba")));
-}
-
-RestrictedData P384SecretValue() {
-  return RestrictedData(
-      HexDecodeOrDie("670dc60402d8a4fe52f4e552d2b71f0f81bcf195d8a71a6c7d84efb4f"
-                     "0e4b4a5d0f60a27c94caac46bdeeb79897a3ed9"),
-      InsecureSecretKeyAccess::Get());
-}
-
-EcPoint P521Point() {
-  return EcPoint(
-      BigInteger(HexDecodeOrDie(
-          "01894550D0785932E00EAA23B694F213F8C3121F86DC97A04E5A7167DB4E5BCD3"
-          "71123D46E45DB6B5D5370A7F20FB633155D38FFA16D2BD761DCAC474B9A2F502"
-          "3A4")),
-      BigInteger(HexDecodeOrDie(
-          "493101C962CD4D2FDDF782285E64584139C2F91B47F87FF82354D6630F746A2"
-          "8A0DB25741B5B34A828008B22ACC23F924FAAFBD4D33F81EA66956DFEAA2BFDF"
-          "CF5")));
-}
-
-RestrictedData P521SecretValue() {
-  return RestrictedData(
-      HexDecodeOrDie(
-          "00FAD06DAA62BA3B25D2FB40133DA757205DE67F5BB0018FEE8C86E1B68C7E75C"
-          "AA896EB32F1F47C70855836A6D16FCC1466F6D8FBEC67DB89EC0C08B0E996B83"
-          "538"),
-      InsecureSecretKeyAccess::Get());
-}
 
 HybridTestVector CreateTestVector0() {
   absl::StatusOr<EciesParameters> params =
@@ -568,31 +515,30 @@ const std::vector<HybridTestVector>& CreateEciesTestVectors() {
   return *vectors;
 }
 
+// Returns a valid static ECIES private key for the given curve type from RFC
+// 6979.
+using EciesPrivateKeyMap =
+    absl::flat_hash_map<subtle::EllipticCurveType,
+                        std::shared_ptr<HybridPrivateKey>>;
+
+const EciesPrivateKeyMap& CreateEciesPrivateKeyMap() {
+  static const absl::NoDestructor<EciesPrivateKeyMap> keys(EciesPrivateKeyMap{
+      {subtle::EllipticCurveType::NIST_P256,
+       CreateTestVector0().hybrid_private_key},
+      {subtle::EllipticCurveType::NIST_P384,
+       CreateTestVector12().hybrid_private_key},
+      {subtle::EllipticCurveType::NIST_P521,
+       CreateTestVector13().hybrid_private_key},
+      {subtle::EllipticCurveType::CURVE25519,
+       CreateTestVector14().hybrid_private_key},
+  });
+  return *keys;
+}
 const EciesPrivateKey* GetEciesPrivateKey(
     subtle::EllipticCurveType curve_type) {
-  static const absl::NoDestructor<absl::flat_hash_map<
-      subtle::EllipticCurveType, std::shared_ptr<HybridPrivateKey>>>
-      keys([]() {
-        absl::flat_hash_map<subtle::EllipticCurveType,
-                            std::shared_ptr<HybridPrivateKey>>
-            map;
-        map.reserve(4);
-        // NIST_P256
-        map[subtle::EllipticCurveType::NIST_P256] =
-            CreateTestVector0().hybrid_private_key;
-        // NIST_P384
-        map[subtle::EllipticCurveType::NIST_P384] =
-            CreateTestVector12().hybrid_private_key;
-        // NIST_P521
-        map[subtle::EllipticCurveType::NIST_P521] =
-            CreateTestVector13().hybrid_private_key;
-        // CURVE25519
-        map[subtle::EllipticCurveType::CURVE25519] =
-            CreateTestVector14().hybrid_private_key;
-        return map;
-      }());
-  auto it = keys->find(curve_type);
-  ABSL_CHECK(it != keys->end()) << "No vector found for curve: " << curve_type;
+  const EciesPrivateKeyMap& keys = CreateEciesPrivateKeyMap();
+  auto it = keys.find(curve_type);
+  ABSL_CHECK(it != keys.end()) << "No vector found for curve: " << curve_type;
   return static_cast<const EciesPrivateKey*>(it->second.get());
 }
 

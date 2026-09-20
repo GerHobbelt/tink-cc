@@ -34,13 +34,13 @@ tink_cc_library(
     absl::statusor
     absl::strings
     tink::core::crypto_format
-    tink::core::primitive_set
     tink::core::primitive_wrapper
     tink::core::public_key_verify
     tink::internal::monitoring
     tink::internal::monitoring_context
     tink::internal::monitoring_key_set_info
     tink::internal::monitoring_util
+    tink::internal::primitive_set
     tink::internal::registry_impl
     tink::internal::util
     tink::util::status
@@ -74,11 +74,11 @@ tink_cc_library(
     absl::status
     absl::strings
     tink::core::crypto_format
-    tink::core::primitive_set
     tink::core::primitive_wrapper
     tink::core::public_key_sign
     tink::internal::monitoring
     tink::internal::monitoring_util
+    tink::internal::primitive_set
     tink::internal::registry_impl
     tink::internal::util
     tink::util::status
@@ -849,12 +849,12 @@ tink_cc_test(
     absl::status_matchers
     absl::strings
     absl::string_view
-    tink::core::primitive_set
     tink::core::public_key_sign
     tink::core::public_key_verify
     tink::core::registry
     tink::internal::monitoring
     tink::internal::monitoring_client_mocks
+    tink::internal::primitive_set
     tink::internal::registry_impl
     tink::util::status
     tink::util::statusor
@@ -897,12 +897,12 @@ tink_cc_test(
     absl::status_matchers
     absl::string_view
     tink::core::crypto_format
-    tink::core::primitive_set
     tink::core::public_key_sign
     tink::core::public_key_verify
     tink::core::registry
     tink::internal::monitoring
     tink::internal::monitoring_client_mocks
+    tink::internal::primitive_set
     tink::internal::registry_impl
     tink::util::status
     tink::util::statusor
@@ -1012,23 +1012,23 @@ tink_cc_test(
   SRCS
     rsa_ssa_pss_verify_key_manager_test.cc
   DEPS
-    tink::signature::rsa_ssa_pss_sign_key_manager
+    tink::signature::rsa_ssa_pss_private_key
+    tink::signature::rsa_ssa_pss_public_key
     tink::signature::rsa_ssa_pss_verify_key_manager
     gmock
     absl::status
     absl::status_matchers
     crypto
+    tink::core::insecure_secret_key_access
+    tink::core::partial_key_access
     tink::core::public_key_sign
     tink::core::public_key_verify
-    tink::internal::bn_util
     tink::internal::rsa_util
-    tink::internal::ssl_unique_ptr
+    tink::signature::internal::testing::rsa_ssa_pss_test_vectors
+    tink::signature::internal::testing::signature_test_vector
     tink::subtle::common_enums
     tink::subtle::rsa_ssa_pss_sign_boringssl
     tink::util::secret_data
-    tink::util::status
-    tink::util::statusor
-    tink::util::test_matchers
     tink::util::test_util
     tink::proto::rsa_ssa_pss_cc_proto
     tink::proto::tink_cc_proto
@@ -1785,7 +1785,6 @@ tink_cc_test(
     absl::status
     absl::status_matchers
     absl::statusor
-    absl::strings
     absl::optional
     crypto
     tink::core::insecure_secret_key_access
@@ -1923,6 +1922,8 @@ tink_cc_test(
     tink::signature::internal::slh_dsa_parameter_set
     tink::signature::internal::slh_dsa_sign_boringssl
     tink::signature::internal::slh_dsa_verify_boringssl
+    tink::signature::internal::testing::signature_test_vector
+    tink::signature::internal::testing::slh_dsa_test_vectors
     tink::subtle::random
   TAGS
     exclude_if_openssl
@@ -1964,7 +1965,6 @@ tink_cc_test(
     tink::core::key
     tink::core::partial_key_access
     tink::subtle::random
-    tink::util::test_matchers
   TAGS
     exclude_if_openssl
 )

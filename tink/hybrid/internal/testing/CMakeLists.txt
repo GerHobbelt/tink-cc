@@ -17,17 +17,21 @@ tink_cc_library(
     hpke_test_vectors.h
   DEPS
     tink::hybrid::internal::testing::hybrid_test_vectors
+    absl::no_destructor
+    absl::flat_hash_map
     absl::absl_check
+    absl::status
     absl::statusor
-    absl::strings
+    absl::string_view
     absl::optional
     tink::core::insecure_secret_key_access
     tink::core::partial_key_access
     tink::core::restricted_data
-    tink::core::secret_data
     tink::hybrid::hpke_parameters
     tink::hybrid::hpke_private_key
     tink::hybrid::hpke_public_key
+    tink::internal::mlkem_util
+    tink::subtle::common_enums
     tink::util::secret_data
     tink::util::test_util
   TESTONLY
@@ -47,8 +51,6 @@ tink_cc_library(
     absl::absl_check
     absl::statusor
     absl::optional
-    tink::core::big_integer
-    tink::core::ec_point
     tink::core::insecure_secret_key_access
     tink::core::partial_key_access
     tink::core::restricted_data
@@ -56,6 +58,7 @@ tink_cc_library(
     tink::hybrid::ecies_private_key
     tink::hybrid::ecies_public_key
     tink::hybrid::hybrid_private_key
+    tink::internal::testing::ec_test_vectors
     tink::subtle::common_enums
     tink::util::test_util
   TESTONLY
