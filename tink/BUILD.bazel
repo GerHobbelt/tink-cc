@@ -746,6 +746,7 @@ cc_library(
     name = "parameters",
     hdrs = ["parameters.h"],
     include_prefix = "tink",
+    visibility = ["//visibility:public"],
 )
 
 cc_library(
@@ -1020,6 +1021,7 @@ cc_test(
         ":keyset_handle",
         ":keyset_handle_builder",
         ":keyset_reader",
+        ":parameters",
         ":partial_key_access",
         ":primitive_set",
         ":primitive_wrapper",
@@ -1036,7 +1038,7 @@ cc_test(
         "//tink/aead:aes_gcm_parameters",
         "//tink/aead:xchacha20_poly1305_key",
         "//tink/aead:xchacha20_poly1305_parameters",
-        "//tink/aead/internal:key_gen_config_v0",
+        "//tink/aead/internal:key_gen_config_2026",
         "//tink/config:fips_140_2",
         "//tink/config:global_registry",
         "//tink/config:key_gen_fips_140_2",
@@ -1133,6 +1135,7 @@ cc_test(
         "//tink/util:status",
         "//tink/util:test_matchers",
         "@abseil-cpp//absl/status",
+        "@abseil-cpp//absl/status:status_matchers",
         "@googletest//:gtest_main",
     ],
 )
@@ -1209,6 +1212,7 @@ cc_test(
         "//tink/util:test_matchers",
         "//tink/util:test_util",
         "@abseil-cpp//absl/status",
+        "@abseil-cpp//absl/status:status_matchers",
         "@abseil-cpp//absl/strings",
         "@googletest//:gtest_main",
     ],
@@ -1239,6 +1243,7 @@ cc_test(
         "//tink/util:validation",
         "@abseil-cpp//absl/memory",
         "@abseil-cpp//absl/status",
+        "@abseil-cpp//absl/status:status_matchers",
         "@abseil-cpp//absl/strings:string_view",
         "@googletest//:gtest_main",
     ],
@@ -1288,6 +1293,7 @@ cc_test(
         "//tink/util:validation",
         "@abseil-cpp//absl/memory",
         "@abseil-cpp//absl/status",
+        "@abseil-cpp//absl/status:status_matchers",
         "@googletest//:gtest_main",
     ],
 )

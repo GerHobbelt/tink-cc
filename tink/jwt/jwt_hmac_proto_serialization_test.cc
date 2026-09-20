@@ -17,6 +17,7 @@
 #include "tink/jwt/jwt_hmac_proto_serialization.h"
 
 #include <memory>
+#include <optional>
 #include <string>
 
 #include "gmock/gmock.h"
@@ -39,7 +40,6 @@
 #include "tink/partial_key_access.h"
 #include "tink/restricted_data.h"
 #include "tink/subtle/random.h"
-#include "tink/util/test_matchers.h"
 #include "proto/common.pb.h"
 #include "proto/jwt_hmac.pb.h"
 
@@ -97,7 +97,7 @@ INSTANTIATE_TEST_SUITE_P(
                JwtHmacParameters::KidStrategy::kBase64EncodedKeyId,
                OutputPrefixTypeTP::kTink, JwtHmacParameters::Algorithm::kHs256,
                JwtHmacAlgorithm::HS256,
-               /*key_size=*/16, /*kid=*/"AgMEAA",
+               /*key_size=*/32, /*kid=*/"AgMEAA",
                /*id=*/0x02030400,
                /*output_prefix=*/std::string("\x01\x02\x03\x04\x00", 5)},
            TestCase{/*strategy=*/JwtHmacParameters::KidStrategy::kIgnored,
@@ -106,16 +106,16 @@ INSTANTIATE_TEST_SUITE_P(
                     OutputPrefixTypeTP::kRaw,
                     JwtHmacParameters::Algorithm::kHs384,
                     JwtHmacAlgorithm::HS384,
-                    /*key_size=*/32, /*kid=*/absl::nullopt,
-                    /*id=*/absl::nullopt, /*output_prefix=*/""},
+                    /*key_size=*/48, /*kid=*/std::nullopt,
+                    /*id=*/std::nullopt, /*output_prefix=*/""},
            TestCase{/*strategy=*/JwtHmacParameters::KidStrategy::kCustom,
                     /*expected_parameters_strategy=*/
                     JwtHmacParameters::KidStrategy::kIgnored,
                     OutputPrefixTypeTP::kRaw,
                     JwtHmacParameters::Algorithm::kHs512,
                     JwtHmacAlgorithm::HS512,
-                    /*key_size=*/32, /*kid=*/"custom_kid",
-                    /*id=*/absl::nullopt, /*output_prefix=*/""}));
+                    /*key_size=*/64, /*kid=*/"custom_kid",
+                    /*id=*/std::nullopt, /*output_prefix=*/""}));
 
 TEST_P(JwtHmacProtoSerializationTest, ParseParameters) {
   TestCase test_case = GetParam();
@@ -376,7 +376,7 @@ TEST_F(JwtHmacProtoSerializationTest, ParseKeyWithInvalidSerialization) {
       internal::ProtoKeySerialization::Create(kTypeUrl, serialized_key,
                                               KeyMaterialTypeTP::kSymmetric,
                                               OutputPrefixTypeTP::kRaw,
-                                              /*id_requirement=*/absl::nullopt);
+                                              /*id_requirement=*/std::nullopt);
   ASSERT_THAT(serialization, IsOk());
 
   absl::StatusOr<std::unique_ptr<Key>> key =
@@ -400,7 +400,7 @@ TEST_F(JwtHmacProtoSerializationTest, ParseKeyWithInvalidVersion) {
       internal::ProtoKeySerialization::Create(kTypeUrl, serialized_key,
                                               KeyMaterialTypeTP::kSymmetric,
                                               OutputPrefixTypeTP::kRaw,
-                                              /*id_requirement=*/absl::nullopt);
+                                              /*id_requirement=*/std::nullopt);
   ASSERT_THAT(serialization, IsOk());
 
   absl::StatusOr<std::unique_ptr<Key>> key =
@@ -457,7 +457,7 @@ TEST_F(JwtHmacProtoSerializationTest, ParseKeyWithUnknownAlgorithm) {
       internal::ProtoKeySerialization::Create(kTypeUrl, serialized_key,
                                               KeyMaterialTypeTP::kSymmetric,
                                               OutputPrefixTypeTP::kRaw,
-                                              /*id_requirement=*/absl::nullopt);
+                                              /*id_requirement=*/std::nullopt);
   ASSERT_THAT(serialization, IsOk());
 
   absl::StatusOr<std::unique_ptr<Key>> key =
@@ -483,12 +483,12 @@ TEST_F(JwtHmacProtoSerializationTest, ParseKeyWithoutSecretKeyAccess) {
       internal::ProtoKeySerialization::Create(kTypeUrl, serialized_key,
                                               KeyMaterialTypeTP::kSymmetric,
                                               OutputPrefixTypeTP::kRaw,
-                                              /*id_requirement=*/absl::nullopt);
+                                              /*id_requirement=*/std::nullopt);
   ASSERT_THAT(serialization, IsOk());
 
   absl::StatusOr<std::unique_ptr<Key>> key =
       internal::MutableSerializationRegistry::GlobalInstance().ParseKey(
-          *serialization, /*token=*/absl::nullopt);
+          *serialization, /*token=*/std::nullopt);
   EXPECT_THAT(key.status(), StatusIs(absl::StatusCode::kInvalidArgument,
                                      HasSubstr("SecretKeyAccess is required")));
 }
@@ -570,7 +570,7 @@ TEST_F(JwtHmacProtoSerializationTest, SerializeKeyWithoutSecretKeyAccess) {
   absl::StatusOr<std::unique_ptr<Serialization>> serialization =
       internal::MutableSerializationRegistry::GlobalInstance()
           .SerializeKey<internal::ProtoKeySerialization>(
-              *key, /*token=*/absl::nullopt);
+              *key, /*token=*/std::nullopt);
   ASSERT_THAT(serialization.status(),
               StatusIs(absl::StatusCode::kInvalidArgument,
                        HasSubstr("SecretKeyAccess is required")));

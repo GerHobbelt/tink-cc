@@ -352,6 +352,7 @@ tink_cc_library(
     rsa_ssa_pkcs1_verify_boringssl.h
   DEPS
     tink::subtle::common_enums
+    absl::algorithm_container
     absl::status
     absl::strings
     crypto
@@ -360,6 +361,7 @@ tink_cc_library(
     tink::internal::bn_util
     tink::internal::fips_utils
     tink::internal::md_util
+    tink::internal::output_prefix_util
     tink::internal::rsa_util
     tink::internal::ssl_unique_ptr
     tink::internal::util
@@ -640,20 +642,17 @@ tink_cc_library(
     absl::algorithm_container
     absl::memory
     absl::status
+    absl::statusor
     absl::strings
     absl::span
     crypto
     tink::core::deterministic_aead
-    tink::aead::internal::aead_util
+    tink::core::secret_data
     tink::internal::aes_util
-    tink::internal::call_with_core_dump_protection
     tink::internal::dfsan_forwarders
     tink::internal::fips_utils
     tink::internal::secret_buffer
-    tink::util::errors
     tink::util::secret_data
-    tink::util::status
-    tink::util::statusor
 )
 
 tink_cc_library(
@@ -1194,16 +1193,19 @@ tink_cc_test(
     wycheproof::testvectors_v1
   DEPS
     tink::subtle::aes_siv_boringssl
+    tink::subtle::random
     gmock
+    absl::absl_check
     absl::status
     absl::status_matchers
+    absl::statusor
     absl::string_view
+    benchmark::benchmark_main
+    tink::core::deterministic_aead
     tink::core::secret_data
     tink::config::tink_fips
     tink::internal::testing::wycheproof_util
     tink::util::secret_data
-    tink::util::statusor
-    tink::util::test_matchers
     tink::util::test_util
 )
 

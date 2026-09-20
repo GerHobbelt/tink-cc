@@ -40,7 +40,7 @@
 #include "tink/aead/aead_wrapper.h"
 #include "tink/aead/aes_gcm_key_manager.h"
 #include "tink/aead/aes_gcm_parameters.h"
-#include "tink/aead/internal/key_gen_config_v0.h"
+#include "tink/aead/internal/key_gen_config_2026.h"
 #include "tink/aead/xchacha20_poly1305_key.h"
 #include "tink/aead/xchacha20_poly1305_parameters.h"
 #include "tink/annotations.h"
@@ -65,6 +65,7 @@
 #include "tink/key_gen_configuration.h"
 #include "tink/key_status.h"
 #include "tink/keyset_reader.h"
+#include "tink/parameters.h"
 #include "tink/partial_key_access.h"
 #include "tink/primitive_set.h"
 #include "tink/primitive_wrapper.h"
@@ -88,13 +89,13 @@ namespace crypto {
 namespace tink {
 
 using ::absl_testing::IsOk;
+using ::absl_testing::StatusIs;
 using ::crypto::tink::TestKeysetHandle;
 using ::crypto::tink::test::AddKeyData;
 using ::crypto::tink::test::AddLegacyKey;
 using ::crypto::tink::test::AddRawKey;
 using ::crypto::tink::test::AddTinkKey;
 using ::crypto::tink::test::DummyAead;
-using ::crypto::tink::test::StatusIs;
 using AesGcmKeyProto = ::google::crypto::tink::AesGcmKey;
 using ::google::crypto::tink::AesGcmKeyFormat;
 using AesGcmSivKeyProto = ::google::crypto::tink::AesGcmSivKey;
@@ -290,7 +291,7 @@ absl::StatusOr<std::unique_ptr<Aead>> GetPrimitiveForXChaCha20Poly1305Key(
 const KeyGenConfiguration& TestKeyGenConfig() {
   static const KeyGenConfiguration* instance = [] {
     static KeyGenConfiguration* config = new KeyGenConfiguration();
-    ABSL_CHECK_OK(internal::AddAeadKeyGenV0(*config));
+    ABSL_CHECK_OK(internal::AddAeadKeyGen2026(*config));
     ABSL_CHECK_OK(RegisterEcdsaProtoSerialization());
     ABSL_CHECK_OK(internal::KeyGenConfigurationImpl::AddAsymmetricKeyManagers(
         absl::make_unique<EcdsaSignKeyManager>(),
@@ -854,6 +855,28 @@ TEST(KeysetHandleGenerateNewFromParametersTest,
           *params, config)
           .status(),
       StatusIs(absl::StatusCode::kNotFound));
+}
+
+TEST(KeysetHandleGenerateNewFromParametersTest,
+     GenerateNewFromAbstractParametersWorks) {
+  absl::StatusOr<XChaCha20Poly1305Parameters> params =
+      XChaCha20Poly1305Parameters::Create(
+          XChaCha20Poly1305Parameters::Variant::kTink);
+  ASSERT_THAT(params.status(), IsOk());
+
+  KeyGenConfiguration config;
+  ASSERT_THAT(
+      internal::KeyGenConfigurationImpl::AddKeyCreator<
+          XChaCha20Poly1305Parameters>(CreateXChaCha20Poly1305Key, config),
+      IsOk());
+
+  // Upcast to abstract Parameters class
+  const Parameters& abstract_params = *params;
+
+  absl::StatusOr<std::unique_ptr<KeysetHandle>> handle =
+      KeysetHandle::GenerateNewFromParameters(abstract_params, config);
+  ASSERT_THAT(handle.status(), IsOk());
+  EXPECT_THAT((*handle)->GetPrimary().GetKey()->GetParameters(), Eq(*params));
 }
 
 TEST(KeysetHandleGenerateNewFromParametersTest,

@@ -203,23 +203,21 @@ tink_cc_library(
 tink_cc_library(
   NAME config_v0
   SRCS
-    config_v0.cc
     config_v0.h
   DEPS
-    absl::absl_check
+    tink::streamingaead::config_2026
+    absl::core_headers
     tink::core::configuration
-    tink::streamingaead::internal::config_v0
 )
 
 tink_cc_library(
   NAME key_gen_config_v0
   SRCS
-    key_gen_config_v0.cc
     key_gen_config_v0.h
   DEPS
-    absl::absl_check
+    tink::streamingaead::key_gen_config_2026
+    absl::core_headers
     tink::core::key_gen_configuration
-    tink::streamingaead::internal::key_gen_config_v0
 )
 
 tink_cc_library(
@@ -592,29 +590,6 @@ tink_cc_test(
 )
 
 tink_cc_test(
-  NAME config_v0_test
-  SRCS
-    config_v0_test.cc
-  DEPS
-    tink::streamingaead::config_v0
-    tink::streamingaead::key_gen_config_v0
-    tink::streamingaead::streaming_aead_key_templates
-    gmock
-    absl::memory
-    absl::status_matchers
-    tink::core::input_stream
-    tink::core::keyset_handle
-    tink::core::output_stream
-    tink::core::streaming_aead
-    tink::subtle::test_util
-    tink::util::istream_input_stream
-    tink::util::ostream_output_stream
-    tink::util::statusor
-    tink::util::test_matchers
-    tink::proto::tink_cc_proto
-)
-
-tink_cc_test(
   NAME aes_ctr_hmac_streaming_parameters_test
   SRCS
     aes_ctr_hmac_streaming_parameters_test.cc
@@ -741,4 +716,26 @@ tink_cc_test(
     tink::util::test_matchers
     tink::proto::aes_gcm_hkdf_streaming_cc_proto
     tink::proto::common_cc_proto
+)
+
+tink_cc_library(
+  NAME config_2026
+  SRCS
+    config_2026.cc
+    config_2026.h
+  DEPS
+    absl::absl_check
+    tink::core::configuration
+    tink::streamingaead::internal::config_2026
+)
+
+tink_cc_library(
+  NAME key_gen_config_2026
+  SRCS
+    key_gen_config_2026.cc
+    key_gen_config_2026.h
+  DEPS
+    absl::absl_check
+    tink::core::key_gen_configuration
+    tink::streamingaead::internal::key_gen_config_2026
 )

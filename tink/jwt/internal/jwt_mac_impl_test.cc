@@ -59,7 +59,7 @@ namespace jwt_internal {
 
 namespace {
 
-absl::StatusOr<std::unique_ptr<JwtMacInternal>> CreateJwtMac() {
+absl::StatusOr<std::unique_ptr<Mac>> CreateTestMac() {
   std::string key_value;
   if (!absl::WebSafeBase64Unescape(
           "AyM1SysPpbyDfgZld3umj1qzKObwVMkoqQ-EstJQLr_T-1"
@@ -74,6 +74,19 @@ absl::StatusOr<std::unique_ptr<JwtMacInternal>> CreateJwtMac() {
   if (!mac.ok()) {
     return mac.status();
   }
+  return *std::move(mac);
+}
+
+absl::StatusOr<std::unique_ptr<JwtMacInternal>> CreateJwtMac() {
+  std::string key_value;
+  if (!absl::WebSafeBase64Unescape(
+          "AyM1SysPpbyDfgZld3umj1qzKObwVMkoqQ-EstJQLr_T-1"
+          "qS0gZH75aKtMN3Yj0iPS4hcgUuTwjAzZr1Z9CAow",
+          &key_value)) {
+    return absl::Status(absl::StatusCode::kInvalidArgument,
+                        "failed to parse key");
+  }
+  absl::StatusOr<std::unique_ptr<Mac>> mac = CreateTestMac();
   std::unique_ptr<JwtMacInternal> jwt_mac =
       JwtMacImpl::Raw(*std::move(mac), "HS256");
   return std::move(jwt_mac);
@@ -96,7 +109,7 @@ TEST(JwtMacImplTest, CreateAndValidateToken) {
   EXPECT_THAT(raw_jwt->GetTypeHeader(), IsOkAndHolds("typeHeader"));
 
   absl::StatusOr<std::string> compact =
-      (*jwt_mac)->ComputeMacAndEncodeWithKid(*raw_jwt, /*kid=*/absl::nullopt);
+      (*jwt_mac)->ComputeMacAndEncodeWithKid(*raw_jwt, /*kid=*/std::nullopt);
   ASSERT_THAT(compact, IsOk());
 
   absl::StatusOr<JwtValidator> validator =
@@ -105,7 +118,7 @@ TEST(JwtMacImplTest, CreateAndValidateToken) {
 
   absl::StatusOr<VerifiedJwt> verified_jwt =
       (*jwt_mac)->VerifyMacAndDecodeWithKid(*compact, *validator,
-                                            /*kid=*/absl::nullopt);
+                                            /*kid=*/std::nullopt);
   ASSERT_THAT(verified_jwt, IsOk());
   EXPECT_THAT(verified_jwt->GetTypeHeader(), IsOkAndHolds("typeHeader"));
   EXPECT_THAT(verified_jwt->GetJwtId(), IsOkAndHolds("id123"));
@@ -115,7 +128,7 @@ TEST(JwtMacImplTest, CreateAndValidateToken) {
   ASSERT_THAT(validator2, IsOk());
   EXPECT_FALSE((*jwt_mac)
                    ->VerifyMacAndDecodeWithKid(*compact, *validator2,
-                                               /*kid=*/absl::nullopt)
+                                               /*kid=*/std::nullopt)
                    .ok());
 }
 
@@ -153,7 +166,7 @@ TEST(JwtMacImplTest, CreateAndValidateTokenWithKid) {
   // with kid=absl::nullopt, the kid header in the token is ignored.
   EXPECT_THAT((*jwt_mac)
                   ->VerifyMacAndDecodeWithKid(*compact, *validator,
-                                              /*kid=*/absl::nullopt)
+                                              /*kid=*/std::nullopt)
                   .status(),
               IsOk());
 
@@ -196,7 +209,7 @@ TEST(JwtMacImplTest, ValidateFixedToken) {
   // verification succeeds because token was valid 1970
   absl::StatusOr<VerifiedJwt> verified_jwt =
       (*jwt_mac)->VerifyMacAndDecodeWithKid(compact, *validator_1970,
-                                            /*kid=*/absl::nullopt);
+                                            /*kid=*/std::nullopt);
   ASSERT_THAT(verified_jwt, IsOk());
   EXPECT_THAT(verified_jwt->GetIssuer(), IsOkAndHolds("joe"));
   EXPECT_THAT(verified_jwt->GetBooleanClaim("http://example.com/is_root"),
@@ -207,7 +220,7 @@ TEST(JwtMacImplTest, ValidateFixedToken) {
   ASSERT_THAT(validator_now, IsOk());
   EXPECT_FALSE((*jwt_mac)
                    ->VerifyMacAndDecodeWithKid(compact, *validator_now,
-                                               /*kid=*/absl::nullopt)
+                                               /*kid=*/std::nullopt)
                    .ok());
 
   // verification fails because token was modified
@@ -217,7 +230,7 @@ TEST(JwtMacImplTest, ValidateFixedToken) {
       "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXi";
   EXPECT_FALSE((*jwt_mac)
                    ->VerifyMacAndDecodeWithKid(
-                       modified_compact, *validator_1970, /*kid=*/absl::nullopt)
+                       modified_compact, *validator_1970, /*kid=*/std::nullopt)
                    .ok());
 }
 
@@ -231,27 +244,27 @@ TEST(JwtMacImplTest, ValidateInvalidTokens) {
   EXPECT_FALSE((*jwt_mac)
                    ->VerifyMacAndDecodeWithKid("eyJhbGciOiJIUzI1NiJ9.e30.abc.",
                                                *validator,
-                                               /*kid=*/absl::nullopt)
+                                               /*kid=*/std::nullopt)
                    .ok());
   EXPECT_FALSE((*jwt_mac)
                    ->VerifyMacAndDecodeWithKid("eyJhbGciOiJIUzI1NiJ9?.e30.abc",
                                                *validator,
-                                               /*kid=*/absl::nullopt)
+                                               /*kid=*/std::nullopt)
                    .ok());
   EXPECT_FALSE((*jwt_mac)
                    ->VerifyMacAndDecodeWithKid("eyJhbGciOiJIUzI1NiJ9.e30?.abc",
                                                *validator,
-                                               /*kid=*/absl::nullopt)
+                                               /*kid=*/std::nullopt)
                    .ok());
   EXPECT_FALSE((*jwt_mac)
                    ->VerifyMacAndDecodeWithKid("eyJhbGciOiJIUzI1NiJ9.e30.abc?",
                                                *validator,
-                                               /*kid=*/absl::nullopt)
+                                               /*kid=*/std::nullopt)
                    .ok());
   EXPECT_FALSE((*jwt_mac)
                    ->VerifyMacAndDecodeWithKid("eyJhbGciOiJIUzI1NiJ9.e30",
                                                *validator,
-                                               /*kid=*/absl::nullopt)
+                                               /*kid=*/std::nullopt)
                    .ok());
 }
 
@@ -275,7 +288,7 @@ TEST(JwtMacImplWithKidTest, ComputeFailsWithWrongKid) {
   EXPECT_THAT(jwt_mac->ComputeMacAndEncodeWithKid(*raw_jwt, /*kid=*/"05060708"),
               Not(IsOk()));
   EXPECT_THAT(
-      jwt_mac->ComputeMacAndEncodeWithKid(*raw_jwt, /*kid=*/absl::nullopt),
+      jwt_mac->ComputeMacAndEncodeWithKid(*raw_jwt, /*kid=*/std::nullopt),
       Not(IsOk()));
 }
 
@@ -310,7 +323,7 @@ TEST(JwtMacImplWithKidTest, Verify) {
         JwtMacImpl::Raw(*std::move(mac), "HS256");
     // KID is ignored with a RAW verifier.
     EXPECT_THAT(jwt_mac->VerifyMacAndDecodeWithKid(*compact, *validator,
-                                                   /*kid=*/absl::nullopt),
+                                                   /*kid=*/std::nullopt),
                 IsOk());
     // Correct KID works.
     EXPECT_THAT(jwt_mac->VerifyMacAndDecodeWithKid(*compact, *validator, kid),
@@ -332,7 +345,7 @@ TEST(JwtMacImplWithKidTest, Verify) {
                 IsOk());
     // No KID makes the verification fail.
     EXPECT_THAT(jwt_mac->VerifyMacAndDecodeWithKid(*compact, *validator,
-                                                   /*kid=*/absl::nullopt),
+                                                   /*kid=*/std::nullopt),
                 Not(IsOk()));
     // A wrong KID makes the verification fail.
     EXPECT_THAT(
@@ -350,7 +363,7 @@ TEST(JwtMacImplWithKidTest, Verify) {
     EXPECT_THAT(jwt_mac->VerifyMacAndDecodeWithKid(*compact, *validator, kid),
                 Not(IsOk()));
     EXPECT_THAT(jwt_mac->VerifyMacAndDecodeWithKid(*compact, *validator,
-                                                   /*kid=*/absl::nullopt),
+                                                   /*kid=*/std::nullopt),
                 Not(IsOk()));
     EXPECT_THAT(
         jwt_mac->VerifyMacAndDecodeWithKid(*compact, *validator, "wrong-kid"),
@@ -388,7 +401,7 @@ TEST(JwtMacImplRawTest, VerifyTokenWithKid) {
         JwtMacImpl::Raw(*std::move(mac), "HS256");
     // KID is ignored with a RAW verifier.
     EXPECT_THAT(jwt_mac->VerifyMacAndDecodeWithKid(*compact, *validator,
-                                                   /*kid=*/absl::nullopt),
+                                                   /*kid=*/std::nullopt),
                 IsOk());
     // Correct KID works.
     EXPECT_THAT(jwt_mac->VerifyMacAndDecodeWithKid(*compact, *validator, kid),
@@ -410,7 +423,7 @@ TEST(JwtMacImplRawTest, VerifyTokenWithKid) {
                 IsOk());
     // No KID makes the verification fail.
     EXPECT_THAT(jwt_mac->VerifyMacAndDecodeWithKid(*compact, *validator,
-                                                   /*kid=*/absl::nullopt),
+                                                   /*kid=*/std::nullopt),
                 Not(IsOk()));
     // A wrong KID makes the verification fail.
     EXPECT_THAT(
@@ -428,7 +441,7 @@ TEST(JwtMacImplRawTest, VerifyTokenWithKid) {
     EXPECT_THAT(jwt_mac->VerifyMacAndDecodeWithKid(*compact, *validator, kid),
                 Not(IsOk()));
     EXPECT_THAT(jwt_mac->VerifyMacAndDecodeWithKid(*compact, *validator,
-                                                   /*kid=*/absl::nullopt),
+                                                   /*kid=*/std::nullopt),
                 Not(IsOk()));
     EXPECT_THAT(
         jwt_mac->VerifyMacAndDecodeWithKid(*compact, *validator, "wrong-kid"),
@@ -450,7 +463,7 @@ TEST(JwtMacImplRawTest, VerifyRawToken) {
   std::unique_ptr<JwtMacInternal> jwt_mac =
       JwtMacImpl::Raw(*std::move(mac), "HS256");
   absl::StatusOr<std::string> compact =
-      jwt_mac->ComputeMacAndEncodeWithKid(*raw_jwt, /*kid=*/absl::nullopt);
+      jwt_mac->ComputeMacAndEncodeWithKid(*raw_jwt, /*kid=*/std::nullopt);
   ASSERT_THAT(compact, IsOk());
   absl::StatusOr<JwtValidator> validator = JwtValidatorBuilder()
                                                .ExpectTypeHeader("typeHeader")
@@ -465,7 +478,7 @@ TEST(JwtMacImplRawTest, VerifyRawToken) {
         JwtMacImpl::Raw(*std::move(mac), "HS256");
     // No KID is OK.
     EXPECT_THAT(jwt_mac->VerifyMacAndDecodeWithKid(*compact, *validator,
-                                                   /*kid=*/absl::nullopt),
+                                                   /*kid=*/std::nullopt),
                 IsOk());
     // Any KID fails.
     EXPECT_THAT(jwt_mac->VerifyMacAndDecodeWithKid(*compact, *validator, "kid"),
@@ -483,7 +496,7 @@ TEST(JwtMacImplRawTest, VerifyRawToken) {
                 Not(IsOk()));
     // Fails because no KID is specified.
     EXPECT_THAT(jwt_mac->VerifyMacAndDecodeWithKid(*compact, *validator,
-                                                   /*kid=*/absl::nullopt),
+                                                   /*kid=*/std::nullopt),
                 Not(IsOk()));
     // Fails because KID is wrong.
     EXPECT_THAT(
@@ -499,7 +512,7 @@ TEST(JwtMacImplRawTest, VerifyRawToken) {
         JwtMacImpl::RawWithCustomKid(*std::move(mac), "HS256", "custom-kid");
     // No KID is OK.
     EXPECT_THAT(jwt_mac->VerifyMacAndDecodeWithKid(*compact, *validator,
-                                                   /*kid=*/absl::nullopt),
+                                                   /*kid=*/std::nullopt),
                 IsOk());
     // Specifying any KID fails.
     EXPECT_THAT(
@@ -549,7 +562,7 @@ TEST(JwtMacImplRawWithCustomKidTest, Verify) {
   std::unique_ptr<JwtMacInternal> jwt_mac = JwtMacImpl::RawWithCustomKid(
       *std::move(mac), "HS256", /*custom_kid=*/"custom-kid");
   absl::StatusOr<std::string> compact =
-      jwt_mac->ComputeMacAndEncodeWithKid(*raw_jwt, /*kid=*/absl::nullopt);
+      jwt_mac->ComputeMacAndEncodeWithKid(*raw_jwt, /*kid=*/std::nullopt);
   ASSERT_THAT(compact, IsOk());
   absl::StatusOr<JwtValidator> validator = JwtValidatorBuilder()
                                                .ExpectTypeHeader("typeHeader")
@@ -564,7 +577,7 @@ TEST(JwtMacImplRawWithCustomKidTest, Verify) {
         JwtMacImpl::Raw(*std::move(mac), "HS256");
     // No KID is OK.
     EXPECT_THAT(jwt_mac->VerifyMacAndDecodeWithKid(*compact, *validator,
-                                                   /*kid=*/absl::nullopt),
+                                                   /*kid=*/std::nullopt),
                 IsOk());
     // Any KID fails.
     EXPECT_THAT(jwt_mac->VerifyMacAndDecodeWithKid(*compact, *validator, "kid"),
@@ -582,7 +595,7 @@ TEST(JwtMacImplRawWithCustomKidTest, Verify) {
                 Not(IsOk()));
     // Fails because no KID is specified.
     EXPECT_THAT(jwt_mac->VerifyMacAndDecodeWithKid(*compact, *validator,
-                                                   /*kid=*/absl::nullopt),
+                                                   /*kid=*/std::nullopt),
                 Not(IsOk()));
     // Fails because KID is wrong.
     EXPECT_THAT(
@@ -598,7 +611,7 @@ TEST(JwtMacImplRawWithCustomKidTest, Verify) {
         *std::move(mac), "HS256", /*custom_kid=*/"custom-kid");
     // No KID is OK.
     EXPECT_THAT(jwt_mac->VerifyMacAndDecodeWithKid(*compact, *validator,
-                                                   /*kid=*/absl::nullopt),
+                                                   /*kid=*/std::nullopt),
                 IsOk());
     // Specifying any KID fails.
     EXPECT_THAT(
@@ -608,6 +621,44 @@ TEST(JwtMacImplRawWithCustomKidTest, Verify) {
         jwt_mac->VerifyMacAndDecodeWithKid(*compact, *validator, "wrong-kid"),
         Not(IsOk()));
   }
+}
+
+TEST(JwtMacImplTest, NonStringTypeHeaderIsRejectedWithDefaultValidator) {
+  absl::StatusOr<std::unique_ptr<JwtMacInternal>> jwt_mac = CreateJwtMac();
+  ASSERT_THAT(jwt_mac, IsOk());
+
+  absl::StatusOr<RawJwt> raw_jwt = RawJwtBuilder()
+                                       .SetIssuer("issuer")
+                                       .AddAudience("audience")
+                                       .SetJwtId("id123")
+                                       .WithoutExpiration()
+                                       .Build();
+  ASSERT_THAT(raw_jwt, IsOk());
+
+  absl::StatusOr<JwtValidator> default_validator =
+      JwtValidatorBuilder()
+          .ExpectIssuer("issuer")
+          .ExpectAudience("audience")
+          .AllowMissingExpiration()
+          .Build();
+  ASSERT_THAT(default_validator, IsOk());
+
+  absl::StatusOr<std::string> payload = raw_jwt->GetJsonPayload();
+  ASSERT_THAT(payload, IsOk());
+  std::string encoded_header = EncodeHeader(R"({"typ":123,"alg":"HS256"})");
+  std::string encoded_payload = EncodePayload(*payload);
+  std::string unsigned_token = encoded_header + "." + encoded_payload;
+
+  absl::StatusOr<std::unique_ptr<Mac>> mac = CreateTestMac();
+  ASSERT_THAT(mac, IsOk());
+  absl::StatusOr<std::string> tag = (*mac)->ComputeMac(unsigned_token);
+  ASSERT_THAT(tag, IsOk());
+  std::string compact = unsigned_token + "." + EncodeSignature(*tag);
+
+  absl::StatusOr<VerifiedJwt> numeric_type_result =
+      (*jwt_mac)->VerifyMacAndDecodeWithKid(compact, *default_validator,
+                                            /*kid=*/std::nullopt);
+  EXPECT_THAT(numeric_type_result, Not(IsOk()));
 }
 
 }  // namespace

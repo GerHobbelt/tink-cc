@@ -687,6 +687,7 @@ tink_cc_library(
   NAME parameters
   SRCS
     parameters.h
+  PUBLIC
 )
 
 tink_cc_library(
@@ -949,6 +950,7 @@ tink_cc_test(
     tink::core::keyset_handle
     tink::core::keyset_handle_builder
     tink::core::keyset_reader
+    tink::core::parameters
     tink::core::partial_key_access
     tink::core::primitive_set
     tink::core::primitive_wrapper
@@ -970,7 +972,7 @@ tink_cc_test(
     tink::aead::aes_gcm_parameters
     tink::aead::xchacha20_poly1305_key
     tink::aead::xchacha20_poly1305_parameters
-    tink::aead::internal::key_gen_config_v0
+    tink::aead::internal::key_gen_config_2026
     tink::config::fips_140_2
     tink::config::global_registry
     tink::config::key_gen_fips_140_2
@@ -1059,6 +1061,7 @@ tink_cc_test(
     tink::core::key_manager
     gmock
     absl::status
+    absl::status_matchers
     tink::util::status
     tink::util::test_matchers
     tink::proto::empty_cc_proto
@@ -1130,6 +1133,7 @@ tink_cc_test(
     tink::core::kms_clients
     gmock
     absl::status
+    absl::status_matchers
     absl::strings
     tink::util::status
     tink::util::statusor
@@ -1157,6 +1161,7 @@ tink_cc_test(
     gmock
     absl::memory
     absl::status
+    absl::status_matchers
     absl::string_view
     tink::subtle::subtle
     tink::util::secret_data
@@ -1205,6 +1210,7 @@ tink_cc_test(
     gmock
     absl::memory
     absl::status
+    absl::status_matchers
     tink::subtle::aes_gcm_boringssl
     tink::subtle::random
     tink::util::status

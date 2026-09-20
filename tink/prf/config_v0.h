@@ -17,13 +17,16 @@
 #ifndef TINK_PRF_CONFIG_V0_H_
 #define TINK_PRF_CONFIG_V0_H_
 
+#include "absl/base/macros.h"
 #include "tink/configuration.h"
+#include "tink/prf/config_2026.h"
 
 namespace crypto {
 namespace tink {
 
-// Configuration used to generate PRF primitives with recommended key managers.
-const Configuration& ConfigPrfV0();
+ABSL_DEPRECATE_AND_INLINE() inline const Configuration& ConfigPrfV0() {
+  return ConfigPrf2026();
+}
 
 }  // namespace tink
 }  // namespace crypto

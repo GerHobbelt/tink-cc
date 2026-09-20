@@ -17,13 +17,18 @@
 #ifndef TINK_CONFIG_KEY_GEN_V0_H_
 #define TINK_CONFIG_KEY_GEN_V0_H_
 
+#include "absl/base/attributes.h"
+#include "tink/config/key_gen_config_2026.h"
 #include "tink/key_gen_configuration.h"
 
 namespace crypto {
 namespace tink {
 
 // KeyGenConfiguration used to generate keys with recommended key managers.
-const KeyGenConfiguration& KeyGenConfigV0();
+ABSL_DEPRECATED("Use KeyGenConfig2026() instead.")
+inline const KeyGenConfiguration& KeyGenConfigV0() {
+  return KeyGenConfig2026();
+}
 
 }  // namespace tink
 }  // namespace crypto

@@ -17,14 +17,17 @@
 #ifndef TINK_HYBRID_KEY_GEN_CONFIG_V0_H_
 #define TINK_HYBRID_KEY_GEN_CONFIG_V0_H_
 
+#include "absl/base/macros.h"
+#include "tink/hybrid/key_gen_config_2026.h"
 #include "tink/key_gen_configuration.h"
 
 namespace crypto {
 namespace tink {
 
-// KeyGenConfiguration used to generate Hybrid Encryption keys with recommended
-// key managers.
-const KeyGenConfiguration& KeyGenConfigHybridV0();
+ABSL_DEPRECATE_AND_INLINE()
+inline const KeyGenConfiguration& KeyGenConfigHybridV0() {
+  return KeyGenConfigHybrid2026();
+}
 
 }  // namespace tink
 }  // namespace crypto

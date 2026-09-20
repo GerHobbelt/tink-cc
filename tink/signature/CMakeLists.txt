@@ -408,20 +408,22 @@ tink_cc_library(
     tink::signature::rsa_ssa_pss_verify_key_manager
     absl::memory
     absl::status
+    absl::statusor
     absl::strings
     tink::core::keyset_reader
     tink::internal::ec_util
     tink::internal::rsa_util
+    tink::signature::internal::ml_dsa_pem
     tink::subtle::pem_parser_boringssl
-    tink::subtle::subtle_util_boringssl
+    tink::util::constants
     tink::util::enums
     tink::util::keyset_util
     tink::util::secret_data
-    tink::util::status
     tink::util::statusor
     tink::proto::common_cc_proto
     tink::proto::ecdsa_cc_proto
     tink::proto::ed25519_cc_proto
+    tink::proto::ml_dsa_cc_proto
     tink::proto::rsa_ssa_pkcs1_cc_proto
     tink::proto::rsa_ssa_pss_cc_proto
     tink::proto::tink_cc_proto
@@ -612,53 +614,25 @@ tink_cc_library(
 tink_cc_library(
   NAME config_v0
   SRCS
-    config_v0.cc
     config_v0.h
   DEPS
-    absl::absl_check
+    tink::signature::config_2026
+    absl::core_headers
     tink::core::configuration
-    tink::signature::internal::config_v0
   TAGS
     exclude_if_openssl
-)
-
-tink_cc_library(
-  NAME config_v0_openssl
-  SRCS
-    config_v0.cc
-    config_v0.h
-  DEPS
-    absl::check
-    tink::core::configuration
-    tink::signature::internal::config_v0_openssl
-  TAGS
-    exclude_if_boringssl
 )
 
 tink_cc_library(
   NAME key_gen_config_v0
   SRCS
-    key_gen_config_v0.cc
     key_gen_config_v0.h
   DEPS
-    absl::absl_check
+    tink::signature::key_gen_config_2026
+    absl::core_headers
     tink::core::key_gen_configuration
-    tink::signature::internal::key_gen_config_v0
   TAGS
     exclude_if_openssl
-)
-
-tink_cc_library(
-  NAME key_gen_config_v0_openssl
-  SRCS
-    key_gen_config_v0.cc
-    key_gen_config_v0.h
-  DEPS
-    absl::check
-    tink::core::key_gen_configuration
-    tink::signature::internal::key_gen_config_v0_openssl
-  TAGS
-    exclude_if_boringssl
 )
 
 tink_cc_library(
@@ -741,7 +715,6 @@ tink_cc_library(
     tink::core::secret_data
     tink::internal::rsa_util
     tink::internal::ssl_unique_ptr
-    tink::util::secret_data
 )
 
 tink_cc_library(
@@ -1063,9 +1036,6 @@ tink_cc_test(
     tink::subtle::ecdsa_verify_boringssl
     tink::util::enums
     tink::util::istream_input_stream
-    tink::util::status
-    tink::util::statusor
-    tink::util::test_matchers
     tink::util::test_util
     tink::proto::ecdsa_cc_proto
     tink::proto::tink_cc_proto
@@ -1088,18 +1058,11 @@ tink_cc_test(
     tink::core::keyset_handle
     tink::core::public_key_sign
     tink::core::public_key_verify
-    tink::core::registry
     tink::config::global_registry
     tink::signature::internal::testing::ed25519_test_vectors
     tink::signature::internal::testing::signature_test_vector
     tink::subtle::ed25519_verify_boringssl
-    tink::util::enums
     tink::util::istream_input_stream
-    tink::util::protobuf_helper
-    tink::util::status
-    tink::util::statusor
-    tink::util::test_matchers
-    tink::util::test_util
     tink::proto::ed25519_cc_proto
     tink::proto::tink_cc_proto
 )
@@ -1284,6 +1247,7 @@ tink_cc_test(
     absl::status_matchers
     absl::statusor
     absl::strings
+    crypto
     tink::core::cleartext_keyset_handle
     tink::core::keyset_handle
     tink::core::keyset_reader
@@ -1293,15 +1257,15 @@ tink_cc_test(
     tink::internal::rsa_util
     tink::internal::ssl_util
     tink::subtle::pem_parser_boringssl
+    tink::util::constants
     tink::util::enums
     tink::util::secret_data
-    tink::util::status
-    tink::util::statusor
     tink::util::test_matchers
     tink::util::test_util
     tink::proto::common_cc_proto
     tink::proto::ecdsa_cc_proto
     tink::proto::ed25519_cc_proto
+    tink::proto::ml_dsa_cc_proto
     tink::proto::rsa_ssa_pss_cc_proto
     tink::proto::tink_cc_proto
   TAGS
@@ -1475,47 +1439,6 @@ tink_cc_test(
     tink::internal::ssl_unique_ptr
     tink::util::test_matchers
     tink::util::test_util
-)
-
-tink_cc_test(
-  NAME config_v0_test
-  SRCS
-    config_v0_test.cc
-  DEPS
-    tink::signature::config_v0
-    tink::signature::key_gen_config_v0
-    tink::signature::ml_dsa_parameters
-    tink::signature::signature_key_templates
-    tink::signature::slh_dsa_parameters
-    gmock
-    absl::status_matchers
-    tink::core::keyset_handle
-    tink::core::public_key_sign
-    tink::core::public_key_verify
-    tink::util::statusor
-    tink::util::test_matchers
-    tink::proto::tink_cc_proto
-  TAGS
-    exclude_if_openssl
-)
-
-tink_cc_test(
-  NAME config_v0_openssl_test
-  SRCS
-    config_v0_test.cc
-  DEPS
-    tink::signature::config_v0_openssl
-    tink::signature::key_gen_config_v0_openssl
-    tink::signature::signature_key_templates
-    gmock
-    tink::core::keyset_handle
-    tink::core::public_key_sign
-    tink::core::public_key_verify
-    tink::util::statusor
-    tink::util::test_matchers
-    tink::proto::tink_cc_proto
-  TAGS
-    exclude_if_boringssl
 )
 
 tink_cc_test(
@@ -2072,7 +1995,6 @@ tink_cc_test(
     tink::core::partial_key_access
     tink::internal::util
     tink::signature::internal::testing::composite_ml_dsa_test_util
-    tink::util::test_matchers
   TAGS
     exclude_if_openssl
 )
@@ -2131,7 +2053,6 @@ tink_cc_test(
     tink::core::partial_key_access
     tink::internal::util
     tink::signature::internal::testing::composite_ml_dsa_test_util
-    tink::util::test_matchers
   TAGS
     exclude_if_openssl
 )
@@ -2190,3 +2111,30 @@ tink_cc_test(
   TAGS
     exclude_if_openssl
 )
+
+tink_cc_library(
+  NAME config_2026
+  SRCS
+    config_2026.cc
+    config_2026.h
+  DEPS
+    absl::absl_check
+    tink::core::configuration
+    tink::signature::internal::config_2026
+  TAGS
+    exclude_if_openssl
+)
+
+tink_cc_library(
+  NAME key_gen_config_2026
+  SRCS
+    key_gen_config_2026.cc
+    key_gen_config_2026.h
+  DEPS
+    absl::absl_check
+    tink::core::key_gen_configuration
+    tink::signature::internal::key_gen_config_2026
+  TAGS
+    exclude_if_openssl
+)
+

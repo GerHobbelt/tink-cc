@@ -17,13 +17,16 @@
 #ifndef TINK_AEAD_CONFIG_V0_H_
 #define TINK_AEAD_CONFIG_V0_H_
 
+#include "absl/base/macros.h"
+#include "tink/aead/config_2026.h"
 #include "tink/configuration.h"
 
 namespace crypto {
 namespace tink {
 
-// Configuration used to generate AEAD primitives with recommended key managers.
-const Configuration& ConfigAeadV0();
+ABSL_DEPRECATE_AND_INLINE() inline const Configuration& ConfigAeadV0() {
+  return ConfigAead2026();
+}
 
 }  // namespace tink
 }  // namespace crypto

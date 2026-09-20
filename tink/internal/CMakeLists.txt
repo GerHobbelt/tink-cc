@@ -326,9 +326,6 @@ tink_cc_test(
     tink::util::istream_input_stream
     tink::util::protobuf_helper
     tink::util::secret_data
-    tink::util::status
-    tink::util::statusor
-    tink::util::test_matchers
     tink::util::test_util
     tink::proto::aes_ctr_hmac_aead_cc_proto
     tink::proto::aes_gcm_cc_proto
@@ -536,7 +533,6 @@ tink_cc_test(
     absl::strings
     tink::core::key_status
     tink::core::primitive_set
-    tink::util::test_matchers
     tink::proto::tink_cc_proto
 )
 
@@ -2154,4 +2150,29 @@ tink_cc_test(
     tink::internal::legacy_annotations
     gmock
     absl::flat_hash_map
+)
+
+tink_cc_library(
+  NAME call_with_core_dump_protection_oss
+  SRCS
+    call_with_core_dump_protection_oss.h
+)
+
+tink_cc_library(
+  NAME safe_stringops_oss
+  SRCS
+    safe_stringops_oss.h
+  DEPS
+    tink::internal::call_with_core_dump_protection
+    crypto
+)
+
+tink_cc_library(
+  NAME sanitizing_allocator_oss
+  SRCS
+    sanitizing_allocator_oss.h
+  DEPS
+    absl::config
+    absl::core_headers
+    crypto
 )

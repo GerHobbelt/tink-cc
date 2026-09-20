@@ -282,28 +282,52 @@ cc_library(
 )
 
 cc_library(
-    name = "config_v0",
-    srcs = ["config_v0.cc"],
-    hdrs = ["config_v0.h"],
+    name = "config_2026",
+    srcs = ["config_2026.cc"],
+    hdrs = ["config_2026.h"],
     include_prefix = "tink/mac",
     visibility = ["//visibility:public"],
     deps = [
         "//tink:configuration",
-        "//tink/mac/internal:config_v0",
+        "//tink/mac/internal:config_2026",
         "@abseil-cpp//absl/log:absl_check",
     ],
 )
 
 cc_library(
-    name = "key_gen_config_v0",
-    srcs = ["key_gen_config_v0.cc"],
-    hdrs = ["key_gen_config_v0.h"],
+    name = "key_gen_config_2026",
+    srcs = ["key_gen_config_2026.cc"],
+    hdrs = ["key_gen_config_2026.h"],
     include_prefix = "tink/mac",
     visibility = ["//visibility:public"],
     deps = [
         "//tink:key_gen_configuration",
-        "//tink/mac/internal:key_gen_config_v0",
+        "//tink/mac/internal:key_gen_config_2026",
         "@abseil-cpp//absl/log:absl_check",
+    ],
+)
+
+cc_library(
+    name = "config_v0",
+    hdrs = ["config_v0.h"],
+    include_prefix = "tink/mac",
+    visibility = ["//visibility:public"],
+    deps = [
+        ":config_2026",
+        "//tink:configuration",
+        "@abseil-cpp//absl/base:core_headers",
+    ],
+)
+
+cc_library(
+    name = "key_gen_config_v0",
+    hdrs = ["key_gen_config_v0.h"],
+    include_prefix = "tink/mac",
+    visibility = ["//visibility:public"],
+    deps = [
+        ":key_gen_config_2026",
+        "//tink:key_gen_configuration",
+        "@abseil-cpp//absl/base:core_headers",
     ],
 )
 
@@ -613,20 +637,19 @@ cc_test(
 )
 
 cc_test(
-    name = "config_v0_test",
-    srcs = ["config_v0_test.cc"],
+    name = "config_2026_test",
+    size = "small",
+    srcs = ["config_2026_test.cc"],
     deps = [
-        ":config_v0",
-        ":key_gen_config_v0",
+        ":config_2026",
+        ":key_gen_config_2026",
         ":mac_key_templates",
         "//proto:tink_cc_proto",
         "//tink:chunked_mac",
-        "//tink:key_gen_configuration",
         "//tink:keyset_handle",
         "//tink:mac",
-        "//tink/util:statusor",
-        "//tink/util:test_matchers",
         "@abseil-cpp//absl/status:status_matchers",
+        "@abseil-cpp//absl/status:statusor",
         "@googletest//:gtest_main",
     ],
 )

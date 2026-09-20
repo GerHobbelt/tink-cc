@@ -6,10 +6,11 @@ package(default_visibility = ["//:__subpackages__"])
 licenses(["notice"])
 
 cc_library(
-    name = "config_v0",
-    srcs = ["config_v0.cc"],
-    hdrs = ["config_v0.h"],
+    name = "config_2026",
+    srcs = ["config_2026.cc"],
+    hdrs = ["config_2026.h"],
     include_prefix = "tink/daead/internal",
+    visibility = ["//visibility:public"],
     deps = [
         "//tink:configuration",
         "//tink/daead:aes_siv_key_manager",
@@ -21,10 +22,11 @@ cc_library(
 )
 
 cc_library(
-    name = "key_gen_config_v0",
-    srcs = ["key_gen_config_v0.cc"],
-    hdrs = ["key_gen_config_v0.h"],
+    name = "key_gen_config_2026",
+    srcs = ["key_gen_config_2026.cc"],
+    hdrs = ["key_gen_config_2026.h"],
     include_prefix = "tink/daead/internal",
+    visibility = ["//visibility:public"],
     deps = [
         "//tink:key_gen_configuration",
         "//tink/daead:aes_siv_key_manager",
@@ -71,11 +73,11 @@ cc_library(
 # tests
 
 cc_test(
-    name = "config_v0_test",
-    srcs = ["config_v0_test.cc"],
+    name = "config_2026_test",
+    srcs = ["config_2026_test.cc"],
     deps = [
-        ":config_v0",
-        ":key_gen_config_v0",
+        ":config_2026",
+        ":key_gen_config_2026",
         "//proto:tink_cc_proto",
         "//tink:configuration",
         "//tink:deterministic_aead",

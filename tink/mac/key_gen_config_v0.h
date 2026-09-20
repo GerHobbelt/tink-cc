@@ -17,13 +17,17 @@
 #ifndef TINK_MAC_KEY_GEN_CONFIG_V0_H_
 #define TINK_MAC_KEY_GEN_CONFIG_V0_H_
 
+#include "absl/base/macros.h"
 #include "tink/key_gen_configuration.h"
+#include "tink/mac/key_gen_config_2026.h"
 
 namespace crypto {
 namespace tink {
 
-// KeyGenConfiguration used to generate MAC keys with recommended key managers.
-const KeyGenConfiguration& KeyGenConfigMacV0();
+ABSL_DEPRECATE_AND_INLINE()
+inline const KeyGenConfiguration& KeyGenConfigMacV0() {
+  return KeyGenConfigMac2026();
+}
 
 }  // namespace tink
 }  // namespace crypto

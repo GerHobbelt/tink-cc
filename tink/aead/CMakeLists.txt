@@ -448,23 +448,21 @@ tink_cc_library(
 tink_cc_library(
   NAME config_v0
   SRCS
-    config_v0.cc
     config_v0.h
   DEPS
-    absl::absl_check
+    tink::aead::config_2026
+    absl::core_headers
     tink::core::configuration
-    tink::aead::internal::config_v0
 )
 
 tink_cc_library(
   NAME key_gen_config_v0
   SRCS
-    key_gen_config_v0.cc
     key_gen_config_v0.h
   DEPS
-    absl::absl_check
+    tink::aead::key_gen_config_2026
+    absl::core_headers
     tink::core::key_gen_configuration
-    tink::aead::internal::key_gen_config_v0
 )
 
 tink_cc_library(
@@ -1328,24 +1326,6 @@ tink_cc_test(
 )
 
 tink_cc_test(
-  NAME config_v0_test
-  SRCS
-    config_v0_test.cc
-  DEPS
-    tink::aead::aead_key_templates
-    tink::aead::config_v0
-    tink::aead::key_gen_config_v0
-    gmock
-    absl::status_matchers
-    tink::core::aead
-    tink::core::keyset_handle
-    tink::internal::ssl_util
-    tink::util::statusor
-    tink::util::test_matchers
-    tink::proto::tink_cc_proto
-)
-
-tink_cc_test(
   NAME aes_eax_parameters_test
   SRCS
     aes_eax_parameters_test.cc
@@ -1831,4 +1811,65 @@ tink_cc_test(
     tink::core::aead
     tink::core::keyset_handle
     tink::config::global_registry
+)
+
+tink_cc_library(
+  NAME kms_aead_config_2026
+  SRCS
+    kms_aead_config_2026.cc
+    kms_aead_config_2026.h
+  DEPS
+    absl::absl_check
+    tink::core::configuration
+    tink::aead::internal::kms_aead_config_2026
+)
+
+tink_cc_library(
+  NAME kms_aead_key_gen_config_2026
+  SRCS
+    kms_aead_key_gen_config_2026.cc
+    kms_aead_key_gen_config_2026.h
+  DEPS
+    absl::absl_check
+    tink::core::key_gen_configuration
+    tink::aead::internal::kms_aead_key_gen_config_2026
+)
+
+tink_cc_library(
+  NAME config_2026
+  SRCS
+    config_2026.cc
+    config_2026.h
+  DEPS
+    absl::absl_check
+    tink::core::configuration
+    tink::aead::internal::config_2026
+)
+
+tink_cc_test(
+  NAME config_2026_test
+  SRCS
+    config_2026_test.cc
+  DEPS
+    tink::aead::aead_key_templates
+    tink::aead::config_2026
+    tink::aead::key_gen_config_2026
+    gmock
+    absl::status_matchers
+    absl::statusor
+    tink::core::aead
+    tink::core::keyset_handle
+    tink::internal::ssl_util
+    tink::proto::tink_cc_proto
+)
+
+tink_cc_library(
+  NAME key_gen_config_2026
+  SRCS
+    key_gen_config_2026.cc
+    key_gen_config_2026.h
+  DEPS
+    absl::absl_check
+    tink::core::key_gen_configuration
+    tink::aead::internal::key_gen_config_2026
 )

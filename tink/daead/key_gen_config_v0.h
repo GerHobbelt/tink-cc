@@ -17,14 +17,17 @@
 #ifndef TINK_DAEAD_KEY_GEN_CONFIG_V0_H_
 #define TINK_DAEAD_KEY_GEN_CONFIG_V0_H_
 
+#include "absl/base/macros.h"
+#include "tink/daead/key_gen_config_2026.h"
 #include "tink/key_gen_configuration.h"
 
 namespace crypto {
 namespace tink {
 
-// KeyGenConfiguration used to generate Deterministic AEAD keys with recommended
-// key managers.
-const KeyGenConfiguration& KeyGenConfigDeterministicAeadV0();
+ABSL_DEPRECATE_AND_INLINE()
+inline const KeyGenConfiguration& KeyGenConfigDeterministicAeadV0() {
+  return KeyGenConfigDeterministicAead2026();
+}
 
 }  // namespace tink
 }  // namespace crypto

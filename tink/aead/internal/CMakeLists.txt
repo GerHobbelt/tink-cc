@@ -159,44 +159,6 @@ tink_cc_library(
 )
 
 tink_cc_library(
-  NAME key_gen_config_v0
-  SRCS
-    key_gen_config_v0.cc
-    key_gen_config_v0.h
-  DEPS
-    absl::memory
-    tink::core::key_gen_configuration
-    tink::aead::aes_ctr_hmac_aead_key_manager
-    tink::aead::aes_eax_key_manager
-    tink::aead::aes_gcm_key_manager
-    tink::aead::aes_gcm_siv_key_manager
-    tink::aead::x_aes_gcm_key_manager
-    tink::aead::xchacha20_poly1305_key_manager
-    tink::internal::key_gen_configuration_impl
-    tink::util::status
-)
-
-tink_cc_library(
-  NAME config_v0
-  SRCS
-    config_v0.cc
-    config_v0.h
-  DEPS
-    absl::memory
-    tink::core::configuration
-    tink::aead::aead_wrapper
-    tink::aead::aes_ctr_hmac_aead_key_manager
-    tink::aead::aes_eax_key_manager
-    tink::aead::aes_gcm_key_manager
-    tink::aead::aes_gcm_siv_key_manager
-    tink::aead::cord_aead_wrapper
-    tink::aead::x_aes_gcm_key_manager
-    tink::aead::xchacha20_poly1305_key_manager
-    tink::internal::configuration_impl
-    tink::util::status
-)
-
-tink_cc_library(
   NAME legacy_kms_envelope_aead_proto_serialization_impl
   SRCS
     legacy_kms_envelope_aead_proto_serialization_impl.cc
@@ -284,15 +246,15 @@ tink_cc_test(
     tink::aead::internal::wycheproof_aead
     gmock
     absl::status_matchers
+    absl::statusor
     absl::strings
     absl::cord
     crypto
     tink::core::aead
+    tink::core::secret_data
     tink::aead::cord_aead
     tink::subtle::aes_gcm_boringssl
     tink::util::secret_data
-    tink::util::statusor
-    tink::util::test_matchers
     tink::util::test_util
 )
 
@@ -380,38 +342,6 @@ tink_cc_test(
     tink::core::crypto_format
     tink::core::primitive_set
     tink::subtle::subtle_util
-    tink::util::test_matchers
-    tink::proto::tink_cc_proto
-)
-
-tink_cc_test(
-  NAME config_v0_test
-  SRCS
-    config_v0_test.cc
-  DEPS
-    tink::aead::internal::config_v0
-    tink::aead::internal::key_gen_config_v0
-    gmock
-    absl::status_matchers
-    absl::cord
-    tink::core::aead
-    tink::core::configuration
-    tink::core::key_gen_configuration
-    tink::core::keyset_handle
-    tink::aead::aead_key_templates
-    tink::aead::aes_ctr_hmac_aead_key_manager
-    tink::aead::aes_eax_key_manager
-    tink::aead::aes_gcm_key_manager
-    tink::aead::aes_gcm_siv_key_manager
-    tink::aead::cord_aead
-    tink::aead::x_aes_gcm_key_manager
-    tink::aead::xchacha20_poly1305_key_manager
-    tink::internal::configuration_impl
-    tink::internal::key_gen_configuration_impl
-    tink::internal::key_type_info_store
-    tink::internal::keyset_wrapper_store
-    tink::internal::ssl_util
-    tink::util::statusor
     tink::util::test_matchers
     tink::proto::tink_cc_proto
 )
@@ -1211,10 +1141,10 @@ tink_cc_test(
 )
 
 tink_cc_library(
-  NAME kms_aead_config_v0
+  NAME kms_aead_config_2026
   SRCS
-    kms_aead_config_v0.cc
-    kms_aead_config_v0.h
+    kms_aead_config_2026.cc
+    kms_aead_config_2026.h
   DEPS
     absl::memory
     absl::status
@@ -1222,13 +1152,32 @@ tink_cc_library(
     tink::aead::kms_aead_key_manager
     tink::aead::kms_envelope_aead_key_manager
     tink::internal::configuration_impl
+)
+
+tink_cc_test(
+  NAME kms_aead_config_2026_test
+  SRCS
+    kms_aead_config_2026_test.cc
+  DEPS
+    tink::aead::internal::kms_aead_config_2026
+    tink::aead::internal::kms_aead_key_gen_config_2026
+    gmock
+    absl::status_matchers
+    absl::statusor
+    tink::core::configuration
+    tink::core::key_gen_configuration
+    tink::aead::kms_aead_key_manager
+    tink::aead::kms_envelope_aead_key_manager
+    tink::internal::configuration_impl
+    tink::internal::key_gen_configuration_impl
+    tink::internal::key_type_info_store
 )
 
 tink_cc_library(
-  NAME kms_aead_key_gen_config_v0
+  NAME kms_aead_key_gen_config_2026
   SRCS
-    kms_aead_key_gen_config_v0.cc
-    kms_aead_key_gen_config_v0.h
+    kms_aead_key_gen_config_2026.cc
+    kms_aead_key_gen_config_2026.h
   DEPS
     absl::memory
     absl::status
@@ -1239,36 +1188,86 @@ tink_cc_library(
 )
 
 tink_cc_test(
-  NAME kms_aead_config_v0_test
+  NAME kms_aead_key_gen_config_2026_test
   SRCS
-    kms_aead_config_v0_test.cc
+    kms_aead_key_gen_config_2026_test.cc
   DEPS
-    tink::aead::internal::kms_aead_config_v0
-    tink::aead::internal::kms_aead_key_gen_config_v0
+    tink::aead::internal::kms_aead_key_gen_config_2026
     gmock
     absl::status_matchers
     absl::statusor
-    tink::core::configuration
     tink::core::key_gen_configuration
     tink::aead::kms_aead_key_manager
     tink::aead::kms_envelope_aead_key_manager
-    tink::internal::configuration_impl
     tink::internal::key_gen_configuration_impl
     tink::internal::key_type_info_store
 )
 
-tink_cc_test(
-  NAME kms_aead_key_gen_config_v0_test
+tink_cc_library(
+  NAME config_2026
   SRCS
-    kms_aead_key_gen_config_v0_test.cc
+    config_2026.cc
+    config_2026.h
   DEPS
-    tink::aead::internal::kms_aead_key_gen_config_v0
+    absl::memory
+    absl::status
+    tink::core::configuration
+    tink::aead::aead_wrapper
+    tink::aead::aes_ctr_hmac_aead_key_manager
+    tink::aead::aes_eax_key_manager
+    tink::aead::aes_gcm_key_manager
+    tink::aead::aes_gcm_siv_key_manager
+    tink::aead::cord_aead_wrapper
+    tink::aead::x_aes_gcm_key_manager
+    tink::aead::xchacha20_poly1305_key_manager
+    tink::internal::configuration_impl
+)
+
+tink_cc_test(
+  NAME config_2026_test
+  SRCS
+    config_2026_test.cc
+  DEPS
+    tink::aead::internal::config_2026
+    tink::aead::internal::key_gen_config_2026
     gmock
     absl::status_matchers
     absl::statusor
+    absl::cord
+    tink::core::aead
+    tink::core::configuration
     tink::core::key_gen_configuration
-    tink::aead::kms_aead_key_manager
-    tink::aead::kms_envelope_aead_key_manager
+    tink::core::keyset_handle
+    tink::aead::aead_key_templates
+    tink::aead::aes_ctr_hmac_aead_key_manager
+    tink::aead::aes_eax_key_manager
+    tink::aead::aes_gcm_key_manager
+    tink::aead::aes_gcm_siv_key_manager
+    tink::aead::cord_aead
+    tink::aead::x_aes_gcm_key_manager
+    tink::aead::xchacha20_poly1305_key_manager
+    tink::internal::configuration_impl
     tink::internal::key_gen_configuration_impl
     tink::internal::key_type_info_store
+    tink::internal::keyset_wrapper_store
+    tink::internal::ssl_util
+    tink::proto::tink_cc_proto
+)
+
+tink_cc_library(
+  NAME key_gen_config_2026
+  SRCS
+    key_gen_config_2026.cc
+    key_gen_config_2026.h
+  DEPS
+    absl::memory
+    absl::status
+    tink::core::key_gen_configuration
+    tink::aead::aes_ctr_hmac_aead_key_manager
+    tink::aead::aes_eax_key_manager
+    tink::aead::aes_gcm_key_manager
+    tink::aead::aes_gcm_siv_key_manager
+    tink::aead::x_aes_gcm_key_manager
+    tink::aead::xchacha20_poly1305_key_manager
+    tink::internal::key_gen_configuration_impl
 )
