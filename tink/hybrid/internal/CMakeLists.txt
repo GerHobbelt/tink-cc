@@ -193,7 +193,9 @@ tink_cc_library(
     absl::status
     absl::statusor
     absl::strings
+    tink::hybrid::hpke_parameters
     tink::internal::ec_util
+    tink::internal::output_prefix_util
     tink::subtle::common_enums
     tink::proto::hpke_cc_proto
   TAGS
@@ -430,6 +432,7 @@ tink_cc_test(
     absl::status
     absl::status_matchers
     absl::statusor
+    tink::hybrid::hpke_parameters
     tink::util::test_matchers
     tink::proto::hpke_cc_proto
   TAGS

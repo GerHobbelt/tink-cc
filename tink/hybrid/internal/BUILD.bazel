@@ -193,7 +193,9 @@ cc_library(
     include_prefix = "tink/hybrid/internal",
     deps = [
         "//proto:hpke_cc_proto",
+        "//tink/hybrid:hpke_parameters",
         "//tink/internal:ec_util",
+        "//tink/internal:output_prefix_util",
         "//tink/subtle:common_enums",
         "@abseil-cpp//absl/status",
         "@abseil-cpp//absl/status:statusor",
@@ -477,6 +479,7 @@ cc_test(
         ":hpke_test_util",
         ":hpke_util",
         "//proto:hpke_cc_proto",
+        "//tink/hybrid:hpke_parameters",
         "//tink/util:test_matchers",
         "@abseil-cpp//absl/status",
         "@abseil-cpp//absl/status:status_matchers",

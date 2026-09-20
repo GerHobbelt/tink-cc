@@ -21,6 +21,7 @@
 #include "absl/status/status.h"
 #include "absl/status/status_matchers.h"
 #include "absl/status/statusor.h"
+#include "tink/hybrid/hpke_parameters.h"
 #include "tink/hybrid/internal/hpke_test_util.h"
 #include "tink/util/test_matchers.h"
 #include "proto/hpke.pb.h"
@@ -186,6 +187,97 @@ TEST(HpkeKemEncodingSizeTest, HpkeEncapsulatedKeyLength) {
               IsOkAndHolds(1088));
   EXPECT_THAT(HpkeEncapsulatedKeyLength(google::crypto::tink::ML_KEM1024),
               IsOkAndHolds(1568));
+}
+
+TEST(HpkeKemEncodingSizeTest, HpkeEncapsulatedKeyLengthWithKemId) {
+  // Encapsulated key length should match 'Nenc' column from
+  // https://www.rfc-editor.org/rfc/rfc9180.html#section-7.1,
+  // https://datatracker.ietf.org/doc/html/draft-connolly-cfrg-xwing-kem-09
+  // and https://datatracker.ietf.org/doc/html/draft-ietf-hpke-pq-01.
+  EXPECT_THAT(
+      HpkeEncapsulatedKeyLength(HpkeParameters::KemId::kDhkemP256HkdfSha256),
+      IsOkAndHolds(65));
+  EXPECT_THAT(
+      HpkeEncapsulatedKeyLength(HpkeParameters::KemId::kDhkemX25519HkdfSha256),
+      IsOkAndHolds(32));
+  EXPECT_THAT(HpkeEncapsulatedKeyLength(HpkeParameters::KemId::kXWing),
+              IsOkAndHolds(1120));
+  EXPECT_THAT(HpkeEncapsulatedKeyLength(HpkeParameters::KemId::kMlKem768),
+              IsOkAndHolds(1088));
+  EXPECT_THAT(HpkeEncapsulatedKeyLength(HpkeParameters::KemId::kMlKem1024),
+              IsOkAndHolds(1568));
+}
+
+TEST(HpkeKemEncodingSizeTest, HpkeEncapsulatedKeyLengthWithInvalidKemId) {
+  EXPECT_THAT(HpkeEncapsulatedKeyLength(
+                  HpkeParameters::KemId::
+                      kDoNotUseInsteadUseDefaultWhenWritingSwitchStatements),
+              StatusIs(absl::StatusCode::kInvalidArgument));
+  EXPECT_THAT(
+      HpkeEncapsulatedKeyLength(static_cast<HpkeParameters::KemId>(12345)),
+      StatusIs(absl::StatusCode::kInvalidArgument));
+}
+
+struct EncryptionOverheadTestCase {
+  HpkeParameters::KemId kem_id;
+  HpkeParameters::AeadId aead_id;
+  HpkeParameters::Variant variant;
+  int expected_overhead;
+};
+
+using HpkeEncryptionOverheadTest =
+    testing::TestWithParam<EncryptionOverheadTestCase>;
+
+INSTANTIATE_TEST_SUITE_P(
+    HpkeEncryptionOverheadTestSuite, HpkeEncryptionOverheadTest,
+    Values(
+        EncryptionOverheadTestCase{
+            HpkeParameters::KemId::kDhkemX25519HkdfSha256,
+            HpkeParameters::AeadId::kAesGcm128,
+            HpkeParameters::Variant::kNoPrefix,
+            /*expected_overhead=*/32 + 16 + 0},
+        EncryptionOverheadTestCase{
+            HpkeParameters::KemId::kDhkemX25519HkdfSha256,
+            HpkeParameters::AeadId::kAesGcm128, HpkeParameters::Variant::kTink,
+            /*expected_overhead=*/32 + 16 + 5},
+        EncryptionOverheadTestCase{
+            HpkeParameters::KemId::kDhkemX25519HkdfSha256,
+            HpkeParameters::AeadId::kChaCha20Poly1305,
+            HpkeParameters::Variant::kCrunchy,
+            /*expected_overhead=*/32 + 16 + 5},
+        EncryptionOverheadTestCase{HpkeParameters::KemId::kDhkemP256HkdfSha256,
+                                   HpkeParameters::AeadId::kAesGcm256,
+                                   HpkeParameters::Variant::kTink,
+                                   /*expected_overhead=*/65 + 16 + 5},
+        EncryptionOverheadTestCase{HpkeParameters::KemId::kDhkemP256HkdfSha256,
+                                   HpkeParameters::AeadId::kAesGcm128,
+                                   HpkeParameters::Variant::kNoPrefix,
+                                   /*expected_overhead=*/65 + 16 + 0},
+        EncryptionOverheadTestCase{HpkeParameters::KemId::kXWing,
+                                   HpkeParameters::AeadId::kAesGcm128,
+                                   HpkeParameters::Variant::kTink,
+                                   /*expected_overhead=*/1120 + 16 + 5},
+        EncryptionOverheadTestCase{HpkeParameters::KemId::kMlKem768,
+                                   HpkeParameters::AeadId::kAesGcm256,
+                                   HpkeParameters::Variant::kNoPrefix,
+                                   /*expected_overhead=*/1088 + 16 + 0},
+        EncryptionOverheadTestCase{HpkeParameters::KemId::kMlKem1024,
+                                   HpkeParameters::AeadId::kChaCha20Poly1305,
+                                   HpkeParameters::Variant::kTink,
+                                   /*expected_overhead=*/1568 + 16 + 5}));
+
+TEST_P(HpkeEncryptionOverheadTest, HpkeEncryptionOverheadWithHpkeParameters) {
+  EncryptionOverheadTestCase test_case = GetParam();
+  absl::StatusOr<HpkeParameters> params =
+      HpkeParameters::Builder()
+          .SetKemId(test_case.kem_id)
+          .SetKdfId(HpkeParameters::KdfId::kHkdfSha256)
+          .SetAeadId(test_case.aead_id)
+          .SetVariant(test_case.variant)
+          .Build();
+  ASSERT_THAT(params, IsOk());
+  EXPECT_THAT(HpkeEncryptionOverhead(*params),
+              IsOkAndHolds(test_case.expected_overhead));
 }
 
 }  // namespace

@@ -473,10 +473,12 @@ cc_library(
     srcs = [
         "core/keyset_handle.cc",
         "core/keyset_handle_builder.cc",
+        "core/legacy_get_keyset_info.cc",
     ],
     hdrs = [
         "keyset_handle.h",
         "keyset_handle_builder.h",
+        "legacy_get_keyset_info.h",
     ],
     include_prefix = "tink",
     visibility = ["//visibility:public"],
@@ -538,6 +540,12 @@ cc_library(
 
 alias(
     name = "keyset_handle_builder",
+    actual = ":keyset_handle",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "legacy_get_keyset_info",
     actual = ":keyset_handle",
     visibility = ["//visibility:public"],
 )
@@ -840,6 +848,7 @@ cc_library(
     srcs = ["core/big_integer.cc"],
     hdrs = ["big_integer.h"],
     include_prefix = "tink",
+    visibility = ["//visibility:public"],
     deps = [
         "@abseil-cpp//absl/strings:string_view",
         "@boringssl//:crypto",
@@ -1014,7 +1023,6 @@ cc_test(
         ":keyset_reader",
         ":parameters",
         ":partial_key_access",
-        ":primitive_set",
         ":primitive_wrapper",
         ":registry",
         ":restricted_data",
@@ -1039,19 +1047,18 @@ cc_test(
         "//tink/internal:key_gen_configuration_impl",
         "//tink/internal:legacy_annotations",
         "//tink/internal:mutable_serialization_registry",
+        "//tink/internal:primitive_set",
         "//tink/internal:ssl_util",
         "//tink/signature:ecdsa_proto_serialization",
         "//tink/signature:ecdsa_sign_key_manager",
         "//tink/signature:ecdsa_verify_key_manager",
-        "//tink/signature:signature_key_templates",
+        "//tink/signature/internal/testing:ecdsa_test_utils",
         "//tink/subtle:random",
         "//tink/subtle:xchacha20_poly1305_boringssl",
         "//tink/util:test_keyset_handle",
-        "//tink/util:test_matchers",
         "//tink/util:test_util",
         "@abseil-cpp//absl/container:flat_hash_map",
         "@abseil-cpp//absl/log:absl_check",
-        "@abseil-cpp//absl/memory",
         "@abseil-cpp//absl/status",
         "@abseil-cpp//absl/status:status_matchers",
         "@abseil-cpp//absl/status:statusor",
@@ -1157,6 +1164,7 @@ cc_test(
     deps = [
         ":binary_keyset_reader",
         ":cleartext_keyset_handle",
+        ":insecure_secret_key_access_testonly",
         ":keyset_handle",
         "//proto:tink_cc_proto",
         "//tink/util:status",
@@ -1165,6 +1173,22 @@ cc_test(
         "//tink/util:test_util",
         "@abseil-cpp//absl/status",
         "@abseil-cpp//absl/status:status_matchers",
+        "@googletest//:gtest_main",
+        "@protobuf",
+    ],
+)
+
+cc_test(
+    name = "legacy_get_keyset_info_test",
+    size = "small",
+    srcs = ["core/legacy_get_keyset_info_test.cc"],
+    deps = [
+        ":keyset_handle",
+        ":legacy_get_keyset_info",
+        "//proto:tink_cc_proto",
+        "//tink/util:test_keyset_handle",
+        "//tink/util:test_util",
+        "@abseil-cpp//absl/strings",
         "@googletest//:gtest_main",
     ],
 )

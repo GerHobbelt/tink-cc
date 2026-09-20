@@ -32,10 +32,10 @@
 #include "tink/crypto_format.h"
 #include "tink/internal/monitoring.h"
 #include "tink/internal/monitoring_client_mocks.h"
+#include "tink/internal/primitive_set.h"
 #include "tink/internal/registry_impl.h"
 #include "tink/mac.h"
 #include "tink/mac/failing_mac.h"
-#include "tink/primitive_set.h"
 #include "tink/registry.h"
 #include "tink/util/status.h"
 #include "tink/util/statusor.h"
@@ -50,6 +50,7 @@ namespace {
 using ::absl_testing::IsOk;
 using ::absl_testing::IsOkAndHolds;
 using ::absl_testing::StatusIs;
+using ::crypto::tink::internal::PrimitiveSet;
 using ::crypto::tink::test::DummyMac;
 using ::google::crypto::tink::KeysetInfo;
 using ::google::crypto::tink::KeyStatusType;
@@ -106,11 +107,11 @@ TEST(MacWrapperTest, Basic) {
   std::string mac_name_1 = "mac1";
   std::string mac_name_2 = "mac2";
   PrimitiveSet<Mac>::Builder mac_set_builder;
-  mac_set_builder.AddPrimitive(absl::make_unique<DummyMac>(mac_name_0),
+  mac_set_builder.AddPrimitive(std::make_unique<DummyMac>(mac_name_0),
                                keyset_info.key_info(0));
-  mac_set_builder.AddPrimitive(absl::make_unique<DummyMac>(mac_name_1),
+  mac_set_builder.AddPrimitive(std::make_unique<DummyMac>(mac_name_1),
                                keyset_info.key_info(1));
-  mac_set_builder.AddPrimaryPrimitive(absl::make_unique<DummyMac>(mac_name_2),
+  mac_set_builder.AddPrimaryPrimitive(std::make_unique<DummyMac>(mac_name_2),
                                       keyset_info.key_info(2));
   absl::StatusOr<PrimitiveSet<Mac>> mac_set =
       std::move(mac_set_builder).Build();
@@ -148,7 +149,7 @@ TEST(MacWrapperTest, testLegacyAuthentication) {
   std::string mac_name = "SomeLegacyMac";
 
   PrimitiveSet<Mac>::Builder mac_set_builder;
-  mac_set_builder.AddPrimaryPrimitive(absl::make_unique<DummyMac>(mac_name),
+  mac_set_builder.AddPrimaryPrimitive(std::make_unique<DummyMac>(mac_name),
                                       key_info);
   absl::StatusOr<PrimitiveSet<Mac>> mac_set =
       std::move(mac_set_builder).Build();
@@ -209,7 +210,7 @@ TEST(MacWrapperTest, VerifyRawAfterLegacy) {
   key_info_0.set_output_prefix_type(OutputPrefixType::RAW);
   key_info_0.set_key_id(1234);
   key_info_0.set_status(KeyStatusType::ENABLED);
-  mac_set_builder.AddPrimitive(absl::make_unique<TryBreakLegacyMac>(),
+  mac_set_builder.AddPrimitive(std::make_unique<TryBreakLegacyMac>(),
                                key_info_0);
 
   KeysetInfo::KeyInfo key_info_1;
@@ -217,7 +218,7 @@ TEST(MacWrapperTest, VerifyRawAfterLegacy) {
   key_info_1.set_key_id(0xffffffff);
   key_info_1.set_status(KeyStatusType::ENABLED);
 
-  mac_set_builder.AddPrimaryPrimitive(absl::make_unique<DummyMac>(""),
+  mac_set_builder.AddPrimaryPrimitive(std::make_unique<DummyMac>(""),
                                       key_info_1);
 
   absl::StatusOr<PrimitiveSet<Mac>> mac_set =
@@ -269,12 +270,12 @@ class MacSetWrapperWithMonitoringTest : public Test {
 
     // Setup mocks for catching Monitoring calls.
     auto monitoring_client_factory =
-        absl::make_unique<internal::MockMonitoringClientFactory>();
+        std::make_unique<internal::MockMonitoringClientFactory>();
     auto compute_monitoring_client =
-        absl::make_unique<NiceMock<internal::MockMonitoringClient>>();
+        std::make_unique<NiceMock<internal::MockMonitoringClient>>();
     compute_monitoring_client_ = compute_monitoring_client.get();
     auto verify_monitoring_client =
-        absl::make_unique<NiceMock<internal::MockMonitoringClient>>();
+        std::make_unique<NiceMock<internal::MockMonitoringClient>>();
     verify_monitoring_client_ = verify_monitoring_client.get();
 
     // Monitoring tests expect that the client factory will create the
@@ -312,12 +313,12 @@ TEST_F(MacSetWrapperWithMonitoringTest,
       {"key1", "value1"}, {"key2", "value2"}, {"key3", "value3"}};
   PrimitiveSet<Mac>::Builder mac_set_builder;
   mac_set_builder.AddAnnotations(annotations);
-  mac_set_builder.AddPrimitive(absl::make_unique<DummyMac>("mac0"),
+  mac_set_builder.AddPrimitive(std::make_unique<DummyMac>("mac0"),
                                keyset_info.key_info(0));
-  mac_set_builder.AddPrimitive(absl::make_unique<DummyMac>("mac1"),
+  mac_set_builder.AddPrimitive(std::make_unique<DummyMac>("mac1"),
                                keyset_info.key_info(1));
   // Set the last as primary.
-  mac_set_builder.AddPrimaryPrimitive(absl::make_unique<DummyMac>("mac2"),
+  mac_set_builder.AddPrimaryPrimitive(std::make_unique<DummyMac>("mac2"),
                                       keyset_info.key_info(2));
   absl::StatusOr<PrimitiveSet<Mac>> mac_primitive_set =
       std::move(mac_set_builder).Build();
@@ -346,12 +347,12 @@ TEST_F(MacSetWrapperWithMonitoringTest,
       {"key1", "value1"}, {"key2", "value2"}, {"key3", "value3"}};
   PrimitiveSet<Mac>::Builder mac_set_builder;
   mac_set_builder.AddAnnotations(annotations);
-  mac_set_builder.AddPrimitive(absl::make_unique<DummyMac>("mac0"),
+  mac_set_builder.AddPrimitive(std::make_unique<DummyMac>("mac0"),
                                keyset_info.key_info(0));
-  mac_set_builder.AddPrimitive(absl::make_unique<DummyMac>("mac1"),
+  mac_set_builder.AddPrimitive(std::make_unique<DummyMac>("mac1"),
                                keyset_info.key_info(1));
   // Set the last as primary.
-  mac_set_builder.AddPrimaryPrimitive(absl::make_unique<DummyMac>("mac2"),
+  mac_set_builder.AddPrimaryPrimitive(std::make_unique<DummyMac>("mac2"),
                                       keyset_info.key_info(2));
   absl::StatusOr<PrimitiveSet<Mac>> mac_primitive_set =
       std::move(mac_set_builder).Build();

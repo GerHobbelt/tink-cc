@@ -38,8 +38,8 @@ tink_cc_library(
     absl::strings
     tink::core::chunked_mac
     tink::core::crypto_format
-    tink::core::primitive_set
     tink::core::primitive_wrapper
+    tink::internal::primitive_set
     tink::internal::util
     tink::util::status
     tink::util::statusor
@@ -175,8 +175,8 @@ tink_cc_test(
     absl::statusor
     absl::strings
     tink::core::chunked_mac
-    tink::core::primitive_set
     tink::core::secret_data
+    tink::internal::primitive_set
     tink::util::secret_data
     tink::util::test_matchers
     tink::proto::tink_cc_proto
@@ -350,14 +350,8 @@ tink_cc_library(
   SRCS
     hmac_proto_structs.h
   DEPS
-    absl::string_view
-    tink::core::secret_data
-    tink::internal::common_proto_enums
-    tink::internal::proto_parser_enum_field
-    tink::internal::proto_parser_fields
-    tink::internal::proto_parser_message
-    tink::internal::proto_parser_secret_data_field
-    tink::util::secret_data
+    absl::core_headers
+    tink::proto::hmac_cc_tinkpb
 )
 
 tink_cc_test(

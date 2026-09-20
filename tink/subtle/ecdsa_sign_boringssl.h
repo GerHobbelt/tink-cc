@@ -21,12 +21,11 @@
 #include <string>
 #include <utility>
 
+#include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-#include "openssl/evp.h"
 #include "tink/internal/fips_utils.h"
 #include "tink/public_key_sign.h"
 #include "tink/signature/ecdsa_private_key.h"
-#include "tink/signature/internal/ecdsa_raw_sign_boringssl.h"
 #include "tink/subtle/common_enums.h"
 #include "tink/subtle/subtle_util_boringssl.h"
 #include "tink/util/statusor.h"

@@ -243,6 +243,7 @@ tink_cc_test(
     keyset_wrapper_impl_test.cc
   DEPS
     tink::internal::key_gen_configuration_impl
+    tink::internal::keyset_wrapper
     tink::internal::keyset_wrapper_impl
     tink::internal::ssl_util
     gmock
@@ -260,7 +261,6 @@ tink_cc_test(
     tink::core::key_status
     tink::core::keyset_handle
     tink::core::partial_key_access
-    tink::core::primitive_set
     tink::core::primitive_wrapper
     tink::core::restricted_data
     tink::aead::aead_config
@@ -269,10 +269,7 @@ tink_cc_test(
     tink::aead::xchacha20_poly1305_parameters
     tink::subtle::xchacha20_poly1305_boringssl
     tink::util::secret_data
-    tink::util::status
-    tink::util::statusor
     tink::util::test_keyset_handle
-    tink::util::test_matchers
     tink::util::test_util
     tink::proto::tink_cc_proto
     tink::proto::xchacha20_poly1305_cc_proto
@@ -320,6 +317,7 @@ tink_cc_test(
     tink::aead::aes_gcm_key_manager
     tink::hybrid::ecies_aead_hkdf_private_key_manager
     tink::hybrid::ecies_aead_hkdf_public_key_manager
+    tink::hybrid::internal::testing::ecies_test_util
     tink::subtle::aes_gcm_boringssl
     tink::subtle::random
     tink::util::input_stream_util
@@ -1165,12 +1163,14 @@ tink_cc_test(
     absl::status
     absl::status_matchers
     absl::string_view
+    tink::core::cleartext_keyset_handle
     tink::core::configuration
     tink::core::key_manager_impl
     tink::core::key_type_manager
     tink::core::private_key_type_manager
     tink::core::template_util
     tink::core::input_stream
+    tink::core::insecure_secret_key_access
     tink::core::key_manager
     tink::core::keyset_handle
     tink::core::primitive_set
@@ -1274,7 +1274,6 @@ tink_cc_test(
     tink::internal::keyset_wrapper_store
     tink::internal::registry_impl
     gmock
-    absl::memory
     absl::status
     absl::status_matchers
     absl::string_view
@@ -1283,13 +1282,9 @@ tink_cc_test(
     tink::core::input_stream
     tink::core::key
     tink::core::mac
-    tink::core::primitive_set
     tink::core::primitive_wrapper
     tink::mac::mac_wrapper
     tink::subtle::random
-    tink::util::status
-    tink::util::statusor
-    tink::util::test_matchers
     tink::util::test_util
     tink::proto::aes_gcm_cc_proto
     tink::proto::tink_cc_proto
@@ -1623,7 +1618,6 @@ tink_cc_test(
     tink::internal::serialization
     gmock
     absl::absl_check
-    absl::memory
     absl::status_matchers
     absl::statusor
     absl::optional
@@ -1650,6 +1644,7 @@ tink_cc_test(
     tink::aead::xchacha20_poly1305_parameters
     tink::daead::aes_siv_key
     tink::daead::aes_siv_parameters
+    tink::internal::testing::ec_test_vectors
     tink::mac::aes_cmac_key
     tink::mac::aes_cmac_parameters
     tink::mac::hmac_key
@@ -1665,13 +1660,12 @@ tink_cc_test(
     tink::signature::ed25519_parameters
     tink::signature::ed25519_private_key
     tink::signature::ed25519_public_key
+    tink::signature::internal::testing::ed25519_test_vectors
     tink::streamingaead::aes_ctr_hmac_streaming_key
     tink::streamingaead::aes_ctr_hmac_streaming_parameters
     tink::streamingaead::aes_gcm_hkdf_streaming_key
     tink::streamingaead::aes_gcm_hkdf_streaming_parameters
     tink::subtle::common_enums
-    tink::subtle::random
-    tink::util::test_matchers
 )
 
 tink_cc_library(
@@ -1724,16 +1718,9 @@ tink_cc_library(
     tink_proto_structs.cc
     tink_proto_structs.h
   DEPS
-    tink::internal::proto_parser_enum_field
-    tink::internal::proto_parser_fields
-    tink::internal::proto_parser_message
-    tink::internal::proto_parser_options
-    tink::internal::proto_parser_secret_data_field
     absl::core_headers
     absl::no_destructor
-    absl::string_view
-    tink::core::secret_data
-    tink::util::secret_data
+    tink::proto::tink_cc_tinkpb
 )
 
 tink_cc_test(
@@ -1753,6 +1740,9 @@ tink_cc_library(
   NAME common_proto_enums
   SRCS
     common_proto_enums.h
+  DEPS
+    absl::core_headers
+    tink::proto::common_cc_tinkpb
 )
 
 tink_cc_library(
@@ -1927,30 +1917,46 @@ tink_cc_test(
 )
 
 tink_cc_library(
-  NAME proto_parser_fields
+  NAME proto_parser_field
   SRCS
-    proto_parser_fields.cc
-    proto_parser_fields.h
+    proto_parser_field.h
   DEPS
-    tink::internal::proto_parser_options
     tink::internal::proto_parser_state
     tink::internal::proto_parsing_helpers
     absl::core_headers
+)
+
+tink_cc_library(
+  NAME proto_parser_scalar_fields
+  SRCS
+    proto_parser_scalar_fields.cc
+    proto_parser_scalar_fields.h
+  DEPS
+    tink::internal::proto_parser_field
+    tink::internal::proto_parser_options
+    tink::internal::proto_parser_state
+    tink::internal::proto_parsing_helpers
     absl::no_destructor
     absl::absl_check
-    absl::status
-    absl::statusor
-    absl::strings
     absl::string_view
 )
 
-tink_cc_test(
-  NAME proto_parser_fields_test
+tink_cc_library(
+  NAME proto_parser_fields
   SRCS
-    proto_parser_fields_test.cc
+    proto_parser_fields.h
   DEPS
-    tink::internal::proto_parser_fields
+    tink::internal::proto_parser_field
+    tink::internal::proto_parser_scalar_fields
+)
+
+tink_cc_test(
+  NAME proto_parser_scalar_fields_test
+  SRCS
+    proto_parser_scalar_fields_test.cc
+  DEPS
     tink::internal::proto_parser_options
+    tink::internal::proto_parser_scalar_fields
     tink::internal::proto_parser_state
     tink::internal::proto_parsing_helpers
     gmock

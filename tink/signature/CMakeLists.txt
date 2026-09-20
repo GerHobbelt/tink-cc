@@ -936,21 +936,22 @@ tink_cc_test(
   SRCS
     ecdsa_verify_key_manager_test.cc
   DEPS
-    tink::signature::ecdsa_sign_key_manager
+    tink::signature::ecdsa_parameters
+    tink::signature::ecdsa_private_key
+    tink::signature::ecdsa_public_key
     tink::signature::ecdsa_verify_key_manager
     gmock
     absl::status
     absl::status_matchers
-    tink::core::public_key_sign
+    tink::core::insecure_secret_key_access
+    tink::core::partial_key_access
     tink::core::public_key_verify
     tink::internal::ec_util
+    tink::signature::internal::testing::ecdsa_test_vectors
+    tink::signature::internal::testing::signature_test_vector
     tink::subtle::ecdsa_sign_boringssl
     tink::util::enums
     tink::util::secret_data
-    tink::util::status
-    tink::util::statusor
-    tink::util::test_matchers
-    tink::util::test_util
     tink::proto::ecdsa_cc_proto
     tink::proto::tink_cc_proto
 )
@@ -984,24 +985,24 @@ tink_cc_test(
   SRCS
     rsa_ssa_pkcs1_verify_key_manager_test.cc
   DEPS
-    tink::signature::rsa_ssa_pkcs1_sign_key_manager
+    tink::signature::rsa_ssa_pkcs1_private_key
+    tink::signature::rsa_ssa_pkcs1_public_key
     tink::signature::rsa_ssa_pkcs1_verify_key_manager
     gmock
     absl::status
     absl::status_matchers
     absl::statusor
     crypto
+    tink::core::insecure_secret_key_access
+    tink::core::partial_key_access
     tink::core::public_key_sign
     tink::core::public_key_verify
-    tink::internal::bn_util
     tink::internal::rsa_util
-    tink::internal::ssl_unique_ptr
+    tink::signature::internal::testing::rsa_ssa_pkcs1_test_vectors
+    tink::signature::internal::testing::signature_test_vector
     tink::subtle::common_enums
     tink::subtle::rsa_ssa_pkcs1_sign_boringssl
     tink::util::secret_data
-    tink::util::status
-    tink::util::statusor
-    tink::util::test_matchers
     tink::util::test_util
     tink::proto::rsa_ssa_pkcs1_cc_proto
     tink::proto::tink_cc_proto
@@ -1039,17 +1040,21 @@ tink_cc_test(
   SRCS
     ecdsa_sign_key_manager_test.cc
   DEPS
+    tink::signature::ecdsa_parameters
+    tink::signature::ecdsa_private_key
+    tink::signature::ecdsa_public_key
     tink::signature::ecdsa_sign_key_manager
     tink::signature::ecdsa_verify_key_manager
     tink::signature::signature_config
     gmock
-    absl::memory
     absl::status
     absl::status_matchers
     absl::statusor
     absl::strings
+    tink::core::insecure_secret_key_access
     tink::core::key_status
     tink::core::keyset_handle
+    tink::core::partial_key_access
     tink::core::public_key_sign
     tink::core::public_key_verify
     tink::config::global_registry
@@ -1096,30 +1101,31 @@ tink_cc_test(
   SRCS
     rsa_ssa_pkcs1_sign_key_manager_test.cc
   DEPS
+    tink::signature::rsa_ssa_pkcs1_parameters
+    tink::signature::rsa_ssa_pkcs1_private_key
+    tink::signature::rsa_ssa_pkcs1_public_key
     tink::signature::rsa_ssa_pkcs1_sign_key_manager
-    tink::signature::rsa_ssa_pkcs1_verify_key_manager
     tink::signature::signature_config
     gmock
     absl::flat_hash_set
     absl::status_matchers
     absl::statusor
-    absl::optional
     crypto
+    tink::core::insecure_secret_key_access_testonly
     tink::core::key_status
     tink::core::keyset_handle
+    tink::core::partial_key_access
     tink::core::public_key_sign
     tink::core::public_key_verify
     tink::config::global_registry
     tink::internal::bn_util
+    tink::internal::rsa_util
     tink::internal::ssl_unique_ptr
     tink::signature::internal::testing::rsa_ssa_pkcs1_test_vectors
     tink::signature::internal::testing::signature_test_vector
     tink::subtle::common_enums
     tink::subtle::rsa_ssa_pkcs1_verify_boringssl
-    tink::util::status
-    tink::util::statusor
-    tink::util::test_matchers
-    tink::util::test_util
+    tink::proto::common_cc_proto
     tink::proto::rsa_ssa_pkcs1_cc_proto
     tink::proto::tink_cc_proto
 )
@@ -1129,17 +1135,21 @@ tink_cc_test(
   SRCS
     rsa_ssa_pss_sign_key_manager_test.cc
   DEPS
+    tink::signature::rsa_ssa_pss_parameters
+    tink::signature::rsa_ssa_pss_private_key
+    tink::signature::rsa_ssa_pss_public_key
     tink::signature::rsa_ssa_pss_sign_key_manager
-    tink::signature::rsa_ssa_pss_verify_key_manager
     tink::signature::signature_config
-    tink::signature::signature_key_templates
     gmock
     absl::flat_hash_set
     absl::status_matchers
+    absl::statusor
     absl::strings
     crypto
+    tink::core::insecure_secret_key_access_testonly
     tink::core::key_status
     tink::core::keyset_handle
+    tink::core::partial_key_access
     tink::core::public_key_sign
     tink::core::public_key_verify
     tink::config::global_registry
@@ -1150,10 +1160,7 @@ tink_cc_test(
     tink::signature::internal::testing::signature_test_vector
     tink::subtle::common_enums
     tink::subtle::rsa_ssa_pss_verify_boringssl
-    tink::util::status
-    tink::util::statusor
-    tink::util::test_matchers
-    tink::util::test_util
+    tink::proto::common_cc_proto
     tink::proto::rsa_ssa_pss_cc_proto
     tink::proto::tink_cc_proto
 )
@@ -1714,6 +1721,7 @@ tink_cc_test(
     tink::internal::proto_parameters_serialization
     tink::internal::serialization
     tink::internal::tink_proto_structs
+    tink::internal::testing::ec_test_vectors
     tink::subtle::common_enums
     tink::util::secret_data
     tink::util::test_matchers

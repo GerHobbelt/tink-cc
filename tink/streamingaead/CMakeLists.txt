@@ -17,10 +17,10 @@ tink_cc_library(
     tink::core::crypto_format
     tink::core::input_stream
     tink::core::output_stream
-    tink::core::primitive_set
     tink::core::primitive_wrapper
     tink::core::random_access_stream
     tink::core::streaming_aead
+    tink::internal::primitive_set
     tink::util::status
     tink::util::statusor
     tink::proto::tink_cc_proto
@@ -171,8 +171,8 @@ tink_cc_library(
     absl::statusor
     absl::string_view
     tink::core::input_stream
-    tink::core::primitive_set
     tink::core::streaming_aead
+    tink::internal::primitive_set
     tink::util::errors
     tink::util::status
     tink::util::statusor
@@ -191,9 +191,9 @@ tink_cc_library(
     absl::statusor
     absl::string_view
     absl::synchronization
-    tink::core::primitive_set
     tink::core::random_access_stream
     tink::core::streaming_aead
+    tink::internal::primitive_set
     tink::util::buffer
     tink::util::errors
     tink::util::status
@@ -342,11 +342,11 @@ tink_cc_test(
     tink::core::insecure_secret_key_access
     tink::core::keyset_handle
     tink::core::output_stream
-    tink::core::primitive_set
     tink::core::proto_keyset_format
     tink::core::random_access_stream
     tink::core::streaming_aead
     tink::config::global_registry
+    tink::internal::primitive_set
     tink::internal::test_random_access_stream
     tink::subtle::random
     tink::subtle::streaming_aead_test_util
@@ -461,33 +461,27 @@ tink_cc_test(
     tink::streamingaead::aes_gcm_hkdf_streaming_key
     tink::streamingaead::aes_gcm_hkdf_streaming_key_manager
     tink::streamingaead::aes_gcm_hkdf_streaming_parameters
-    tink::streamingaead::key_gen_config_v0
+    tink::streamingaead::key_gen_config_2026
     tink::streamingaead::streaming_aead_config
     tink::streamingaead::streaming_aead_key_templates
     gmock
-    absl::memory
     absl::status
     absl::status_matchers
-    tink::core::insecure_secret_key_access_testonly
     tink::core::key_status
     tink::core::keyset_handle
     tink::core::keyset_handle_builder
-    tink::core::partial_key_access
-    tink::core::primitive_set
     tink::core::registry
-    tink::core::restricted_data
     tink::core::streaming_aead
     tink::config::global_registry
     tink::config::tink_fips
     tink::internal::fips_utils
     tink::internal::legacy_proto_key
     tink::internal::mutable_serialization_registry
-    tink::internal::proto_key_serialization
+    tink::internal::primitive_set
     tink::internal::proto_parameters_serialization
-    tink::subtle::random
-    tink::util::status
-    tink::util::statusor
-    tink::util::test_matchers
+    tink::streamingaead::internal::testing::aes_ctr_hmac_streaming_test_vectors
+    tink::streamingaead::internal::testing::aes_gcm_hkdf_streaming_test_vectors
+    tink::streamingaead::internal::testing::streamingaead_test_vector
     tink::util::test_util
     tink::proto::tink_cc_proto
 )
@@ -522,8 +516,8 @@ tink_cc_test(
     absl::strings
     tink::core::input_stream
     tink::core::output_stream
-    tink::core::primitive_set
     tink::core::streaming_aead
+    tink::internal::primitive_set
     tink::subtle::random
     tink::subtle::test_util
     tink::util::istream_input_stream
@@ -544,9 +538,9 @@ tink_cc_test(
     absl::status_matchers
     absl::strings
     tink::core::output_stream
-    tink::core::primitive_set
     tink::core::random_access_stream
     tink::core::streaming_aead
+    tink::internal::primitive_set
     tink::internal::test_random_access_stream
     tink::subtle::random
     tink::subtle::test_util

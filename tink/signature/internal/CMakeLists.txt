@@ -11,6 +11,7 @@ tink_cc_library(
     absl::memory
     absl::status
     absl::status_macros
+    absl::statusor
     absl::strings
     crypto
     tink::core::public_key_sign
@@ -24,7 +25,6 @@ tink_cc_library(
     tink::internal::ssl_unique_ptr
     tink::internal::util
     tink::subtle::common_enums
-    tink::subtle::subtle_util_boringssl
     tink::util::errors
     tink::util::status
     tink::util::statusor
@@ -61,18 +61,14 @@ tink_cc_test(
     gmock
     absl::status
     absl::status_matchers
-    tink::core::public_key_sign
-    tink::core::public_key_verify
+    absl::string_view
+    crypto
     tink::internal::ec_util
     tink::internal::fips_utils
     tink::internal::md_util
     tink::internal::testing::ec_test_vectors
     tink::subtle::common_enums
     tink::subtle::ecdsa_verify_boringssl
-    tink::subtle::subtle_util_boringssl
-    tink::util::status
-    tink::util::statusor
-    tink::util::test_matchers
 )
 
 tink_cc_test(
@@ -87,6 +83,7 @@ tink_cc_test(
     absl::statusor
     tink::core::configuration
     tink::core::key_gen_configuration
+    tink::core::key_status
     tink::core::keyset_handle
     tink::core::public_key_sign
     tink::core::public_key_verify
@@ -95,11 +92,15 @@ tink_cc_test(
     tink::internal::key_type_info_store
     tink::internal::keyset_wrapper_store
     tink::signature::ecdsa_verify_key_manager
+    tink::signature::ed25519_parameters
     tink::signature::ed25519_verify_key_manager
     tink::signature::rsa_ssa_pkcs1_verify_key_manager
     tink::signature::rsa_ssa_pss_verify_key_manager
-    tink::signature::signature_key_templates
-    tink::proto::tink_cc_proto
+    tink::signature::internal::testing::ecdsa_test_vectors
+    tink::signature::internal::testing::ed25519_test_vectors
+    tink::signature::internal::testing::rsa_ssa_pkcs1_test_vectors
+    tink::signature::internal::testing::rsa_ssa_pss_test_vectors
+    tink::signature::internal::testing::signature_test_vector
   TAGS
     exclude_if_openssl
 )
@@ -513,6 +514,7 @@ tink_cc_test(
     tink::internal::serialization
     tink::internal::serialization_registry
     tink::internal::tink_proto_structs
+    tink::internal::testing::ec_test_vectors
     tink::signature::ecdsa_parameters
     tink::signature::ecdsa_private_key
     tink::signature::ecdsa_public_key
@@ -1010,11 +1012,15 @@ tink_cc_test(
     gmock
     absl::status_matchers
     absl::statusor
+    tink::core::insecure_secret_key_access_testonly
     tink::core::key_manager
+    tink::core::partial_key_access
     tink::core::public_key_sign
+    tink::signature::ml_dsa_parameters
+    tink::signature::ml_dsa_private_key
     tink::signature::signature_config
-    tink::util::protobuf_helper
-    tink::util::test_matchers
+    tink::signature::internal::testing::ml_dsa_test_vectors
+    tink::signature::internal::testing::signature_test_vector
     tink::proto::ml_dsa_cc_proto
   TAGS
     exclude_if_openssl
@@ -1076,11 +1082,16 @@ tink_cc_test(
     gmock
     absl::status_matchers
     absl::statusor
+    tink::core::insecure_secret_key_access_testonly
     tink::core::key_manager
+    tink::core::partial_key_access
     tink::core::public_key_sign
+    tink::core::public_key_verify
     tink::signature::signature_config
-    tink::util::protobuf_helper
-    tink::util::test_matchers
+    tink::signature::slh_dsa_parameters
+    tink::signature::slh_dsa_private_key
+    tink::signature::internal::testing::signature_test_vector
+    tink::signature::internal::testing::slh_dsa_test_vectors
     tink::proto::slh_dsa_cc_proto
   TAGS
     exclude_if_openssl
@@ -1558,6 +1569,7 @@ tink_cc_test(
     tink::signature::internal::testing::rsa_ssa_pkcs1_test_vectors
     tink::signature::internal::testing::rsa_ssa_pss_test_vectors
     tink::signature::internal::testing::signature_test_vector
+    tink::signature::internal::testing::slh_dsa_test_vectors
     tink::util::test_util
     tink::proto::tink_cc_proto
   TAGS
@@ -1609,6 +1621,7 @@ tink_cc_test(
     gmock
     absl::status_matchers
     absl::statusor
+    crypto
     tink::core::key_gen_configuration
     tink::core::key_status
     tink::core::keyset_handle

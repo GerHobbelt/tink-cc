@@ -21,6 +21,7 @@
 #include <string>
 #include <utility>
 
+#include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "openssl/ec.h"
 #include "openssl/evp.h"
@@ -29,7 +30,6 @@
 #include "tink/internal/ssl_unique_ptr.h"
 #include "tink/public_key_sign.h"
 #include "tink/subtle/common_enums.h"
-#include "tink/subtle/subtle_util_boringssl.h"
 #include "tink/util/statusor.h"
 
 namespace crypto {
@@ -37,7 +37,7 @@ namespace tink {
 namespace internal {
 
 // ECDSA raw signing using Boring SSL, generating signatures in DER-encoding.
-class EcdsaRawSignBoringSsl : public PublicKeySign {
+class EcdsaRawSignBoringSsl {
  public:
   static absl::StatusOr<std::unique_ptr<EcdsaRawSignBoringSsl>> New(
       internal::SslUniquePtr<EC_KEY> key,
@@ -47,8 +47,9 @@ class EcdsaRawSignBoringSsl : public PublicKeySign {
       const crypto::tink::internal::EcKey& ec_key,
       subtle::EcdsaSignatureEncoding encoding);
 
-  // Computes the signature for 'data'.
-  absl::StatusOr<std::string> Sign(absl::string_view data) const override;
+  // Computes the signature for digest (which is some hash of the message,
+  // correctness is ensured by the environment).
+  absl::StatusOr<std::string> SignDigest(absl::string_view data) const;
 
   static constexpr crypto::tink::internal::FipsCompatibility kFipsStatus =
       crypto::tink::internal::FipsCompatibility::kRequiresBoringCrypto;

@@ -58,6 +58,7 @@ tink_cc_library(
     key_manager.h
     keyset_handle.h
     keyset_manager.h
+    legacy_get_keyset_info.h
     keyset_reader.h
     keyset_writer.h
     kms_client.h
@@ -434,8 +435,10 @@ tink_cc_library(
   SRCS
     core/keyset_handle.cc
     core/keyset_handle_builder.cc
+    core/legacy_get_keyset_info.cc
     keyset_handle.h
     keyset_handle_builder.h
+    legacy_get_keyset_info.h
   DEPS
     tink::core::aead
     tink::core::annotations
@@ -492,6 +495,7 @@ tink_cc_library(
 )
 
 add_library(tink::core::keyset_handle_builder ALIAS tink_internal_core_keyset_handle)
+add_library(tink::core::legacy_get_keyset_info ALIAS tink_internal_core_keyset_handle)
 
 tink_cc_library(
   NAME cleartext_keyset_handle
@@ -945,14 +949,12 @@ tink_cc_test(
     tink::core::keyset_reader
     tink::core::parameters
     tink::core::partial_key_access
-    tink::core::primitive_set
     tink::core::primitive_wrapper
     tink::core::registry
     tink::core::restricted_data
     gmock
     absl::flat_hash_map
     absl::absl_check
-    absl::memory
     absl::status
     absl::status_matchers
     absl::statusor
@@ -975,15 +977,15 @@ tink_cc_test(
     tink::internal::key_gen_configuration_impl
     tink::internal::legacy_annotations
     tink::internal::mutable_serialization_registry
+    tink::internal::primitive_set
     tink::internal::ssl_util
     tink::signature::ecdsa_proto_serialization
     tink::signature::ecdsa_sign_key_manager
     tink::signature::ecdsa_verify_key_manager
-    tink::signature::signature_key_templates
+    tink::signature::internal::testing::ecdsa_test_utils
     tink::subtle::random
     tink::subtle::xchacha20_poly1305_boringssl
     tink::util::test_keyset_handle
-    tink::util::test_matchers
     tink::util::test_util
     tink::proto::aes_gcm_cc_proto
     tink::proto::aes_gcm_siv_cc_proto
@@ -1085,13 +1087,29 @@ tink_cc_test(
   DEPS
     tink::core::binary_keyset_reader
     tink::core::cleartext_keyset_handle
+    tink::core::insecure_secret_key_access_testonly
     tink::core::keyset_handle
     gmock
     absl::status
     absl::status_matchers
+    protobuf::libprotobuf
     tink::util::status
     tink::util::test_keyset_handle
     tink::util::test_matchers
+    tink::util::test_util
+    tink::proto::tink_cc_proto
+)
+
+tink_cc_test(
+  NAME legacy_get_keyset_info_test
+  SRCS
+    core/legacy_get_keyset_info_test.cc
+  DEPS
+    tink::core::keyset_handle
+    tink::core::legacy_get_keyset_info
+    gmock
+    absl::strings
+    tink::util::test_keyset_handle
     tink::util::test_util
     tink::proto::tink_cc_proto
 )

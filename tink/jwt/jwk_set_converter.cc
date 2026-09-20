@@ -174,7 +174,7 @@ absl::StatusOr<KeyData> RsPublicKeyDataFromKeyStruct(const Struct& key_struct) {
     return e.status();
   }
   std::string decoded_e;
-  if (!absl::WebSafeBase64Unescape(*e, &decoded_e)) {
+  if (!jwt_internal::StrictWebSafeBase64Unescape(*e, &decoded_e)) {
     return absl::Status(absl::StatusCode::kInvalidArgument,
                         "failed to decode e");
   }
@@ -185,7 +185,7 @@ absl::StatusOr<KeyData> RsPublicKeyDataFromKeyStruct(const Struct& key_struct) {
     return n.status();
   }
   std::string decoded_n;
-  if (!absl::WebSafeBase64Unescape(*n, &decoded_n)) {
+  if (!jwt_internal::StrictWebSafeBase64Unescape(*n, &decoded_n)) {
     return absl::Status(absl::StatusCode::kInvalidArgument,
                         "failed to decode n");
   }
@@ -248,7 +248,7 @@ absl::StatusOr<KeyData> PsPublicKeyDataFromKeyStruct(const Struct& key_struct) {
     return e.status();
   }
   std::string decoded_e;
-  if (!absl::WebSafeBase64Unescape(*e, &decoded_e)) {
+  if (!jwt_internal::StrictWebSafeBase64Unescape(*e, &decoded_e)) {
     return absl::Status(absl::StatusCode::kInvalidArgument,
                         "failed to decode e");
   }
@@ -259,7 +259,7 @@ absl::StatusOr<KeyData> PsPublicKeyDataFromKeyStruct(const Struct& key_struct) {
     return n.status();
   }
   std::string decoded_n;
-  if (!absl::WebSafeBase64Unescape(*n, &decoded_n)) {
+  if (!jwt_internal::StrictWebSafeBase64Unescape(*n, &decoded_n)) {
     return absl::Status(absl::StatusCode::kInvalidArgument,
                         "failed to decode n");
   }
@@ -292,24 +292,28 @@ absl::StatusOr<KeyData> EsPublicKeyDataFromKeyStruct(const Struct& key_struct) {
   if (!curve.ok()) {
     return curve.status();
   }
+  subtle::EllipticCurveType curve_type;
   if (*alg == "ES256") {
     if (*curve != "P-256") {
       return absl::Status(absl::StatusCode::kInvalidArgument,
                           "crv is not equal to P-256");
     }
     public_key_proto.set_algorithm(JwtEcdsaAlgorithm::ES256);
+    curve_type = subtle::EllipticCurveType::NIST_P256;
   } else if (*alg == "ES384") {
     if (*curve != "P-384") {
       return absl::Status(absl::StatusCode::kInvalidArgument,
                           "crv is not equal to P-384");
     }
     public_key_proto.set_algorithm(JwtEcdsaAlgorithm::ES384);
+    curve_type = subtle::EllipticCurveType::NIST_P384;
   } else if (*alg == "ES512") {
     if (*curve != "P-521") {
       return absl::Status(absl::StatusCode::kInvalidArgument,
                           "crv is not equal to P-521");
     }
     public_key_proto.set_algorithm(JwtEcdsaAlgorithm::ES512);
+    curve_type = subtle::EllipticCurveType::NIST_P521;
   } else {
     return absl::Status(absl::StatusCode::kInvalidArgument, "invalid alg");
   }
@@ -331,14 +335,24 @@ absl::StatusOr<KeyData> EsPublicKeyDataFromKeyStruct(const Struct& key_struct) {
     return status_key_ops;
   }
 
+  absl::StatusOr<int32_t> expected_coordinate_size =
+      internal::EcFieldSizeInBytes(curve_type);
+  if (!expected_coordinate_size.ok()) {
+    return expected_coordinate_size.status();
+  }
+
   absl::StatusOr<std::string> x = GetStringItem(key_struct, "x");
   if (!x.ok()) {
     return x.status();
   }
   std::string decoded_x;
-  if (!absl::WebSafeBase64Unescape(*x, &decoded_x)) {
+  if (!jwt_internal::StrictWebSafeBase64Unescape(*x, &decoded_x)) {
     return absl::Status(absl::StatusCode::kInvalidArgument,
                         "failed to decode x");
+  }
+  if (decoded_x.size() != static_cast<size_t>(*expected_coordinate_size)) {
+    return absl::Status(absl::StatusCode::kInvalidArgument,
+                        "invalid length of x");
   }
   public_key_proto.set_x(decoded_x);
 
@@ -347,9 +361,13 @@ absl::StatusOr<KeyData> EsPublicKeyDataFromKeyStruct(const Struct& key_struct) {
     return y.status();
   }
   std::string decoded_y;
-  if (!absl::WebSafeBase64Unescape(*y, &decoded_y)) {
+  if (!jwt_internal::StrictWebSafeBase64Unescape(*y, &decoded_y)) {
     return absl::Status(absl::StatusCode::kInvalidArgument,
                         "failed to decode y");
+  }
+  if (decoded_y.size() != static_cast<size_t>(*expected_coordinate_size)) {
+    return absl::Status(absl::StatusCode::kInvalidArgument,
+                        "invalid length of y");
   }
   public_key_proto.set_y(decoded_y);
 

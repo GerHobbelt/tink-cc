@@ -23,16 +23,18 @@
 #include <utility>
 
 #include "google/protobuf/struct.pb.h"
-#include "google/protobuf/util/message_differencer.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/status/status.h"
 #include "absl/status/status_matchers.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/escaping.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
+#include "google/protobuf/util/message_differencer.h"
 #include "tink/cleartext_keyset_handle.h"
 #include "tink/config/global_registry.h"
+#include "tink/insecure_secret_key_access.h"
 #include "tink/json/json_keyset_reader.h"
 #include "tink/jwt/internal/json_util.h"
 #include "tink/jwt/jwt_public_key_sign.h"
@@ -680,13 +682,15 @@ TEST_F(JwkSetToPublicKeysetHandleTest, Rs256CorrectlySetsKid) {
   absl::StatusOr<std::unique_ptr<KeysetHandle>> public_handle =
       JwkSetToPublicKeysetHandle(jwt_set);
   EXPECT_THAT(public_handle, IsOk());
-  const google::crypto::tink::Keyset &keyset =
-      CleartextKeysetHandle::GetKeyset(**public_handle);
-  ASSERT_THAT(keyset.key_size(), Eq(1));
-  EXPECT_THAT(keyset.key(0).output_prefix_type(),
+  absl::StatusOr<google::crypto::tink::Keyset> keyset =
+      CleartextKeysetHandle::GetKeysetOrError(**public_handle,
+                                              InsecureSecretKeyAccess::Get());
+  ASSERT_THAT(keyset, IsOk());
+  ASSERT_THAT(keyset->key_size(), Eq(1));
+  EXPECT_THAT(keyset->key(0).output_prefix_type(),
               Eq(google::crypto::tink::OutputPrefixType::RAW));
   google::crypto::tink::JwtRsaSsaPkcs1PublicKey key;
-  key.ParseFromString(keyset.key(0).key_data().value());
+  key.ParseFromString(keyset->key(0).key_data().value());
   EXPECT_THAT(key.custom_kid().value(), Eq("DfpE4Q"));
 }
 
@@ -876,13 +880,14 @@ TEST_F(JwkSetToPublicKeysetHandleTest, Es256CorrectlySetsKid) {
   absl::StatusOr<std::unique_ptr<KeysetHandle>> public_handle =
       JwkSetToPublicKeysetHandle(jwt_set);
   EXPECT_THAT(public_handle, IsOk());
-  const google::crypto::tink::Keyset &keyset =
-      CleartextKeysetHandle::GetKeyset(**public_handle);
-  ASSERT_THAT(keyset.key_size(), Eq(1));
-  EXPECT_THAT(keyset.key(0).output_prefix_type(),
+  absl::StatusOr<google::crypto::tink::Keyset> keyset =
+      CleartextKeysetHandle::GetKeysetOrError(**public_handle,
+                                              InsecureSecretKeyAccess::Get());
+  ASSERT_THAT(keyset->key_size(), Eq(1));
+  EXPECT_THAT(keyset->key(0).output_prefix_type(),
               Eq(google::crypto::tink::OutputPrefixType::RAW));
   google::crypto::tink::JwtEcdsaPublicKey key;
-  key.ParseFromString(keyset.key(0).key_data().value());
+  key.ParseFromString(keyset->key(0).key_data().value());
   EXPECT_THAT(key.custom_kid().value(), Eq("EhuduQ"));
 }
 
@@ -1205,11 +1210,13 @@ TEST_P(JwkSetSmallCoordinateConverterTest,
   absl::StatusOr<std::unique_ptr<KeysetHandle>> keyset_handle =
       CleartextKeysetHandle::Read(std::move(*reader));
   ASSERT_THAT(keyset_handle, IsOk());
-  const google::crypto::tink::Keyset &public_keyset =
-      CleartextKeysetHandle::GetKeyset(**keyset_handle);
+  absl::StatusOr<google::crypto::tink::Keyset> public_keyset =
+      CleartextKeysetHandle::GetKeysetOrError(**keyset_handle,
+                                              InsecureSecretKeyAccess::Get());
+  ASSERT_THAT(public_keyset, IsOk());
   google::crypto::tink::EcdsaPublicKey public_key;
-  ASSERT_TRUE(
-      public_key.ParseFromString(public_keyset.key().at(0).key_data().value()));
+  ASSERT_TRUE(public_key.ParseFromString(
+      public_keyset->key().at(0).key_data().value()));
   // verify one of the coordinates is different than the field element size.
   ASSERT_FALSE(public_key.x().size() == GetParam().expected_encoded_size &&
                public_key.y().size() == GetParam().expected_encoded_size);
@@ -1290,6 +1297,215 @@ TEST_F(JwkSetFromPublicKeysetHandleTest,
       keyset_handle.status(),
       StatusIs(absl::StatusCode::kInvalidArgument,
                HasSubstr("Could not determine JwtRsaSsaPkcs1Algorithm")));
+}
+
+std::string MakeEs256Jwk(absl::string_view x, absl::string_view y) {
+  return absl::StrCat(
+      R"({"keys":[{"kty":"EC","crv":"P-256","alg":"ES256","use":"sig",)"
+      R"("key_ops":["verify"],"x":")",
+      x, R"(","y":")", y, R"("}]})");
+}
+
+absl::StatusOr<std::string> GetFieldFromFirstKeyInJwkSet(
+    absl::string_view jwk_set, absl::string_view field_name) {
+  absl::StatusOr<google::protobuf::Struct> proto_struct =
+      jwt_internal::JsonStringToProtoStruct(jwk_set);
+  if (!proto_struct.ok()) {
+    return proto_struct.status();
+  }
+  auto keys_it = proto_struct->fields().find("keys");
+  if (keys_it == proto_struct->fields().end() ||
+      keys_it->second.kind_case() != google::protobuf::Value::kListValue ||
+      keys_it->second.list_value().values().empty()) {
+    return absl::InvalidArgumentError("keys list not found or empty");
+  }
+  const google::protobuf::Struct& key =
+      keys_it->second.list_value().values(0).struct_value();
+  auto field_it = key.fields().find(std::string(field_name));
+  if (field_it == key.fields().end()) {
+    return absl::InvalidArgumentError(
+        absl::StrCat("field not found: ", field_name));
+  }
+  return field_it->second.string_value();
+}
+
+// Canonical P-256 coordinates from kEs256JwkWithEncodedSmallCoordinates whose
+// x-coordinate has a leading 0x00 byte (32 bytes when decoded).
+constexpr absl::string_view kCanonX =
+    "AGlFjtbwLgtzRDh7dV9sYmW4IWl3ZKA-WghvrQPiCNo";
+constexpr absl::string_view kCanonY =
+    "QnylBczID8nLBoZZP4geZbG5Vhap3GQ-xRIcuFJCbnU";
+
+TEST_F(JwkSetToPublicKeysetHandleTest, PaddedBase64UrlCoordinatesRejected) {
+  // RFC 7515 §2 requires base64url encoding without
+  // padding. JwkSetToPublicKeysetHandle must reject '='-padded coordinates.
+  std::string padded_x = absl::StrCat(kCanonX, "=");
+  std::string padded_y = absl::StrCat(kCanonY, "=");
+
+  EXPECT_THAT(
+      JwkSetToPublicKeysetHandle(MakeEs256Jwk(padded_x, kCanonY)).status(),
+      StatusIs(absl::StatusCode::kInvalidArgument,
+               HasSubstr("failed to decode x")));
+  EXPECT_THAT(
+      JwkSetToPublicKeysetHandle(MakeEs256Jwk(kCanonX, padded_y)).status(),
+      StatusIs(absl::StatusCode::kInvalidArgument,
+               HasSubstr("failed to decode y")));
+}
+
+TEST_F(JwkSetToPublicKeysetHandleTest,
+       EmbeddedWhitespaceAndDotPaddingRejected) {
+  // RFC 7515 §2 forbids whitespace and non-base64url
+  // characters. JwkSetToPublicKeysetHandle must reject embedded whitespace and
+  // '.' padding.
+  std::string ws_x = std::string(kCanonX);
+  ws_x.insert(10, "  ");  // embedded spaces
+  ws_x += '.';            // '.' padding
+  EXPECT_THAT(JwkSetToPublicKeysetHandle(MakeEs256Jwk(ws_x, kCanonY)).status(),
+              StatusIs(absl::StatusCode::kInvalidArgument,
+                       HasSubstr("failed to decode x")));
+}
+
+TEST_F(JwkSetToPublicKeysetHandleTest, NonUrlSafeBase64CharactersRejected) {
+  // RFC 7515 §2 requires base64url encoding without padding and forbids
+  // non-URL-safe characters. Standard base64 characters '+' and '/' must be
+  // rejected.
+  std::string plus_x = std::string(kCanonX);
+  plus_x[plus_x.find('-')] = '+';
+  EXPECT_THAT(
+      JwkSetToPublicKeysetHandle(MakeEs256Jwk(plus_x, kCanonY)).status(),
+      StatusIs(absl::StatusCode::kInvalidArgument,
+               HasSubstr("failed to decode x")));
+
+  std::string slash_x = std::string(kCanonX);
+  slash_x[slash_x.find('-')] = '/';
+  EXPECT_THAT(
+      JwkSetToPublicKeysetHandle(MakeEs256Jwk(slash_x, kCanonY)).status(),
+      StatusIs(absl::StatusCode::kInvalidArgument,
+               HasSubstr("failed to decode x")));
+
+  std::string plus_y = std::string(kCanonY);
+  plus_y[plus_y.find('-')] = '+';
+  EXPECT_THAT(
+      JwkSetToPublicKeysetHandle(MakeEs256Jwk(kCanonX, plus_y)).status(),
+      StatusIs(absl::StatusCode::kInvalidArgument,
+               HasSubstr("failed to decode y")));
+
+  std::string slash_y = std::string(kCanonY);
+  slash_y[slash_y.find('-')] = '/';
+  EXPECT_THAT(
+      JwkSetToPublicKeysetHandle(MakeEs256Jwk(kCanonX, slash_y)).status(),
+      StatusIs(absl::StatusCode::kInvalidArgument,
+               HasSubstr("failed to decode y")));
+}
+
+TEST_F(JwkSetToPublicKeysetHandleTest, PaddedRsaModulusAndExponentRejected) {
+  // RFC 7515 §2 requires base64url without padding for RSA members 'n' and 'e'.
+  std::string padded_rsa_n = R"({
+    "keys":[{
+      "kty":"RSA",
+      "n": "vmUOa62TYrxj7N8rZVAzoEdSnmsRQaNWBMAdB8adGa8n4ycGiYWoGv0uZWc8vH2jn6l3Pa_72bb2IHf3-KD2UaTwLk1x3yShXybEoS5ZF9bemzrn2ohNixGoN7Ofj7wPb61Z-F1Nv53nq308z-RI1WeyIH-9HjuIcuUxaWY0VevsXzCehMJP5g7kVzyl55bYcRi28didkVazrzVgNG35yNNMEL32oW1Vfvvp7hfQHtxSwkFOPzJgzIPHbJFbxALGrrgXHsoq7UtDQdS9vvoEp4_JzQhCtnCEKahgkTwOWyT96OlRGYiPJSFHWTujy1Qnd6OKc8LGEspAX4oD6Zl-YQ==",
+      "e":"AQAB",
+      "use":"sig",
+      "alg":"RS256",
+      "key_ops":["verify"],
+      "kid":"TCGiGw"
+    }]
+  })";
+  EXPECT_THAT(JwkSetToPublicKeysetHandle(padded_rsa_n).status(),
+              StatusIs(absl::StatusCode::kInvalidArgument,
+                       HasSubstr("failed to decode n")));
+
+  std::string padded_rsa_e = R"({
+    "keys":[{
+      "kty":"RSA",
+      "n": "vmUOa62TYrxj7N8rZVAzoEdSnmsRQaNWBMAdB8adGa8n4ycGiYWoGv0uZWc8vH2jn6l3Pa_72bb2IHf3-KD2UaTwLk1x3yShXybEoS5ZF9bemzrn2ohNixGoN7Ofj7wPb61Z-F1Nv53nq308z-RI1WeyIH-9HjuIcuUxaWY0VevsXzCehMJP5g7kVzyl55bYcRi28didkVazrzVgNG35yNNMEL32oW1Vfvvp7hfQHtxSwkFOPzJgzIPHbJFbxALGrrgXHsoq7UtDQdS9vvoEp4_JzQhCtnCEKahgkTwOWyT96OlRGYiPJSFHWTujy1Qnd6OKc8LGEspAX4oD6Zl-YQ",
+      "e":"AQAB=",
+      "use":"sig",
+      "alg":"RS256",
+      "key_ops":["verify"],
+      "kid":"TCGiGw"
+    }]
+  })";
+  EXPECT_THAT(JwkSetToPublicKeysetHandle(padded_rsa_e).status(),
+              StatusIs(absl::StatusCode::kInvalidArgument,
+                       HasSubstr("failed to decode e")));
+}
+
+TEST_F(JwkSetToPublicKeysetHandleTest,
+       CanonicalCoordinatesSucceedAndRoundTripIdentically) {
+  // Verifies that strictly canonical coordinates parse successfully and
+  // round-trip identically through JwkSetFromPublicKeysetHandle.
+  std::string jwk = MakeEs256Jwk(kCanonX, kCanonY);
+  absl::StatusOr<std::unique_ptr<KeysetHandle>> handle =
+      JwkSetToPublicKeysetHandle(jwk);
+  ASSERT_THAT(handle, IsOk());
+
+  absl::StatusOr<std::unique_ptr<JwtPublicKeyVerify>> verify =
+      (*handle)->GetPrimitive<JwtPublicKeyVerify>(ConfigGlobalRegistry());
+  EXPECT_THAT(verify, IsOk());
+
+  absl::StatusOr<std::string> re_exported_jwk =
+      JwkSetFromPublicKeysetHandle(**handle);
+  ASSERT_THAT(re_exported_jwk, IsOk());
+  absl::StatusOr<std::string> re_exported_x =
+      GetFieldFromFirstKeyInJwkSet(*re_exported_jwk, "x");
+  EXPECT_THAT(re_exported_x, IsOkAndHolds(Eq(kCanonX)));
+  absl::StatusOr<std::string> re_exported_y =
+      GetFieldFromFirstKeyInJwkSet(*re_exported_jwk, "y");
+  EXPECT_THAT(re_exported_y, IsOkAndHolds(Eq(kCanonY)));
+}
+
+TEST_F(JwkSetToPublicKeysetHandleTest, StrippedLeadingZeroCoordinateRejected) {
+  // RFC 7518 §6.2.1.2 mandates that coordinate octet
+  // sequences MUST be the full size of a coordinate for the curve (32 octets
+  // for P-256). JwkSetToPublicKeysetHandle must reject a 31-byte coordinate.
+  std::string raw_x;
+  ASSERT_TRUE(absl::WebSafeBase64Unescape(kCanonX, &raw_x));
+  ASSERT_THAT(raw_x.size(), Eq(32));
+  ASSERT_THAT(raw_x[0], Eq('\0'));
+
+  std::string x_31 = raw_x.substr(1);  // 31 bytes
+  std::string x_31_b64;
+  x_31_b64 = absl::WebSafeBase64Escape(x_31);
+
+  EXPECT_THAT(
+      JwkSetToPublicKeysetHandle(MakeEs256Jwk(x_31_b64, kCanonY)).status(),
+      StatusIs(absl::StatusCode::kInvalidArgument,
+               HasSubstr("invalid length of x")));
+}
+
+TEST_F(JwkSetToPublicKeysetHandleTest, ExtraLeadingZeroCoordinateRejected) {
+  // Extra leading 0x00 byte yields 33 bytes for P-256.
+  // RFC 7518 §6.2.1.2 requires exactly 32 octets. JwkSetToPublicKeysetHandle
+  // must reject a 33-byte coordinate.
+  std::string raw_x;
+  ASSERT_TRUE(absl::WebSafeBase64Unescape(kCanonX, &raw_x));
+  ASSERT_THAT(raw_x.size(), Eq(32));
+
+  std::string x_33 = absl::StrCat(std::string(1, '\0'), raw_x);  // 33 bytes
+  std::string x_33_b64;
+  x_33_b64 = absl::WebSafeBase64Escape(x_33);
+
+  EXPECT_THAT(
+      JwkSetToPublicKeysetHandle(MakeEs256Jwk(x_33_b64, kCanonY)).status(),
+      StatusIs(absl::StatusCode::kInvalidArgument,
+               HasSubstr("invalid length of x")));
+}
+
+TEST_F(JwkSetToPublicKeysetHandleTest, WrongLengthYCoordinateRejected) {
+  // Verifies that coordinate length validation is also strictly enforced for y.
+  std::string raw_y;
+  ASSERT_TRUE(absl::WebSafeBase64Unescape(kCanonY, &raw_y));
+  ASSERT_THAT(raw_y.size(), Eq(32));
+
+  std::string y_31 = raw_y.substr(1);  // 31 bytes
+  std::string y_31_b64;
+  y_31_b64 = absl::WebSafeBase64Escape(y_31);
+
+  EXPECT_THAT(
+      JwkSetToPublicKeysetHandle(MakeEs256Jwk(kCanonX, y_31_b64)).status(),
+      StatusIs(absl::StatusCode::kInvalidArgument,
+               HasSubstr("invalid length of y")));
 }
 
 }  // namespace
